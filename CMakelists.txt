@@ -88,6 +88,11 @@ if(FLEX_MESH_BuildDev)
     add_subdirectory(dev)
 endif()
     
+# CTest must be included before any subdirs
+include(CTest)
+if(BUILD_TESTING)
+    add_subdirectory(unit_tests)
+endif()
 
 # Install
 include(CMakePackageConfigHelpers)

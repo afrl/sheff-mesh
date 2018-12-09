@@ -1,0 +1,360 @@
+#pragma once
+
+#include "flex_mesh/node/Node.h"
+#include "flex_mesh/edge/Edge.h"
+#include "flex_mesh/face/Face.h"
+
+#include "Orientations.h"
+#include "ShapeFunctions.h"
+
+#include <set>
+
+namespace flex_mesh
+{
+	template<typename NodeType>
+	class Element
+	{
+	public:
+		using FaceTyped = Face<NodeType>;
+		using EdgeTyped = Edge<NodeType>;
+		using FacePtr = Face<NodeType>*;
+		using EdgePtr = Edge<NodeType>*;
+		using ConnSize = uint8_t;
+
+		//////////////////
+		// Constructors //
+		//////////////////
+
+		/// Note: component ID and global number are 0 by default
+		///       use set_global_number() and set_component_id()
+		Element();
+		// TODO Provide value constructors
+		Element(const Element&) = default;
+		virtual ~Element() {};
+
+		/// Initializes the element topology object
+		/// Note: orientations are not allocated by default
+		void initialize(const ElementType type,
+			const std::vector<NodeType *> & connectivity,
+			const LCSAssignment lcs_assignment = LCSAssignment::None);
+
+		/////////////////
+		// Get-setters //
+		/////////////////
+
+		const GlobalIndex& get_global_number() const;
+		void set_global_number(const GlobalIndex& global_num);
+
+		const ComponentIndex& get_component_id() const;
+		void set_component_id(const ComponentIndex& component_id);
+
+		/// Get the type by const-ref
+		/// Note: to set this, call initialize(...)
+		const ElementType& get_type() const;
+		/// Returns the number of nodes in the connectivity of the element.
+		/// Note: to set this, call initialize(...)
+		inline ConnSize get_num_nodes() const;
+
+		/// Get the connectivity as pointers to the nodes
+		const Connectivity<NodeType, ConnSize>& get_conn() const;
+		/// Get the connectivity in terms of the local node numbering for a partition
+		std::vector<LocalIndex> get_local_conn() const;
+
+		/// Returns the node pointer at the beginning of the connectivity
+		auto begin() const;
+		/// Returns the node pointer at the end of the connectivity
+		auto end() const;
+
+		/////////////////
+		// Comparisons //
+		/////////////////
+
+		/// Compares based on the mean coordinate
+		bool operator < (const Element &Other) const;
+		/// Compares based on the mean coordinate
+		bool operator > (const Element &Other) const;
+
+		///////////////////////
+		// Interrogate Nodes //
+		///////////////////////
+
+		/// Returns vector that is mean coordinate of the nodes defining this face
+		Point get_mean_coordinate() const;
+		/// Fills a vector (which it will resize) with the global numbers of the nodes
+		void get_global_node_numbers(std::vector<GlobalIndex>& numbers) const;
+		/// Return a set of the nodes that are shared between this and another element
+		std::set<NodeType *> get_shared_nodes(const Element &other) const;
+		/// Returns if this element contains the given node
+		bool contains_node(const NodeType& node) const;
+		/// Given a map from old to new nodes, this will replace the pointers in
+		/// the element and face connectivity containers.
+		virtual void remap_element_nodes(const std::map<NodeType *, NodeType *> & old_to_new_nodes);
+
+		//////////////////
+		// Orientations //
+		//////////////////
+
+		// TODO update naming
+		/// Allocates the local coordinate systems
+		void allocate_lcs(const LCSAssignment lcs_assignment);
+		/// Rotate all orientations in the element by the same amount
+		/// axes are defined in the global coordinate system
+		void rotate_orientations(const Vector3D & axis,
+			const double & angle);
+		/// Rotate the orientations about one axis.
+		void rotate_orientations(const short & axis_index,
+			const double & angle);
+		/// Set all orientations in the element to an identity matrix
+		void reset_orientations();
+		/// Directly get the orientations
+		/// \attention Be careful.  The orientations may only contain
+		/// one value per an element
+		Orientations<ConnSize>& get_orientations();
+		/// Get the orientation for a specific node
+		Quaternion& get_orientation(const ConnSize& i);
+
+		///////////////////
+		// Interpolation //
+		///////////////////
+
+		/// Resizes and fills the Eigen matrix with the shape function values
+		virtual void get_shape_function_values(
+			const Point& parametric_coordinate,
+			ElementVector& shape_function_values) const;
+
+		/// Resizes and fills the Eigen matrix with the shape function derivatives
+		/// Note: derivatives are in terms of parammetric coordinates (dPhi/dxi)
+		virtual void get_shape_function_derivatives(
+			const Point& parametric_coordinate,
+			ElementMatrix3D& shape_function_derivs) const;
+
+		/// Resizes and fills the Eigen matrix with the nodal coordinates
+		/// Will be arranged with each row being a node
+		void get_node_coordinates(ElementMatrix3D& coordinates) const;
+
+	protected:
+		GlobalIndex global_num_;
+		ComponentIndex component_id_;
+		ElementType type_;
+		Connectivity<NodeType, ConnSize> connectivity_;
+		Orientations<ConnSize> orientations_;
+	};
+
+	/////////////////
+	// Definitions //
+	/////////////////
+
+	template<typename NodeType>
+	inline Element<NodeType>::Element()
+		: global_num_(0), component_id_(0), type_(ElementType::UNKNGEOM)
+	{
+	}
+
+	template<typename NodeType>
+	inline void flex_mesh::Element<NodeType>::initialize(const ElementType type, const std::vector<NodeType*>& connectivity, const LCSAssignment lcs_assignment)
+	{
+		type_ = type;
+		connectivity_ = connectivity;
+	}
+
+	template<typename NodeType>
+	inline const GlobalIndex & flex_mesh::Element<NodeType>::get_global_number() const
+	{
+		return global_num_;
+	}
+
+	template<typename NodeType>
+	inline void Element<NodeType>::set_global_number(const GlobalIndex & global_num)
+	{
+		global_num_ = global_num;
+	}
+
+	template<typename NodeType>
+	inline const ComponentIndex & Element<NodeType>::get_component_id() const
+	{
+		return component_id_;
+	}
+
+	template<typename NodeType>
+	inline void Element<NodeType>::set_component_id(const ComponentIndex & component_id)
+	{
+		component_id_ = component_id;
+	}
+
+	template<typename NodeType>
+	inline const ElementType & Element<NodeType>::get_type() const
+	{
+		return type_;
+	}
+
+	template<typename NodeType>
+	inline typename Element<NodeType>::ConnSize Element<NodeType>::get_num_nodes() const
+	{
+		return connectivity_.size();
+	}
+
+	template<typename NodeType>
+	inline const Connectivity<NodeType, typename Element<NodeType>::ConnSize>& Element<NodeType>::get_conn() const
+	{
+		return connectivity_;
+	}
+
+	template<typename NodeType>
+	inline std::vector<LocalIndex> Element<NodeType>::get_local_conn() const
+	{
+		std::vector<LocalIndex> local_indices;
+		for (auto& n_ptr : *this)
+			local_indices.push_back(n_ptr->get_local_number());
+	}
+
+	template<typename NodeType>
+	inline auto Element<NodeType>::begin() const
+	{
+		return connectivity_.begin();
+	}
+
+	template<typename NodeType>
+	inline auto Element<NodeType>::end() const
+	{
+		return connectivity_.end();
+	}
+
+	template<typename NodeType>
+	inline bool Element<NodeType>::operator<(const Element & other) const
+	{
+		return compare_points(get_mean_coordinate(), other.get_mean_coordinate(), NodeType::get_compare_tolerance());
+	}
+
+	template<typename NodeType>
+	inline bool Element<NodeType>::operator>(const Element & other) const
+	{
+		return compare_points(other.get_mean_coordinate(), get_mean_coordinate(), NodeType::get_compare_tolerance());
+	}
+
+	template<typename NodeType>
+	inline Point Element<NodeType>::get_mean_coordinate() const
+	{
+		return get_mean_coordinate_of_nodes(connectivity_.begin(), connectivity_.size());
+	}
+
+	template<typename NodeType>
+	inline void Element<NodeType>::get_global_node_numbers(std::vector<GlobalIndex>& numbers) const
+	{
+		numbers.resize(connectivity_.size());
+		for (auto i = 0; i < Parent::connectivity_.size(); i++) {
+			numbers[i] = connectivity_[i]->get_global_number();
+		}
+	}
+
+	template<typename NodeType>
+	inline std::set<NodeType*> Element<NodeType>::get_shared_nodes(const Element & other) const
+	{
+		std::set<NodeType*> common_nodes(connectivity_.begin(), connectivity_.end());
+		for (auto& n_ptr : other) {
+			auto find_iter = common_nodes.find(n_ptr);
+			if (find_iter == common_nodes.end())
+				common_nodes.remove(find_iter);
+		}
+		return common_nodes;
+	}
+
+	template<typename NodeType>
+	inline bool Element<NodeType>::contains_node(const NodeType & node) const
+	{
+		for (auto& n_ptr : *this)
+			if (n_ptr == &node)
+				return true;
+		return false;
+	}
+
+	template<typename NodeType>
+	inline void Element<NodeType>::remap_element_nodes(const std::map<NodeType*, NodeType*>& old_to_new_nodes)
+	{
+		for (auto i = 0; i < connectivity_.size(); i++) {
+			auto find_iter = old_to_new_nodes.find(connectivity_[i]);
+			if (find_iter != old_to_new_nodes.end())
+				connectivity_[i] = find_iter->second;
+		}
+	}
+
+	template<typename NodeType>
+	inline void Element<NodeType>::allocate_lcs(const LCSAssignment lcs_assignment)
+	{
+		if (lcs_assignment == LCSAssignment::None)
+			orientations_.clear();
+		else if (lcs_assignment == LCSAssignment::Node) {
+			orientations_ = std::vector<Quaternion>(connectivity_.size());
+			for (auto& orient : orientations_)
+				orient.setIdentity();
+		}
+		// There will only be one lcs per an element for LCSAssignment::Element
+		// and LCSAssignment::Component
+		else {
+			orientations_ = std::vector<Quaternion>(1);
+			for (auto& orient : orientations_)
+				orient.setIdentity();
+		}
+	}
+
+	template<typename NodeType>
+	inline void Element<NodeType>::rotate_orientations(const Vector3D & axis, const double & angle)
+	{
+		Eigen::AngleAxis<FloatType> rotation(angle, axis);
+		for (auto& orient : orientations_)
+			orient += rotation;
+	}
+
+	template<typename NodeType>
+	inline void Element<NodeType>::rotate_orientations(const short & axis_index, const double & angle)
+	{
+		Vector3D axis; axis.setZero();
+		axis(axis_index, 1.0);
+		rotate_orientations(axis, angle);
+	}
+
+	template<typename NodeType>
+	inline void Element<NodeType>::reset_orientations()
+	{
+		for (auto& orient : orientations_)
+			orient.setIdentity();
+	}
+
+	template<typename NodeType>
+	inline Orientations<typename Element<NodeType>::ConnSize> & Element<NodeType>::get_orientations()
+	{
+		return orientations_;
+	}
+
+	template<typename NodeType>
+	inline Quaternion & Element<NodeType>::get_orientation(const ConnSize & i)
+	{
+		if (orientations_.size() == 0)
+			return Quaternion::Identity();
+		// Handle the case if there is only one orientation for the whole element
+		else if (orientations_.size() == 1)
+			return orientations_[0];
+		return orientations_[i];
+	}
+
+	template<typename NodeType>
+	inline void flex_mesh::Element<NodeType>::get_shape_function_values(const Point & parametric_coordinate, ElementVector & shape_function_values) const
+	{
+		ShapeFunctions<Point, ElementVector, ElementMatrix3D>::values(type_, parametric_coordinate, shape_function_values);
+	}
+
+	template<typename NodeType>
+	inline void flex_mesh::Element<NodeType>::get_shape_function_derivatives(const Point & parametric_coordinate, ElementMatrix3D & shape_function_derivs) const
+	{
+		ShapeFunctions<Point, ElementVector, ElementMatrix3D>::derivatives(type_, parametric_coordinate, shape_function_derivs);
+	}
+
+	template<typename NodeType>
+	inline void Element<NodeType>::get_node_coordinates(ElementMatrix3D & coordinates) const
+	{
+		coordinates.resize(connectivity_.size(), 3);
+		for (ConnSize i = 0; i < connectivity_.size(); i++)
+			for (auto j = 0; j < 3; j++)
+				coordinates(i, j) = (*connectivity_[i])[j];
+	}
+
+};

@@ -1,0 +1,14 @@
+*.iobj
+*.ipdb
+*.pdb
+*.vs
+*.tlog
+*.obj
+*.idb
+*.exe
+*..lastbuildstate
+*.bin
+*.json
+*.filters
+build/*
+install/*

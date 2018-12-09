@@ -1,0 +1,284 @@
+#pragma once
+
+#include <array>
+#include <forward_list>
+
+#include "flex_mesh/common/Defines.h"
+#include "flex_mesh/common/Utility.h"
+
+#include "Eigen/Eigen"
+
+namespace flex_mesh
+{
+
+	/// This class captures the geometrical/topological information of a node
+	/// such as coordinates, numbering, parents, etc.
+	class Node
+	{
+
+	public:
+		//////////////////
+		// Constructors //
+		//////////////////
+
+		/// Initializes every property to 0
+		Node();
+		/// Creates a node with all variables initialized, except the parent elements
+		Node(const GlobalIndex global_num, const Point& coords);
+		/// Creates a node with all variables initialized to 0 except the coordinates.
+		Node(const Point& coords);
+		/// Copy constructor
+		Node(const Node& other) = default;
+		/// Move constructor
+		Node(Node&& other) = default;
+
+		/////////////////
+		// Get-setters //
+		/////////////////
+
+		const Point& get_coord() const;
+		void set_coord(const Point& coord);
+
+		const GlobalIndex& get_global_number() const;
+		void set_global_number(const GlobalIndex& globalNum);
+
+		/////////////////
+		// Eigen casts //
+		/////////////////
+
+		/// Returns an Eigen::Map object that maps the coordinates to a 2D Eigen vector.
+		/// It can be used as a normal Eigen vector, and it will modify the underlying
+		/// coordinates if the vector is modified.
+		auto as_eigen_vec2d();
+		/// Const version of as_eigen_vec2d().  Will not allow modification to the underlying
+		/// coordinates of the node.
+		auto as_eigen_vec2d() const;
+		/// Returns an Eigen::Map object that maps the coordinates to a 3D Eigen vector.
+		/// It can be used as a normal Eigen vector, and it will modify the underlying
+		/// coordinates if the vector is modified.
+		auto as_eigen_vec3d();
+		/// Const version of as_eigen_vec3d().  Will not allow modification to the underlying
+		/// coordinates of the node.
+		auto as_eigen_vec3d() const;
+
+		///////////////
+		// Operators //
+		///////////////
+
+		/// Tests if the addresses are the same
+		bool operator == (const Node &other) const;
+		/// Compares based on the coordinates of each node (first by x, then by y, then by z),
+		/// but takes into account a tolerance.
+		bool operator > (const Node &other) const;
+		/// Compares based on the coordinates of each node (first by x, then by y, then by z),
+		/// but takes into account a tolerance.
+		bool operator < (const Node &other) const;
+		/// Adds a vector to the coordinates of a node, effectively translating the node.
+		/// Note: may invalidate existing KD trees, be sure to update them as needed
+		Node& operator += (const Point &translation_vec);
+		/// Assigns the coordinates of the node to a new set of coordinates.
+		/// Note: may invalidate existing KD trees, be sure to update them as needed
+		Node& operator = (const Point &coord);
+		/// Const coordinate accessor.  Note: does not check if i is within 0-2.
+		const FloatType& operator [] (unsigned int i) const;
+		/// Non-const coordinate accessor.  Note: does not check if i is within 0-2.
+		/// Note: may invalidate existing KD trees, be sure to update them as needed
+		///       if the value of a coordinat eis modified.
+		FloatType& operator [] (unsigned int i);
+
+		///////////////////////////////
+		// Static comparison methods //
+		///////////////////////////////
+
+		/// Compares nodes based on global number.  Useful for sorting by number
+		static bool num_based_compare(const Node& node1, const Node& node2);
+
+		///////////////////////
+		// Tolerance methods //
+		///////////////////////
+
+		/// Sets the tolerance used for > and < operators
+		/// Note: Not thread-safe
+		static void set_compare_tolerance(const double& tol);
+		/// Sets the tolerance used for > and < operators within the node class
+		static double get_compare_tolerance();
+
+		////////////////////////////
+		// Methods for mesh class //
+		////////////////////////////
+
+		/// Add a parent element to the vector of parents (which are internally stored as void*)
+		template<typename ElementType>
+		void add_parent_element(ElementType* elem);
+		/// Remove a parent element to the vector of parents (which are internally stored as void*)
+		template<typename ElementType>
+		void remove_parent_element(ElementType* elem);
+		/// Reset the partent list to contain nothing
+		void reset_parents();
+		/// Get the list of parent elements, though it must cast to the correct types
+		std::vector<void*> const * const get_parent_elements() const;
+
+	protected:
+		/// The global number of the node, which must be an unique, 0-based index with all of the nodes
+		/// forming a contiguous range from 0 to N-1, where N is the number of nodes.
+		GlobalIndex global_num_;
+		/// The coordinates of the node.  Assuemd to be 3D.
+		// TODO plurality
+		Point coords_;
+
+		/// The mesh class will be responsible for using this property, but since the
+		/// NodeTopology class cannot know what type of element will contain it, the parents
+		/// will be stored as a vector of void pointers.  The mesh class will allocate and cast them.
+		/// DO NOT mess with the pointers outside of the mesh class.
+		/// AND NEVER delete these pointers.
+		std::unique_ptr<std::vector<void*>> parent_elements_;
+	};
+
+	/////////////////
+	// Definitions //
+	/////////////////
+
+	inline Node::Node()
+		: global_num_(0), coords_({ 0, 0, 0 })
+	{
+	}
+
+	inline Node::Node(const GlobalIndex global_num, const Point & coords)
+		: global_num_(global_num), coords_(coords)
+	{
+	}
+
+	inline Node::Node(const Point& coords)
+		: global_num_(0), coords_(coords)
+	{
+	}
+
+	inline const Point& Node::get_coord() const
+	{
+		return coords_;
+	}
+
+	inline void Node::set_coord(const Point& coord)
+	{
+		coords_ = coord;
+	}
+
+	inline const GlobalIndex & Node::get_global_number() const
+	{
+		return global_num_;
+	}
+
+	inline void Node::set_global_number(const GlobalIndex & globalNum)
+	{
+		global_num_ = globalNum;
+	}
+
+	inline auto Node::as_eigen_vec2d()
+	{
+		return Eigen::Map<Eigen::Vector2d>(&coords_[0], 2);
+	}
+
+	inline auto Node::as_eigen_vec2d() const
+	{
+		return Eigen::Map<const Eigen::Vector2d>(&coords_[0], 2);
+	}
+
+	inline auto Node::as_eigen_vec3d()
+	{
+		return Eigen::Map<Eigen::Vector3d>(&coords_[0], 3);
+	}
+
+	inline auto Node::as_eigen_vec3d() const
+	{
+		return Eigen::Map<const Eigen::Vector3d>(&coords_[0], 3);
+	}
+
+	bool Node::operator==(const Node & other) const
+	{
+		return this == &other;
+	}
+
+	bool Node::operator>(const Node & other) const
+	{
+		return other < *this;
+	}
+
+	inline bool Node::operator<(const Node & other) const
+	{
+		return compare_points(this->coords_, other.coords_, get_compare_tolerance());
+	}
+
+	inline const FloatType & Node::operator[](unsigned int i) const
+	{
+		return coords_[i];
+	}
+
+	inline FloatType & Node::operator[](unsigned int i)
+	{
+		return coords_[i];
+	}
+
+	inline Node & Node::operator+=(const Point& translation_vec)
+	{
+		for (unsigned int i = 0; i < 3; i++)
+			coords_[i] += translation_vec[i];
+		return *this;
+	}
+
+	inline Node & Node::operator=(const Point& coord)
+	{
+		coords_ = coord;
+		return *this;
+	}
+
+	inline bool Node::num_based_compare(const Node & node1, const Node & node2)
+	{
+		return node1.global_num_ < node2.global_num_;
+	}
+
+	inline void Node::set_compare_tolerance(const double & tol)
+	{
+		static double compare_tol_ = 1e-14;
+		compare_tol_ = tol;
+	}
+
+
+	inline double Node::get_compare_tolerance()
+	{
+		static double compare_tol_;
+		return compare_tol_;
+	}
+
+	inline void Node::reset_parents()
+	{
+		parent_elements_ = nullptr;
+	}
+
+	inline std::vector<void*> const * const Node::get_parent_elements() const
+	{
+		return parent_elements_.get();
+	}
+
+	template<typename ElementType>
+	inline void Node::add_parent_element(ElementType * elem)
+	{
+		if (parent_elements_ == nullptr)
+			parent_elements_ = std::make_unique<std::vector<void*>>();
+
+		parent_elements_->push_back(static_cast<void*>(elem));
+	}
+
+	template<typename ElementType>
+	inline void Node::remove_parent_element(ElementType * elem)
+	{
+		if (parent_elements_ == nullptr)
+			return;
+
+		for (auto i = 0; i < parent_elements_->size(); i++) {
+			if ((*parent_elements_)[i] == elem) {
+				(*parent_elements_)[i] = parent_elements_->back();
+				parent_elements_->resize(parent_elements_->size() - 1);
+			}
+		}
+	}
+};

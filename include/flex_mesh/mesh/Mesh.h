@@ -55,6 +55,94 @@ GENERATE_HAS_MEMBER(get_local_number)  // Creates 'has_get_local_number'.
 
 namespace flex_mesh
 {
+	template<typename T>
+	class UniquePtrContainer
+	{
+	public:
+		using ObjectUniquePtr = std::unique_ptr<T>;
+		typedef typename std::vector<ObjectUniquePtr>::iterator Iterator;
+		typedef typename std::vector<ObjectUniquePtr>::const_iterator ConstIterator;
+
+		UniquePtrContainer() {};
+		virtual ~UniquePtrContainer() {};
+
+		/// Returns the size of the container
+		virtual size_t size() const { return objects_.size(); }
+		/// Returns the begin iterator of the container
+		virtual auto begin() { return objects_.begin(); }
+		/// Returns the begin iterator of the container
+		virtual auto begin() const { return objects_.begin(); }
+		/// Returns the end iterator of the container
+		virtual auto end() const { return objects_.end(); }
+		/// Returns a raw pointer to the first object added
+		T * const front() const { return  !objects_.empty() ? objects_.front().get() : nullptr; }
+		/// Returns a raw pointer to the last object added
+		T * const back() const { return !objects_.empty() ? objects_.back().get() : nullptr; }
+		/// Add an object to the container
+		/// Returns a raw pointer to that object
+#ifndef SWIG
+		T * add(ObjectUniquePtr obj) {
+			objects_.push_back(std::move(obj));
+			return back();
+		};
+#endif
+		/// Add an object to the container and have it call its default constructor
+		/// Returns a raw pointer to that object
+		T * add() {
+			objects_.push_back(std::make_unique<T>());
+			return back();
+		};
+		/// Remove an object from the container given an iterator
+		/// Returns the next iterator
+		Iterator remove(Iterator it) {
+			*it = std::move(objects_.back());
+			objects_.resize(objects_.size() - 1);
+			return it++;
+		};
+		/// Remove a list of objects from the container given iterators
+		void remove(std::list<Iterator> iter_list) {
+			for (auto it : iter_list)
+				this->remove(it);
+		}
+		/// Given a set of object pointers, this will remove all of them from the container.
+		/// Note: if the container stores elements, it does not update element connectivities,
+		/// that must be done in the algorithm that call this.
+		void remove_nodes(std::set<T *> objects_to_remove) {
+			for (auto it = begin(); nIt != end(); ) {
+				auto setIt = objects_to_remove.find(it->get());
+				if (setIt != objects_to_remove.end()) {
+					objects_to_remove.erase(setIt);
+					it = remove_node(it);
+				}
+				else
+					it++;
+			}
+		};
+
+	protected:
+		std::vector<ObjectUniquePtr> objects_;
+	};
+
+	template<typename Element_, typename PolyhedralElement_>
+	class ElementContainer : public UniquePtrContainer<Element_>
+	{
+	public:
+		using Parent = UniquePtrContainer<Element_>;
+		using PolyhedronUniquePtr = std::unique_ptr<PolyhedralElement_>;
+
+		ElementContainer() : Parent() {};
+		virtual ~ElementContainer() override {};
+
+
+
+	protected:
+		std::vector<PolyhedronUniquePtr> polyhedral_elements_;
+	};
+
+	// Iterator adapter for elements to iterate through elements then polyhedrals?
+
+
+
 	/// A base container for NodeTopology and ElementTopology objects
 	/// that compose a mesh. This is meant to be very simple and only
 	/// contain methods related to accessing and manipulating a mesh.

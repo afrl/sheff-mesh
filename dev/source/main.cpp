@@ -5,6 +5,7 @@
 
 #include "flex_mesh/common/Common.h"
 #include "flex_mesh/common/Connectivity.h"
+#include "flex_mesh/common/Traits.h"
 #include "flex_mesh/node/Node.h"
 #include "flex_mesh/node/DistribNode.h"
 #include "flex_mesh/node/NodeUtilities.h"
@@ -323,6 +324,11 @@ bool test_polyhedron()
 
 	return true;
 }
+
+struct Test
+{
+	int get_local_number() { return 1; }
+};
 
 bool test_mesh()
 {

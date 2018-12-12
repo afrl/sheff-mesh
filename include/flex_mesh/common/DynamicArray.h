@@ -1,5 +1,7 @@
 #pragma once
 
+#include "flex_mesh/common/CrossplatformHelpers.h"
+
 #include <assert.h>
 #include <limits>
 #include <vector>
@@ -17,11 +19,11 @@ namespace flex_mesh
 		/// A constructor that takes an iteratable container class that contains
 		/// T objects.  It must have begin and end methods.
 		template<typename TContainer>
-		DynamicArray(const TContainer& objects);
+		DynamicArray(TContainer&& objects);
 		/// A constructor that takes an initializer list, use like:
 		/// DynamicArray<Node> c({ &n1, &n2 });
 		/// where n1 and n2 are Node objects
-		DynamicArray(const std::initializer_list<T>& objects);
+		DynamicArray(std::initializer_list<T>&& objects);
 		DynamicArray(const DynamicArray& arg);
 		// TODO implement move constructor
 		DynamicArray(DynamicArray&& arg);
@@ -85,19 +87,19 @@ namespace flex_mesh
 
 	template<typename T, typename SizeType>
 	template<typename TContainer>
-	inline DynamicArray<T, SizeType>::DynamicArray(const TContainer & objects)
+	inline DynamicArray<T, SizeType>::DynamicArray(TContainer && objects)
 		: objects_(new T[objects.size()]), size_(static_cast<SizeType>(objects.size()))
 	{
 		assert(objects.size() > 0);
-		std::copy(objects.begin(), objects.end(), objects_);
+		std::copy(objects.begin(), objects.end(), stdext::checked_array_iterator<T*>(objects_, size_));
 	}
 
 	template<typename T, typename SizeType>
-	inline DynamicArray<T, SizeType>::DynamicArray(const std::initializer_list<T>& objects)
+	inline DynamicArray<T, SizeType>::DynamicArray(std::initializer_list<T>&& objects)
 		: objects_(new T[objects.size()]), size_(static_cast<SizeType>(objects.size()))
 	{
 		assert(objects.size() > 0);
-		std::copy(objects.begin(), objects.end(), objects_);
+		std::copy(objects.begin(), objects.end(), stdext::checked_array_iterator<T*>(objects_, size_));
 	}
 
 	template<typename T, typename SizeType>
@@ -105,7 +107,7 @@ namespace flex_mesh
 		: objects_(new T[arg.size_]), size_(arg.size_)
 	{
 		assert(arg.size() > 0);
-		std::copy(&arg.objects_[0], &arg.objects_[arg.size_], objects_);
+		std::copy(&arg.objects_[0], &arg.objects_[arg.size_], stdext::checked_array_iterator<T*>(objects_, size_));
 	}
 
 	template<typename T, typename SizeType>
@@ -158,7 +160,7 @@ namespace flex_mesh
 	{
 		auto tmp = objects_;
 		objects_ = new T[size_ + 1];
-		std::copy(&tmp[0], &tmp[size_], objects_);
+		std::copy(&tmp[0], &tmp[size_], stdext::checked_array_iterator<T*>(objects_, size_));
 		objects_[size_] = T(entry);
 		size_++;
 		delete[] tmp;
@@ -197,7 +199,7 @@ namespace flex_mesh
 		assert(objects.size() < std::numeric_limits<SizeType>::max());
 		delete[] this->objects_;
 		this->objects_ = new T[objects.size()];
-		std::copy(objects.begin(), objects.end(), this->objects_);
+		std::copy(objects.begin(), objects.end(), stdext::checked_array_iterator<T*>(this->objects_, this->size_));
 		this->size_ = static_cast<SizeType>(objects.size());
 		return *this;
 	}
@@ -207,7 +209,7 @@ namespace flex_mesh
 	{
 		delete[] this->objects_;
 		this->objects_ = new T[other.size_];
-		std::copy(&other.objects_[0], &other.objects_[other.size_], this->objects_);
+		std::copy(&other.objects_[0], &other.objects_[other.size_], stdext::checked_array_iterator<T*>(this->objects_, this->size_));
 		this->size_ = other.size_;
 		return *this;
 	}
@@ -216,7 +218,7 @@ namespace flex_mesh
 	inline const std::vector<T> DynamicArray<T, SizeType>::copy_as_vector() const
 	{
 		std::vector<T> conn_copy(size());
-		std::copy(&objects_[0], &objects_[size_], &conn_copy[0]);
+		std::copy(&objects_[0], &objects_[size_], conn_copy.begin());
 		return conn_copy;
 	}
 

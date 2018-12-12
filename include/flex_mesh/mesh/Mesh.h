@@ -2,6 +2,7 @@
 
 #include "flex_mesh/common/Defines.h"
 #include "flex_mesh/common/Exceptions.h"
+#include "flex_mesh/common/Traits.h"
 
 #include <algorithm>
 #include <functional>
@@ -10,48 +11,11 @@
 #include <set>
 #include <vector>
 
-namespace flex_mesh_detail
-{
-// This is a bit of complicated macro that tests if a class has a particular method
-// at compile time, allowing specialized methods based on whether the method exists.
-// A great idea borrowed from https://en.wikibooks.org/wiki/More_C++_Idioms/Member_Detector
-// Consider moving this to Common.h?
-#define GENERATE_HAS_MEMBER(member)                                               \
-                                                                                  \
-template < class T >                                                              \
-class HasMember_##member                                                          \
-{                                                                                 \
-private:                                                                          \
-    using Yes = char[2];                                                          \
-    using  No = char[1];                                                          \
-                                                                                  \
-    struct Fallback { int member; };                                              \
-    struct Derived : T, Fallback { };                                             \
-                                                                                  \
-    template < class U >                                                          \
-    static No& test ( decltype(U::member)* );                                     \
-    template < typename U >                                                       \
-    static Yes& test ( U* );                                                      \
-                                                                                  \
-public:                                                                           \
-    static constexpr bool RESULT = sizeof(test<Derived>(nullptr)) == sizeof(Yes); \
-};                                                                                \
-                                                                                  \
-template < class T >                                                              \
-struct has_##member                                                        \
-: public std::integral_constant<bool, HasMember_##member<T>::RESULT>              \
-{                                                                                 \
-};
-
-GENERATE_HAS_MEMBER(get_local_number)  // Creates 'has_get_local_number'.
-
-}
-
 // Tests to see if elements contain distributed information
-#define HAS_LOCAL_NUMBERING_DECLARE(T) typename T_ = T, typename std::enable_if<flex_mesh_detail::has_get_local_number<T_>::value>::type* = nullptr
-#define HAS_LOCAL_NUMBERING_DEFINE(T) typename T_, typename std::enable_if<flex_mesh_detail::has_get_local_number<T_>::value>::type*
-#define MISSING_LOCAL_NUMBERING_DECLARE(T) typename T_ = T, typename std::enable_if<!flex_mesh_detail::has_get_local_number<T_>::value>::type* = nullptr
-#define MISSING_LOCAL_NUMBERING_DEFINE(T) typename T_, typename std::enable_if<!flex_mesh_detail::has_get_local_number<T_>::value>::type*
+#define HAS_LOCAL_NUMBERING_DECLARE(T) typename T_ = T, typename std::enable_if<flex_mesh_traits::has_get_local_number<T_>::value>::type* = nullptr
+#define HAS_LOCAL_NUMBERING_DEFINE(T) typename T_, typename std::enable_if<flex_mesh_traits::has_get_local_number<T_>::value>::type*
+#define MISSING_LOCAL_NUMBERING_DECLARE(T) typename T_ = nullptr, typename std::enable_if<!flex_mesh_traits::has_get_local_number<T_>::value>::type* = nullptr
+#define MISSING_LOCAL_NUMBERING_DEFINE(T) typename T_, typename std::enable_if<!flex_mesh_traits::has_get_local_number<T_>::value>::type*
 
 namespace flex_mesh
 {

@@ -26,20 +26,20 @@ namespace flex_mesh
 	typedef Eigen::Quaternion<FloatType> Quaternion;
 
 	template<typename SizeType>
-	class Orientations : public DynamicArray<Quaternion, SizeType>
+	class LCSContainer : public DynamicArray<Quaternion, SizeType>
 	{
 	public:
 		using Parent = DynamicArray<Quaternion, SizeType>;
 
-		Orientations() : Parent() {};
+		LCSContainer() : Parent() {};
 		template<typename QuaternionContainer>
-		Orientations(const QuaternionContainer& quaternions) : Parent(quaternions) {};
-		Orientations(const std::initializer_list<Quaternion>& quaternions) : Parent(quaternions) {};
-		Orientations(const DynamicArray<Quaternion, SizeType >& arg) : Parent(arg) {};
+		LCSContainer(const QuaternionContainer& quaternions) : Parent(quaternions) {};
+		LCSContainer(const std::initializer_list<Quaternion>& quaternions) : Parent(quaternions) {};
+		LCSContainer(const DynamicArray<Quaternion, SizeType >& arg) : Parent(arg) {};
 
 		/// Assign the array to a new list of nodes
 		template<typename OrientationContainer>
-		Orientations& operator = (const OrientationContainer &nodes) {
+		LCSContainer& operator = (const OrientationContainer &nodes) {
 			Parent::operator=(nodes);
 			return *this;
 		};

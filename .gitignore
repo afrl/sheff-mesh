@@ -11,4 +11,4 @@
 *.json
 *.filters
 build/*
-install/*
+install_dir/*

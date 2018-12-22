@@ -199,8 +199,8 @@ namespace flex_mesh
 		assert(objects.size() < std::numeric_limits<SizeType>::max());
 		delete[] this->objects_;
 		this->objects_ = new T[objects.size()];
-		std::copy(objects.begin(), objects.end(), stdext::checked_array_iterator<T*>(this->objects_, this->size_));
 		this->size_ = static_cast<SizeType>(objects.size());
+		std::copy(objects.begin(), objects.end(), stdext::checked_array_iterator<T*>(this->objects_, this->size_));
 		return *this;
 	}
 
@@ -209,8 +209,8 @@ namespace flex_mesh
 	{
 		delete[] this->objects_;
 		this->objects_ = new T[other.size_];
-		std::copy(&other.objects_[0], &other.objects_[other.size_], stdext::checked_array_iterator<T*>(this->objects_, this->size_));
 		this->size_ = other.size_;
+		std::copy(&other.objects_[0], &other.objects_[other.size_], stdext::checked_array_iterator<T*>(this->objects_, this->size_));
 		return *this;
 	}
 

@@ -148,13 +148,23 @@ namespace flex_mesh
 	/// \attention Will overwrite anything in the vectors!
 	void get_edge_info(const ElementType & geom_type, const unsigned int num_nodes_in_element, std::vector<EdgeType>& types, std::vector<std::vector<unsigned int>>& conn);
 
-
 	/////////////
 	// Helpers //
 	/////////////
 
 	/// A helper used in get_edge_info and get_face_info
 	static std::vector<std::vector<unsigned int>> connectivity_helper(int num_faces, int* nodes_per_face, int* face_nodes);
+
+	/////////////////
+	// VTK Helpers //
+	/////////////////
+
+	/// Returns the integer used to indicate VTK cell types for a given ElementType
+	int get_vtk_element_type(const ElementType& geom_type);
+	/// Returns the permuation vector to go from the internal connectivity to the
+	/// connectivity used in VTK.  All types are not mappable to a VTK element,
+	/// in those cases, it will throw.
+	std::vector<unsigned int> get_vtk_permutation(const ElementType& geom_type);
 
 	//////////////////
 	// Definitiions //
@@ -277,7 +287,92 @@ namespace flex_mesh
 		return faces_connectivities;
 	}
 
-	unsigned int flex_mesh::get_num_nodes_for_type(const ElementType & geom_type)
+	int get_vtk_element_type(const ElementType & geom_type)
+	{
+		// 1D
+		if (geom_type == ElementType::L1D2N)
+			return 3;
+		else if (geom_type == ElementType::L1D3N)
+			return 21;
+		// 2D
+		else if (geom_type == ElementType::T2D3N)
+			return 5;
+		else if (geom_type == ElementType::Q2D4N)
+			return 9;
+		else if (geom_type == ElementType::T2D6N)
+			return 22;
+		else if (geom_type == ElementType::Q2D8N)
+			return 23;
+		//else if (geom_type == ElementType::POLYGON)
+		//	return 7;
+		// 3D
+		else if (geom_type == ElementType::T3D4N)
+			return 10;
+		else if (geom_type == ElementType::P3D5N)
+			return 14;
+		else if (geom_type == ElementType::W3D6N)
+			return 13;
+		else if (geom_type == ElementType::H3D8N)
+			return 12;
+		else if (geom_type == ElementType::T3D10N)
+			return 24;
+		else if (geom_type == ElementType::P3D13N)
+			return 27;
+		else if (geom_type == ElementType::W3D15N)
+			return 26;
+		else if (geom_type == ElementType::H3D20N)
+			return 25;
+		//else if (geom_type == ElementType::POLYHEDRON)
+		//	return ?;
+		else
+			throw _FM_MSG_EXCEPT("VTK type conversion not implemented.");
+	}
+
+	std::vector<unsigned int> get_vtk_permutation(const ElementType & geom_type)
+	{
+		auto num_nodes = get_num_nodes_for_type(geom_type);
+		std::vector<unsigned int> permutation(num_nodes);
+		// Fill permutation with 0 - num_nodes-1
+		std::iota(permutation.begin(), permutation.end(), 0);
+
+		// 1D
+		if (geom_type == ElementType::L1D2N)
+			return permutation; // Unchanged
+		else if (geom_type == ElementType::L1D3N)
+			throw _FM_MSG_EXCEPT("L1D2N type not implemented.");
+		// 2D
+		else if (geom_type == ElementType::T2D3N)
+			return permutation; // Unchanged
+		else if (geom_type == ElementType::Q2D4N)
+			return permutation; // Unchanged
+		else if (geom_type == ElementType::T2D6N)
+			return{ 0,2,4,1,3,5 }; // Different
+		else if (geom_type == ElementType::Q2D8N)
+			return{ 0,2,4,6,1,3,5,7 }; // Different
+		//else if (geom_type == ElementType::POLYGON)
+		//	return permutation; // Unchanged
+		// 3D
+		else if (geom_type == ElementType::T3D4N)
+			return permutation; // Unchanged
+		else if (geom_type == ElementType::P3D5N)
+			return permutation; // Unchanged
+		else if (geom_type == ElementType::W3D6N)
+			return{ 0, 2, 1, 3, 5, 4 }; // Different
+		else if (geom_type == ElementType::H3D8N)
+			return permutation; // Unchanged
+		else if (geom_type == ElementType::T3D10N)
+			return permutation; // Unchanged
+		else if (geom_type == ElementType::P3D13N)
+			return permutation; // Unchanged
+		else if (geom_type == ElementType::W3D15N)
+			return{ 0, 4, 2, 9, 13, 11, 5, 3, 1, 14, 12, 10, 6, 8, 7 }; // Different
+		else if (geom_type == ElementType::H3D20N)
+			return{ 0, 2, 4, 6, 12, 14, 16, 18, 1, 3, 5, 7, 13, 15, 17, 19, 8, 9, 10, 11 }; // Different
+		else
+			return{};
+	}
+
+	unsigned int get_num_nodes_for_type(const ElementType & geom_type)
 	{
 		// 1D
 		if (geom_type == ElementType::L1D2N) return 2;

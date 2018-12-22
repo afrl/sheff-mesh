@@ -23,7 +23,9 @@ namespace flex_mesh
 
 		// Inherit constructors from Node
 		using BaseType::BaseType;
+		DistribNode();
 		DistribNode(const LocalIndex local_num, const GlobalIndex global_num, const Point& coords, const PartitionIndex parent_partition = 0);
+		DistribNode(const Point& coords);
 		DistribNode(const DistribNode& other) = default;
 		DistribNode(DistribNode&& other) = default;
 
@@ -59,8 +61,20 @@ namespace flex_mesh
 	};
 
 	template<typename BaseType>
+	inline DistribNode<BaseType>::DistribNode()
+		: BaseType(), local_num_(0), parent_partition_(0)
+	{
+	}
+
+	template<typename BaseType>
 	DistribNode<BaseType>::DistribNode(const LocalIndex local_num, const GlobalIndex global_num, const Point & coords, const PartitionIndex parent_partition)
 		: BaseType(global_num, coords), local_num_(local_num), parent_partition_(parent_partition)
+	{
+	}
+
+	template<typename BaseType>
+	inline DistribNode<BaseType>::DistribNode(const Point & coords)
+		: BaseType(coords), local_num_(0), parent_partition_(0)
 	{
 	}
 

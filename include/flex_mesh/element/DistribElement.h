@@ -19,15 +19,17 @@ namespace flex_mesh
 	/// application of this library.  The templates may be a verbose and a bit
 	/// tricky, but it allows strong typing, with mix and match inheritance
 	/// without the need for the woes of multiple inheritance.
-	template<typename NodeType, typename BaseType>
+	template<typename BaseType>
 	class DistribElement : public BaseType
 	{
+	public:
+		using NodeTypename = typename BaseType::NodeTypename;
+		using NodePtr = NodeTypename * ;
+
 		static_assert(
-			std::is_base_of<BaseType, Element<NodeType>>::value,
+			std::is_base_of<BaseType, Element<NodeTypename>>::value,
 			"BaseType must be a derived type of flex_mesh::Element<NodeType>"
 			);
-
-	public:
 
 		//////////////////
 		// Constructors //
@@ -63,32 +65,32 @@ namespace flex_mesh
 	// Definitions //
 	/////////////////
 
-	template<typename NodeType, typename BaseType>
-	inline DistribElement<NodeType, BaseType>::DistribElement()
+	template<typename BaseType>
+	inline DistribElement<BaseType>::DistribElement()
 		: BaseType(), local_num_(0), parent_partition_(0)
 	{
 	}
 
-	template<typename NodeType, typename BaseType>
-	inline const LocalIndex & DistribElement<NodeType, BaseType>::get_local_number() const
+	template<typename BaseType>
+	inline const LocalIndex & DistribElement<BaseType>::get_local_number() const
 	{
 		return local_num_;
 	}
 
-	template<typename NodeType, typename BaseType>
-	inline void DistribElement<NodeType, BaseType>::set_local_number(const LocalIndex & local_num)
+	template<typename BaseType>
+	inline void DistribElement<BaseType>::set_local_number(const LocalIndex & local_num)
 	{
 		local_num_ = local_num;
 	}
 
-	template<typename NodeType, typename BaseType>
-	inline const PartitionIndex & DistribElement<NodeType, BaseType>::get_parent_partition() const
+	template<typename BaseType>
+	inline const PartitionIndex & DistribElement<BaseType>::get_parent_partition() const
 	{
 		return parent_partition_;
 	}
 
-	template<typename NodeType, typename BaseType>
-	inline void DistribElement<NodeType, BaseType>::set_parent_partition(const PartitionIndex & parent_partition)
+	template<typename BaseType>
+	inline void DistribElement<BaseType>::set_parent_partition(const PartitionIndex & parent_partition)
 	{
 		parent_partition_ = parent_partition;
 	}

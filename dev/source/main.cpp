@@ -16,6 +16,7 @@
 #include "flex_mesh/element/MeshGenElement.h"
 #include "flex_mesh/element/PolyhedronElement.h"
 #include "flex_mesh/mesh/Mesh.h"
+#include "flex_mesh/algorithms/IO.h"
 
 using namespace flex_mesh;
 
@@ -178,7 +179,7 @@ bool test_face()
 bool test_element()
 {
 	using NodeTyped = DistribNode<Node>;
-	using ElementTyped = MeshGenElement<NodeTyped, DistribElement<NodeTyped, Element<NodeTyped>>>;
+	using ElementTyped = MeshGenElement<NodeTyped, DistribElement<Element<NodeTyped>>>;
 
 	NodeTyped na(0, 0, { 0, 0, 0 });
 	NodeTyped nb(1, 1, { 1, 0, 0 });
@@ -201,15 +202,15 @@ bool test_element()
 	Point mean = a.get_mean_coordinate();
 	assert(distance(mean, { 0.5, 0.5, 0 }) < 1e-16);
 
-	assert(a.get_orientations().size() == 0);
+	assert(a.get_lcs().size() == 0);
 	a.allocate_lcs(LCSAssignment::None);
-	assert(a.get_orientations().size() == 0);
+	assert(a.get_lcs().size() == 0);
 	a.allocate_lcs(LCSAssignment::Element);
-	assert(a.get_orientations().size() == 1);
+	assert(a.get_lcs().size() == 1);
 	a.allocate_lcs(LCSAssignment::Component);
-	assert(a.get_orientations().size() == 1);
+	assert(a.get_lcs().size() == 1);
 	a.allocate_lcs(LCSAssignment::Node);
-	assert(a.get_orientations().size() == 4);
+	assert(a.get_lcs().size() == 4);
 
 	ElementVector S;
 	ElementMatrix3D dS;
@@ -333,18 +334,33 @@ struct Test
 bool test_mesh()
 {
 	using NodeTyped = DistribNode<Node>;
-	using ElementTyped = MeshGenElement<NodeTyped, DistribElement<NodeTyped, Element<NodeTyped>>>;
-	using MeshType = Mesh<NodeTyped, ElementTyped>;
+	using ElementTyped = MeshGenElement<NodeTyped, DistribElement<Element<NodeTyped>>>;
+	using MeshTyped = Mesh<NodeTyped, ElementTyped>;
 
-	MeshType mesh;
+	MeshTyped mesh;
 	NodeTyped * na = mesh.add_node_by_coord({ 0, 0, 0 });
 	NodeTyped * nb = mesh.add_node_by_coord({ 1, 0, 0 });
 	NodeTyped * nc = mesh.add_node_by_coord({ 1, 1, 0 });
 	NodeTyped * nd = mesh.add_node_by_coord({ 0, 1, 0 });
-	ElementTyped * ea = mesh.add_element();
-	ea->initialize(ElementType::Q3D4N, { na, nb, nc, nd });
+	NodeTyped * ne = mesh.add_node_by_coord({ 2, 0, 0 });
+	ne->set_parent_partition(1);
+	NodeTyped * nf = mesh.add_node_by_coord({ 2, 1, 0 });
+	nf->set_parent_partition(1);
+
+	ElementTyped * ea = mesh.elements().add();
+	ea->initialize(ElementType::Q2D4N, { na, nb, nc, nd }, LCSAssignment::Component);
+	ElementTyped * eb = mesh.elements().add();
+	eb->initialize(ElementType::Q2D4N, { nb, ne, nf, nc }, LCSAssignment::Node);
+	eb->set_component_id(1);
+	eb->set_parent_partition(1);
+
 	mesh.update_global_numbering();
 	mesh.sort_by_partition();
+
+	write_vtk(mesh, "test.vtk");
+	FEAIOInterface<MeshTyped>::write(mesh, "test", "test_meta",
+		{ {0, "Component0"} },
+		{}, nullptr, nullptr, nullptr);
 
 	// TODO: add asserts
 
@@ -355,12 +371,6 @@ int main()
 {
 	initialize_flex_mesh(1e-14);
 
-	RUN_TEST(test_node);
-	RUN_TEST(test_connectivity);
-	RUN_TEST(test_edge);
-	RUN_TEST(test_face);
-	RUN_TEST(test_element);
-	RUN_TEST(test_polyhedron);
 	RUN_TEST(test_mesh);
 
 	//system("pause");

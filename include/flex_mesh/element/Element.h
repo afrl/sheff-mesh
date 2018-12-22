@@ -4,7 +4,7 @@
 #include "flex_mesh/edge/Edge.h"
 #include "flex_mesh/face/Face.h"
 
-#include "Orientations.h"
+#include "LCSContainer.h"
 #include "ShapeFunctions.h"
 
 #include <set>
@@ -15,8 +15,10 @@ namespace flex_mesh
 	class Element
 	{
 	public:
-		using FaceTyped = Face<NodeType>;
-		using EdgeTyped = Edge<NodeType>;
+		using NodeTypename = NodeType;
+		using FaceTypename = Face<NodeType>;
+		using EdgeTypename = Edge<NodeType>;
+		using NodePtr = NodeType*;
 		using FacePtr = Face<NodeType>*;
 		using EdgePtr = Edge<NodeType>*;
 		using ConnSize = uint8_t;
@@ -33,7 +35,7 @@ namespace flex_mesh
 		virtual ~Element() {};
 
 		/// Initializes the element topology object
-		/// Note: orientations are not allocated by default
+		/// Note: lcs are not allocated by default
 		void initialize(const ElementType type,
 			const std::vector<NodeType *> & connectivity,
 			const LCSAssignment lcs_assignment = LCSAssignment::None);
@@ -94,24 +96,24 @@ namespace flex_mesh
 		// Orientations //
 		//////////////////
 
-		// TODO update naming
 		/// Allocates the local coordinate systems
 		void allocate_lcs(const LCSAssignment lcs_assignment);
-		/// Rotate all orientations in the element by the same amount
+		/// Rotate all lcs in the element by the same amount
 		/// axes are defined in the global coordinate system
-		void rotate_orientations(const Vector3D & axis,
+		void rotate_lcs(const Vector3D & axis,
 			const double & angle);
-		/// Rotate the orientations about one axis.
-		void rotate_orientations(const short & axis_index,
+		/// Rotate the lcs about one axis.
+		void rotate_lcs(const short & axis_index,
 			const double & angle);
-		/// Set all orientations in the element to an identity matrix
-		void reset_orientations();
-		/// Directly get the orientations
-		/// \attention Be careful.  The orientations may only contain
-		/// one value per an element
-		Orientations<ConnSize>& get_orientations();
-		/// Get the orientation for a specific node
-		Quaternion& get_orientation(const ConnSize& i);
+		/// Set all lcs in the element to an identity matrix
+		void reset_lcs();
+		/// Directly get the local coordinate systems
+		/// \attention Be careful.  The lcs may only contain one value per an element
+		LCSContainer<ConnSize>& get_lcs();
+		/// Get the local coordinate system for a specific node
+		Quaternion get_lcs(const ConnSize& i);
+		/// Returns the type of local coordinate system assignment for the element
+		LCSAssignment get_lcs_assignment() const;
 
 		///////////////////
 		// Interpolation //
@@ -137,7 +139,8 @@ namespace flex_mesh
 		ComponentIndex component_id_;
 		ElementType type_;
 		Connectivity<NodeType, ConnSize> connectivity_;
-		Orientations<ConnSize> orientations_;
+		LCSContainer<ConnSize> lcs_;
+		LCSAssignment lcs_assignment_;
 	};
 
 	/////////////////
@@ -146,7 +149,7 @@ namespace flex_mesh
 
 	template<typename NodeType>
 	inline Element<NodeType>::Element()
-		: global_num_(0), component_id_(0), type_(ElementType::UNKNGEOM)
+		: global_num_(0), component_id_(0), type_(ElementType::UNKNGEOM), lcs_assignment_(LCSAssignment::None)
 	{
 	}
 
@@ -155,6 +158,7 @@ namespace flex_mesh
 	{
 		type_ = type;
 		connectivity_ = connectivity;
+		allocate_lcs(lcs_assignment);
 	}
 
 	template<typename NodeType>
@@ -205,6 +209,7 @@ namespace flex_mesh
 		std::vector<LocalIndex> local_indices;
 		for (auto& n_ptr : *this)
 			local_indices.push_back(n_ptr->get_local_number());
+		return local_indices;
 	}
 
 	template<typename NodeType>
@@ -280,60 +285,67 @@ namespace flex_mesh
 	template<typename NodeType>
 	inline void Element<NodeType>::allocate_lcs(const LCSAssignment lcs_assignment)
 	{
+		lcs_assignment_ = lcs_assignment;
 		if (lcs_assignment == LCSAssignment::None)
-			orientations_.clear();
+			lcs_.clear();
 		else if (lcs_assignment == LCSAssignment::Node) {
-			orientations_ = std::vector<Quaternion>(connectivity_.size());
-			for (auto& orient : orientations_)
-				orient.setIdentity();
+			lcs_ = std::vector<Quaternion>(connectivity_.size());
+			for (auto& lcs : lcs_)
+				lcs.setIdentity();
 		}
 		// There will only be one lcs per an element for LCSAssignment::Element
 		// and LCSAssignment::Component
 		else {
-			orientations_ = std::vector<Quaternion>(1);
-			for (auto& orient : orientations_)
-				orient.setIdentity();
+			lcs_ = std::vector<Quaternion>(1);
+			for (auto& lcs : lcs_)
+				lcs.setIdentity();
 		}
 	}
 
 	template<typename NodeType>
-	inline void Element<NodeType>::rotate_orientations(const Vector3D & axis, const double & angle)
+	inline void Element<NodeType>::rotate_lcs(const Vector3D & axis, const double & angle)
 	{
 		Eigen::AngleAxis<FloatType> rotation(angle, axis);
-		for (auto& orient : orientations_)
+		for (auto& orient : lcs_)
 			orient += rotation;
 	}
 
 	template<typename NodeType>
-	inline void Element<NodeType>::rotate_orientations(const short & axis_index, const double & angle)
+	inline void Element<NodeType>::rotate_lcs(const short & axis_index, const double & angle)
 	{
 		Vector3D axis; axis.setZero();
 		axis(axis_index, 1.0);
-		rotate_orientations(axis, angle);
+		rotate_lcs(axis, angle);
 	}
 
 	template<typename NodeType>
-	inline void Element<NodeType>::reset_orientations()
+	inline void Element<NodeType>::reset_lcs()
 	{
-		for (auto& orient : orientations_)
+		for (auto& orient : lcs_)
 			orient.setIdentity();
 	}
 
 	template<typename NodeType>
-	inline Orientations<typename Element<NodeType>::ConnSize> & Element<NodeType>::get_orientations()
+	inline LCSContainer<typename Element<NodeType>::ConnSize> & Element<NodeType>::get_lcs()
 	{
-		return orientations_;
+		return lcs_;
 	}
 
 	template<typename NodeType>
-	inline Quaternion & Element<NodeType>::get_orientation(const ConnSize & i)
+	inline Quaternion Element<NodeType>::get_lcs(const ConnSize & i)
 	{
-		if (orientations_.size() == 0)
+		if (lcs_.size() == 0)
 			return Quaternion::Identity();
-		// Handle the case if there is only one orientation for the whole element
-		else if (orientations_.size() == 1)
-			return orientations_[0];
-		return orientations_[i];
+		// Handle the case if there is only one lcs for the whole element
+		else if (lcs_.size() == 1)
+			return lcs_[0];
+		return lcs_[i];
+	}
+
+	template<typename NodeType>
+	inline LCSAssignment Element<NodeType>::get_lcs_assignment() const
+	{
+		return lcs_assignment_;
 	}
 
 	template<typename NodeType>

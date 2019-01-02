@@ -6,13 +6,7 @@
 #include "flex_mesh/common/Common.h"
 #include "flex_mesh/common/Connectivity.h"
 #include "flex_mesh/node/Node.h"
-#include "flex_mesh/node/DistribNode.h"
 #include "flex_mesh/node/NodeUtilities.h"
-#include "flex_mesh/edge/Edge.h"
-#include "flex_mesh/face/Face.h"
-#include "flex_mesh/element/Element.h"
-#include "flex_mesh/element/DistribElement.h"
-#include "flex_mesh/element/MeshGenElement.h"
 
 using namespace flex_mesh;
 
@@ -20,17 +14,15 @@ int main()
 {
 	initialize_flex_mesh(1e-14);
 
-	using NodeTyped = DistribNode<Node>;
+	using NodeTyped = Node;
 
 	NodeTyped a({ 1, 0, 0 });
 	assert(a.get_global_number() == 0);
-	assert(a.get_local_number() == 0);
 	assert(a.get_coord() == Point({ 1, 0, 0 }));
 	assert(a.get_parent_partition() == 0);
 
-	NodeTyped b(1, 1, { 0, 0, 1 }, 1);
+	NodeTyped b(1, { 0, 0, 1 }, 1);
 	assert(b.get_global_number() == 1);
-	assert(b.get_local_number() == 1);
 	assert(b.get_coord() == Point({ 0, 0, 1 }));
 	assert(b.get_parent_partition() == 1);
 

@@ -7,12 +7,10 @@
 #include "flex_mesh/common/Connectivity.h"
 #include "flex_mesh/common/Traits.h"
 #include "flex_mesh/node/Node.h"
-#include "flex_mesh/node/DistribNode.h"
 #include "flex_mesh/node/NodeUtilities.h"
 #include "flex_mesh/edge/Edge.h"
 #include "flex_mesh/face/Face.h"
 #include "flex_mesh/element/Element.h"
-#include "flex_mesh/element/DistribElement.h"
 #include "flex_mesh/element/MeshGenElement.h"
 #include "flex_mesh/element/PolyhedronElement.h"
 #include "flex_mesh/mesh/Mesh.h"
@@ -56,17 +54,15 @@ void run_test(const std::function<bool()>& test_function, const std::string func
 
 bool test_node()
 {
-	using NodeTyped = DistribNode<Node>;
+	using NodeTyped = Node;
 
 	NodeTyped a({ 1, 0, 0 });
 	assert(a.get_global_number() == 0);
-	assert(a.get_local_number() == 0);
 	assert(a.get_coord() == Point({ 1, 0, 0 }));
 	assert(a.get_parent_partition() == 0);
 
-	NodeTyped b(1, 1, { 0, 0, 1 }, 1);
+	NodeTyped b(1, { 0, 0, 1 }, 1);
 	assert(b.get_global_number() == 1);
-	assert(b.get_local_number() == 1);
 	assert(b.get_coord() == Point({ 0, 0, 1 }));
 	assert(b.get_parent_partition() == 1);
 
@@ -90,10 +86,10 @@ bool test_node()
 
 bool test_connectivity()
 {
-	using NodeTyped = DistribNode<Node>;
+	using NodeTyped = Node;
 
-	NodeTyped na(0, 0, { 0, 0, 0 });
-	NodeTyped nb(1, 1, { 0.5, 0, 0 });
+	NodeTyped na(0, { 0, 0, 0 });
+	NodeTyped nb(1, { 0.5, 0, 0 });
 	std::vector<NodeTyped*> c_vec;
 
 	{
@@ -118,11 +114,11 @@ bool test_connectivity()
 
 bool test_edge()
 {
-	using NodeTyped = DistribNode<Node>;
-	using EdgeTyped = Edge<DistribNode<Node>>;
+	using NodeTyped = Node;
+	using EdgeTyped = Edge<Node>;
 
-	NodeTyped na(0, 0, { 0, 0, 0 });
-	NodeTyped nb(1, 1, { 0.5, 0, 0 });
+	NodeTyped na(0, { 0, 0, 0 });
+	NodeTyped nb(1, { 0.5, 0, 0 });
 	EdgeTyped a(EdgeType::E2N, { &na, &nb });
 	assert(a.get_type() == EdgeType::E2N);
 	for (auto n_ptr : a)
@@ -134,7 +130,7 @@ bool test_edge()
 	Point mean = a.get_mean_coordinate();
 	assert(distance(mean, { 0.25, 0, 0 }) < 1e-16);
 
-	NodeTyped nc(2, 2, { 1, 0, 0 });
+	NodeTyped nc(2, { 1, 0, 0 });
 	a.swap_nodes(&nb, &nc);
 	assert(fabs(a.get_length() - 1) < 1e-16);
 
@@ -146,13 +142,13 @@ bool test_edge()
 
 bool test_face()
 {
-	using NodeTyped = DistribNode<Node>;
-	using FaceTyped = Face<DistribNode<Node>>;
+	using NodeTyped = Node;
+	using FaceTyped = Face<Node>;
 
-	NodeTyped na(0, 0, { 0, 0, 0 });
-	NodeTyped nb(1, 1, { 1, 0, 0 });
-	NodeTyped nc(2, 2, { 1, 1, 0 });
-	NodeTyped nd(2, 2, { 0, 1, 0 });
+	NodeTyped na(0, { 0, 0, 0 });
+	NodeTyped nb(1, { 1, 0, 0 });
+	NodeTyped nc(2, { 1, 1, 0 });
+	NodeTyped nd(2, { 0, 1, 0 });
 
 	FaceTyped a(FaceType::Q3D4N, { &na, &nb, &nc, &nd });
 	assert(a.get_type() == FaceType::Q3D4N);
@@ -178,20 +174,18 @@ bool test_face()
 
 bool test_element()
 {
-	using NodeTyped = DistribNode<Node>;
-	using ElementTyped = MeshGenElement<NodeTyped, DistribElement<Element<NodeTyped>>>;
+	using NodeTyped = Node;
+	using ElementTyped = MeshGenElement<Element<NodeTyped>>;
 
-	NodeTyped na(0, 0, { 0, 0, 0 });
-	NodeTyped nb(1, 1, { 1, 0, 0 });
-	NodeTyped nc(2, 2, { 1, 1, 0 });
-	NodeTyped nd(2, 2, { 0, 1, 0 });
+	NodeTyped na(0, { 0, 0, 0 });
+	NodeTyped nb(1, { 1, 0, 0 });
+	NodeTyped nc(2, { 1, 1, 0 });
+	NodeTyped nd(2, { 0, 1, 0 });
 
 	ElementTyped a;
 	a.initialize(ElementType::Q2D4N, { &na, &nb, &nc, &nd });
 	a.set_component_id(1);
 	assert(a.get_component_id() == 1);
-	a.set_local_number(1);
-	assert(a.get_local_number() == 1);
 	a.set_global_number(1);
 	assert(a.get_global_number() == 1);
 	a.set_parent_partition(1);
@@ -251,16 +245,16 @@ std::array<std::array<FloatType, 3>, 4> get_tetrahedron_2nd_order_gauss()
 
 bool test_polyhedron()
 {
-	using NodeTyped = DistribNode<Node>;
+	using NodeTyped = Node;
 
-	NodeTyped n0(0, 0, { 0, 0, 0 });
-	NodeTyped n1(1, 1, { 1, 0, 0 });
-	NodeTyped n2(2, 2, { 0, 1, 0 });
-	NodeTyped n3(3, 3, { 0, 0, 1 });
+	NodeTyped n0(0, { 0, 0, 0 });
+	NodeTyped n1(1, { 1, 0, 0 });
+	NodeTyped n2(2, { 0, 1, 0 });
+	NodeTyped n3(3, { 0, 0, 1 });
 
 	// Basically a 4-node tetrahedral
 	PolyhedronElement<NodeTyped> poly;
-	poly.initialize(ElementType::POLYHEDRON, {
+	poly.initialize({
 		{&n0, &n2, &n1},
 		{&n0, &n1, &n3},
 		{&n2, &n0, &n3},
@@ -333,8 +327,8 @@ struct Test
 
 bool test_mesh()
 {
-	using NodeTyped = DistribNode<Node>;
-	using ElementTyped = MeshGenElement<NodeTyped, DistribElement<Element<NodeTyped>>>;
+	using NodeTyped = Node;
+	using ElementTyped = MeshGenElement<Element<NodeTyped>>;
 	using MeshTyped = Mesh<NodeTyped, ElementTyped>;
 
 	MeshTyped mesh;
@@ -355,7 +349,7 @@ bool test_mesh()
 	eb->set_parent_partition(1);
 
 	mesh.update_global_numbering();
-	mesh.sort_by_partition();
+	//mesh.sort_by_partition();
 
 	write_vtk(mesh, "test.vtk");
 	FEAIOInterface<MeshTyped>::write(mesh, "test", "test_meta",

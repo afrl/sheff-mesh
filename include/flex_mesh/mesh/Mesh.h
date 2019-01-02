@@ -155,9 +155,9 @@ namespace flex_mesh
 		/////////////////////
 
 		/// Access element container by non-const reference
-		const MeshEntityContainer<Node_>& nodes() const;
-		/// Access element container by const reference
 		MeshEntityContainer<Node_>& nodes();
+		/// Access element container by const reference
+		const MeshEntityContainer<Node_>& nodes() const;
         /// Add a node via the coordinate
 		Node_ * add_node_by_coord(const Point& coord);
 		/// Set the tolerance used for comparisons between node coordinates
@@ -174,53 +174,24 @@ namespace flex_mesh
 		////////////////////////
 
 		/// Access element container by non-const reference
-		const MeshEntityContainer<Element_>& elements() const;
-		/// Access element container by const reference
 		MeshEntityContainer<Element_>& elements();
-        /// Reset element face/edges
-		void reset_element_faces_and_edges();
+		/// Access element container by const reference
+		const MeshEntityContainer<Element_>& elements() const;
 		/// Returns the set of component IDs for all the elements
 		std::set<ComponentIndex> get_component_ids() const;
 		/// Returns a vector of element pointers that belong to the component
 		/// Note: only includes elements in this mesh object
 		std::vector<Element_ *> get_component(ComponentIndex component_id) const;
 
-		//////////////////////////////
-		// Distributed mesh methods //
-		//////////////////////////////
-
-		/// Returns the number of partitions (assuming they are contiguous 0-based when assigned)
-		template<HAS_LOCAL_NUMBERING_DECLARE(Element_)>
-		unsigned int get_num_partitions() const;
+		///////////
+		// Misc. //
+		///////////
 
 		/// This method will go through the nodes and elements and update
 		/// the global numbering appropriately.  This should be called after
 		/// an operation of adding nodes or elements to the mesh.  It is not
 		/// called automatically for performance reasons.
-		/// This will also set the local numbering to be the same as the global,
-		/// which is neccessary for non-distributed I/O.
-		template<HAS_LOCAL_NUMBERING_DECLARE(Element_)>
 		void update_global_numbering();
-		template<MISSING_LOCAL_NUMBERING_DECLARE(Element_)>
-		void update_global_numbering();
-
-		/// Renumbers the nodes and element local numbers for the current partition.
-		/// for node not : the current parition, the local number is unchanged.
-		/// Therefore, never rely on the local number to see if it belons to this partition;
-		/// instead, use get_parent_partition() for the elements and nodes to test.
-		/// Returns the number of nodes and elements respectively for the current partition
-		/// Template note: template siables this method if the Element_ type does not contain a
-		/// method specifically called get_local_number()
-		template<HAS_LOCAL_NUMBERING_DECLARE(Element_)>
-		std::pair<std::set<Node_ *>, std::set<Element_ *>> update_local_numbering(const PartitionIndex current_partition = 0);
-
-		/// Sort the nodes and elements by the parent partition id (ascending)
-		template<HAS_LOCAL_NUMBERING_DECLARE(Element_)>
-		void sort_by_partition();
-
-		///////////
-		// Misc. //
-		///////////
 
 		/// Manually marks the nodes container as changed, which will force updates to
 		/// subcomponent lists or KD trees when they are requested.
@@ -237,6 +208,9 @@ namespace flex_mesh
 		// Containers
 		MeshEntityContainer<Node_> nodes_;
 		MeshEntityContainer<Element_> elements_;
+		// TODO the type should be PolyhedronElement<Element_> but PolyhedronElement needs
+		// to be changed to take the base class as the template.
+		MeshEntityContainer<Element_> polyhedral_elements_;
 	};
 
 	template<typename Node_, typename Element_>
@@ -345,12 +319,6 @@ namespace flex_mesh
 	}
 
 	template<typename Node_, typename Element_>
-	inline void Mesh<Node_, Element_>::reset_element_faces_and_edges() {
-		for (auto& e_ptr : elements_)
-			e_ptr->reset_faces_and_edges();
-	}
-
-	template<typename Node_, typename Element_>
 	inline std::set<ComponentIndex> Mesh<Node_, Element_>::get_component_ids() const
 	{
 		std::set<ComponentIndex> component_ids;
@@ -372,101 +340,18 @@ namespace flex_mesh
 	}
 
 	template<typename Node_, typename Element_>
-	template<HAS_LOCAL_NUMBERING_DEFINE(Element_)>
-	inline unsigned int Mesh<Node_, Element_>::get_num_partitions() const
-	{
-		// Get the number of partitions first
-		std::set<PartitionIndex> partitions;
-		for (auto& n_ptr : nodes())
-			partitions.insert(n_ptr->get_parent_partition());
-		// Should we spend the time to ensure that the partitions are contiguous (no gaps)
-		return static_cast<unsigned int>(partitions.size());
-	}
-
-	template<typename Node_, typename Element_>
-	template<HAS_LOCAL_NUMBERING_DEFINE(Element_)>
 	inline void Mesh<Node_, Element_>::update_global_numbering()
 	{
 		GlobalIndex current_num = 0;
 		for (auto& n_ptr : nodes_) {
 			n_ptr->set_global_number(current_num);
-			n_ptr->set_local_number(current_num);
 			current_num++;
 		}
 		current_num = 0;
 		for (auto& e_ptr : elements_) {
 			e_ptr->set_global_number(current_num);
-			e_ptr->set_local_number(current_num);
 			current_num++;
 		}
-	}
-
-	template<typename Node_, typename Element_>
-	template<MISSING_LOCAL_NUMBERING_DEFINE(Element_)>
-		inline void Mesh<Node_, Element_>::update_global_numbering()
-	{
-		GlobalIndex current_num = 0;
-		for (auto n_ptr : nodes_) {
-			n_ptr->set_global_number(current_num);
-			current_num++;
-		}
-		current_num = 0;
-		for (auto e_ptr : elements_) {
-			e_ptr->set_global_number(current_num);
-			current_num++;
-		}
-	}
-
-	template<typename Node_, typename Element_>
-	template<HAS_LOCAL_NUMBERING_DEFINE(Element_)>
-	inline std::pair<std::set<Node_ *>, std::set<Element_ *>>
-		Mesh<Node_, Element_>::update_local_numbering(const PartitionIndex current_partition)
-	{
-		std::set<Node_ *> nodes_in_part;
-		std::set<Element_ *> elements_in_part;
-		// Loop over the elements
-		for (auto& e_ptr : elements_) {
-			// If one of the nodes is owned by this partition,
-			// then all the nodes in the element to the partition need to be in
-			// the partition's mesh file, and the element needs to be in the
-			// partition's mesh file as well (regardless if the element is owned or not).
-			for (auto& n_ptr : *e_ptr) {
-				if (n_ptr->get_parent_partition() == current_partition) {
-					elements_in_part.insert(e_ptr.get());
-					for (auto& n_ptr2 : *e_ptr)
-						nodes_in_part.insert(n_ptr2);
-					break;
-				}
-			}
-		} // End creating sets
-
-		// Now renumber the nodes and elements in the sets
-		unsigned int current_num = 0;
-		for (auto node : nodes_in_part)
-			node->set_local_number(current_num++);
-
-		current_num = 0;
-		for (auto element : elements_in_part)
-			element->set_local_number(current_num++);
-
-		return{ nodes_in_part, elements_in_part };
-	}
-
-	template<typename Node_, typename Element_>
-	template<HAS_LOCAL_NUMBERING_DEFINE(Element_)>
-	inline void Mesh<Node_, Element_>::sort_by_partition() {
-		using NodeUniquePtr = std::unique_ptr<Node_>;
-		using ElementUniquePtr = std::unique_ptr<Element_>;
-
-		std::sort(nodes_.objects_.begin(), nodes_.objects_.end(),
-			[](const NodeUniquePtr& n1, const NodeUniquePtr& n2) -> bool {
-			return n1->get_parent_partition() < n2->get_parent_partition();
-		});
-
-		std::sort(elements_.objects_.begin(), elements_.objects_.end(),
-			[](const ElementUniquePtr& e1, const ElementUniquePtr& e2) -> bool {
-			return e1->get_parent_partition() < e2->get_parent_partition();
-		});
 	}
 
 	template<typename Node_, typename Element_>

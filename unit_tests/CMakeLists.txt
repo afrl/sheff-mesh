@@ -22,7 +22,13 @@ foreach(_test ${_unit_tests})
   STRING(REPLACE ".cpp" "" _name FLEX_MESH_TEST_${_name}) 
   add_executable(${_name} ${_test})
   set_property(TARGET ${_name} PROPERTY FOLDER unit_tests)
-  target_link_libraries(${_name} PRIVATE ${FLEX_MESH_TARGET_NAME})
+  target_link_libraries(${_name} PRIVATE FlexMesh::FlexMesh)
+  
+  include(${CMAKE_SOURCE_DIR}/cmake/Utilities.cmake)
+  assign_source_group("flex_mesh" ${FLEXMESH_HEADER_LIST})
+  if(FLEXMESH_USE_FEAIO)
+    assign_source_group_feaio()
+  endif()
 
   # Create test
   add_test(NAME "Unit_${_category}_${_name}"        # test name prefixed with Unit and category

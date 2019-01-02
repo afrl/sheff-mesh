@@ -29,14 +29,19 @@ namespace flex_mesh
 
 		/// Note: component ID and global number are 0 by default
 		///       use set_global_number() and set_component_id()
-		Element();
-		// TODO Provide value constructors
-		Element(const Element&) = default;
+		Element() noexcept;
+		Element(const GlobalIndex global_num,
+			const ElementType type,
+			const std::vector<NodeType *> & connectivity,
+			const LCSAssignment lcs_assignment = LCSAssignment::None) noexcept;
+		Element(const Element&) noexcept = default;
+		// Move constructor cannot be defaulted for MSVC, TODO implement
+		//Element(const Element&&) noexcept = default;
 		virtual ~Element() {};
 
 		/// Initializes the element topology object
 		/// Note: lcs are not allocated by default
-		void initialize(const ElementType type,
+		virtual void initialize(const ElementType type,
 			const std::vector<NodeType *> & connectivity,
 			const LCSAssignment lcs_assignment = LCSAssignment::None);
 
@@ -49,6 +54,9 @@ namespace flex_mesh
 
 		const ComponentIndex& get_component_id() const;
 		void set_component_id(const ComponentIndex& component_id);
+
+		const PartitionIndex& get_parent_partition() const;
+		void set_parent_partition(const PartitionIndex& parent_partition);
 
 		/// Get the type by const-ref
 		/// Note: to set this, call initialize(...)
@@ -119,16 +127,24 @@ namespace flex_mesh
 		// Interpolation //
 		///////////////////
 
+		/// Evaluates the shape functions at the given parametric coordinate
 		/// Resizes and fills the Eigen matrix with the shape function values
 		virtual void get_shape_function_values(
 			const Point& parametric_coordinate,
 			ElementVector& shape_function_values) const;
+		/// Evaluates the shape functions at the given parametric coordinate
+		ElementVector get_shape_function_values(const Point& parametric_coordinate) const;
 
+		/// Evaluates the derivatives of shape functions at the given parametric coordinate in
+		/// terms of the parametric coordinates (dPhi/dxi) 
 		/// Resizes and fills the Eigen matrix with the shape function derivatives
-		/// Note: derivatives are in terms of parammetric coordinates (dPhi/dxi)
 		virtual void get_shape_function_derivatives(
 			const Point& parametric_coordinate,
 			ElementMatrix3D& shape_function_derivs) const;
+		/// Evaluates the derivatives of shape functions at the given parametric coordinate in
+		/// terms of the parametric coordinates (dPhi/dxi) 
+		ElementMatrix3D get_shape_function_derivatives(
+			const Point& parametric_coordinate) const;
 
 		/// Resizes and fills the Eigen matrix with the nodal coordinates
 		/// Will be arranged with each row being a node
@@ -141,6 +157,9 @@ namespace flex_mesh
 		Connectivity<NodeType, ConnSize> connectivity_;
 		LCSContainer<ConnSize> lcs_;
 		LCSAssignment lcs_assignment_;
+		/// It is assumed that only one partition will be responsible for each element.
+		/// A mesh for a partition may have elements belonging to other parititons depending ghost elements.
+		PartitionIndex parent_partition_;
 	};
 
 	/////////////////
@@ -148,9 +167,16 @@ namespace flex_mesh
 	/////////////////
 
 	template<typename NodeType>
-	inline Element<NodeType>::Element()
-		: global_num_(0), component_id_(0), type_(ElementType::UNKNGEOM), lcs_assignment_(LCSAssignment::None)
+	inline Element<NodeType>::Element() noexcept
+		: global_num_(0), component_id_(0), type_(ElementType::UNKNGEOM), lcs_assignment_(LCSAssignment::None), parent_partition_(0)
 	{
+	}
+
+	template<typename NodeType>
+	inline Element<NodeType>::Element(const GlobalIndex global_num, const ElementType type, const std::vector<NodeType*>& connectivity, const LCSAssignment lcs_assignment) noexcept
+		: global_num_(0), component_id_(0), parent_partition_(0)
+	{
+		initialize(type, connectivity, lcs_assignment);
 	}
 
 	template<typename NodeType>
@@ -183,6 +209,18 @@ namespace flex_mesh
 	inline void Element<NodeType>::set_component_id(const ComponentIndex & component_id)
 	{
 		component_id_ = component_id;
+	}
+
+	template<typename NodeType>
+	inline const PartitionIndex & Element<NodeType>::get_parent_partition() const
+	{
+		return parent_partition_;
+	}
+
+	template<typename NodeType>
+	inline void Element<NodeType>::set_parent_partition(const PartitionIndex & parent_partition)
+	{
+		parent_partition_ = parent_partition;
 	}
 
 	template<typename NodeType>
@@ -355,9 +393,25 @@ namespace flex_mesh
 	}
 
 	template<typename NodeType>
+	inline ElementVector Element<NodeType>::get_shape_function_values(const Point & parametric_coordinate) const
+	{
+		ElementVector shape_function_values;
+		get_shape_function_values(shape_function_values);
+		return shape_function_values;
+	}
+
+	template<typename NodeType>
 	inline void flex_mesh::Element<NodeType>::get_shape_function_derivatives(const Point & parametric_coordinate, ElementMatrix3D & shape_function_derivs) const
 	{
 		ShapeFunctions<Point, ElementVector, ElementMatrix3D>::derivatives(type_, parametric_coordinate, shape_function_derivs);
+	}
+
+	template<typename NodeType>
+	inline ElementMatrix3D Element<NodeType>::get_shape_function_derivatives(const Point & parametric_coordinate) const
+	{
+		ElementMatrix3D derivatives;
+		get_shape_function_derivatives(derivatives);
+		return derivatives;
 	}
 
 	template<typename NodeType>

@@ -203,7 +203,7 @@ namespace flex_mesh
 	inline void FEAIOInterface<MeshType>::write(MeshType & mesh, const std::string & base_file_path, const std::string& meta_name, const std::map<ComponentIndex, std::string>& component_names, std::vector<fea_io::ArrayInfo> array_info, NodeDataCallback node_data_callback, ElementDataCallback element_data_callback, NodeByElemDataCallback node_by_elem_data_callback)
 	{
 		// Get the number of partitions first
-		PartitionIndex num_partitions = mesh.get_num_partitions();
+		PartitionIndex num_partitions = get_num_partitions(mesh);
 
 		std::vector<PartitionIndex> partition_ids(num_partitions);
 		// Fills vector with 0..num_partitions-1
@@ -444,7 +444,7 @@ namespace flex_mesh
 			auto front_lcs_assignment = elements_in_component.front()->get_lcs_assignment();
 			for (auto& e_ptr : elements_in_component) {
 				if (e_ptr->get_lcs_assignment() != front_lcs_assignment) {
-					throw _MSG_EXCEPT("The elements within the same component must have the same LCSAssignment to be written to the fea_io format.");
+					throw _FM_MSG_EXCEPT("The elements within the same component must have the same LCSAssignment to be written to the fea_io format.");
 				}
 			}
 
@@ -459,7 +459,7 @@ namespace flex_mesh
 			mesh_info.components.push_back({ component_id, component_name,
 				convert_lcs_assignment(front_lcs_assignment), fea_io::LCSParameterization::Quaternion });
 		}
-		PartitionIndex num_partitions = mesh.get_num_partitions();
+		PartitionIndex num_partitions = get_num_partitions(mesh);
 		mesh_info.total_num_partitions = num_partitions;
 		return mesh_info;
 	}
@@ -511,16 +511,21 @@ namespace flex_mesh
 		partition.partition_id = partition_id;
 
 		// Update local indices
-		auto numbering_result = mesh.update_local_numbering(partition_id);
-		std::set<NodePtr>& nodes_in_partition = numbering_result.first;
-		std::set<ElementPtr>& elements_in_partition = numbering_result.second;
+		auto nodes_elements_in_part = get_partition_nodes_and_elements(mesh, partition_id);
+		std::set<NodePtr>& nodes_in_partition = nodes_elements_in_part.first;
+		std::set<ElementPtr>& elements_in_partition = nodes_elements_in_part.second;
 
 		// Populate node information
+		LocalIndex local_num = 0;
+		std::map<GlobalIndex, LocalIndex> global_to_local_node_num_map;
 		for (auto& n_ptr : nodes_in_partition) {
 			partition.node_global_ids.push_back(n_ptr->get_global_number());
 			partition.node_parent_partitions.push_back(n_ptr->get_parent_partition());
 			for (auto i = 0; i < 3; i++)
 				partition.node_coords.push_back((*n_ptr)[i]);
+
+			global_to_local_node_num_map[n_ptr->get_global_number()] = local_num;
+			local_num++;
 		}
 
 		// Populate element information
@@ -528,7 +533,11 @@ namespace flex_mesh
 			partition.element_global_ids.push_back(e_ptr->get_global_number());
 			partition.element_parent_partitions.push_back(e_ptr->get_parent_partition());
 			partition.element_types.push_back(convert_element_type(e_ptr->get_type()));
-			partition.element_connectivities.push_back(e_ptr->get_local_conn());
+			std::vector<LocalIndex> local_connectivity;
+			for (auto& n_ptr : *e_ptr)
+				local_connectivity.push_back(global_to_local_node_num_map[n_ptr->get_global_number()]);
+			partition.element_connectivities.push_back(local_connectivity);
+			//partition.element_connectivities.push_back(e_ptr->get_local_conn());
 		}
 
 		// Find what components are in this partition
@@ -539,16 +548,21 @@ namespace flex_mesh
 		// Figure out what each subcomponent contains in this partition
 		std::vector<fea_io::Subcomponent<LocalIndex, FloatType>> subcomponents;
 		for (auto& component_id : component_ids_in_partition) {
-			auto nodes_in_subcomponent = find_nodes_in_component<NodePtr>(elements_in_partition, component_id);
-			auto elements_in_subcomponent = find_elements_in_component(elements_in_partition, component_id);
+			auto nodes_in_subcomponent_pair = find_nodes_in_component<NodePtr>(elements_in_partition, component_id);
+			auto elements_in_subcomponent_pair = find_elements_in_component(elements_in_partition, component_id);
+			std::vector<NodePtr>& nodes_in_subcomponent = nodes_in_subcomponent_pair.second;
+			std::vector<ElementPtr>& elements_in_subcomponent = elements_in_subcomponent_pair.second;
 
 			fea_io::Subcomponent<LocalIndex, FloatType> subcomponent;
 			subcomponent.component_id = component_id;
-			for (auto& n_ptr : nodes_in_subcomponent)
-				subcomponent.nodes_in_subcomponent.push_back(n_ptr->get_local_number());
-			for (auto& e_ptr : elements_in_subcomponent) {
-				subcomponent.elements_in_subcomponent.push_back(e_ptr->get_local_number());
 
+			for (auto& i : nodes_in_subcomponent_pair.first) {
+				subcomponent.nodes_in_subcomponent.push_back(i);
+			}
+			for (auto& i : elements_in_subcomponent_pair.first) {
+				subcomponent.elements_in_subcomponent.push_back(i);
+			}
+			for (auto& e_ptr : elements_in_subcomponent) {
 				auto& lcs = e_ptr->get_lcs();
 				for (auto i = 0; i < lcs.size(); i++) {
 					const Quaternion& quatern = lcs[i];

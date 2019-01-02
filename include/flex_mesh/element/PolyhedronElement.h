@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "flex_mesh/common/Exceptions.h"
 #include "Element.h"
 
 #include "PolyhedronHelpers.h"
@@ -23,7 +24,13 @@ namespace flex_mesh
 		PolyhedronElement(const PolyhedronElement&) = default;
 		virtual ~PolyhedronElement() {};
 
-		void initialize(ElementType type, const std::vector<Connectivity<NodeType, ConnSize>>& polyhedron_faces);
+		/// Initializes the polyhedron element provided the connecitivty of the faces.
+		/// Note: nodes should be repeated in the connectivity of each face as needed.
+		void initialize(const std::vector<Connectivity<NodeType, ConnSize>>& polyhedron_faces);
+		/// Throws an error to prevent use
+		virtual void initialize(const ElementType type,
+			const std::vector<NodeType *> & connectivity,
+			const LCSAssignment lcs_assignment = LCSAssignment::None) override;
 
 		///////////////////
 		// Interpolation //
@@ -52,8 +59,10 @@ namespace flex_mesh
 
 
 	template<typename NodeType>
-	inline void PolyhedronElement<NodeType>::initialize(ElementType type, const std::vector<Connectivity<NodeType, ConnSize>>& polyhedron_faces)
+	inline void PolyhedronElement<NodeType>::initialize(const std::vector<Connectivity<NodeType, ConnSize>>& polyhedron_faces)
 	{
+		type_ = ElementType::POLYHEDRON;
+
 		std::set<NodeType*> unique_nodes;
 		for (auto& face : polyhedron_faces)
 			for (auto& n_ptr : face)
@@ -94,6 +103,12 @@ namespace flex_mesh
 				std::cout << "|- " << n->get_global_number() << std::endl;
 		}
 		*/
+	}
+
+	template<typename NodeType>
+	inline void PolyhedronElement<NodeType>::initialize(const ElementType type, const std::vector<NodeType*>& connectivity, const LCSAssignment lcs_assignment)
+	{
+		throw _FM_MSG_EXCEPT_C("Polyhedral elements require the other initialize method.");
 	}
 
 	template<typename NodeType>

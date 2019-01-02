@@ -22,15 +22,17 @@ namespace flex_mesh
 		//////////////////
 
 		/// Initializes every property to 0
-		Node();
-		/// Creates a node with all variables initialized, except the parent elements
-		Node(const GlobalIndex global_num, const Point& coords);
+		Node() noexcept;
 		/// Creates a node with all variables initialized to 0 except the coordinates.
-		Node(const Point& coords);
+		Node(const Point& coord) noexcept;
+		/// Creates a node with all variables initialized to 0 except the global number and coordinates.
+		Node(const GlobalIndex global_num, const Point& coord) noexcept;
+		/// Creates a node with all variables initialized, except the parent elements
+		Node(const GlobalIndex global_num, const Point& coord, const PartitionIndex& parent_partition) noexcept;
 		/// Copy constructor
-		Node(const Node& other) = default;
+		Node(const Node& other) noexcept = default;
 		/// Move constructor
-		Node(Node&& other) = default;
+		Node(Node&& other) noexcept = default;
 
 		/////////////////
 		// Get-setters //
@@ -40,7 +42,10 @@ namespace flex_mesh
 		void set_coord(const Point& coord);
 
 		const GlobalIndex& get_global_number() const;
-		void set_global_number(const GlobalIndex& globalNum);
+		void set_global_number(const GlobalIndex& global_num);
+
+		const PartitionIndex& get_parent_partition() const;
+		void set_parent_partition(const PartitionIndex& parent_partition);
 
 		/////////////////
 		// Eigen casts //
@@ -93,6 +98,10 @@ namespace flex_mesh
 		/// Compares nodes based on global number.  Useful for sorting by number
 		static bool num_based_compare(const Node& node1, const Node& node2);
 
+		/// Nodes owned by lower partition numbers are less than those owned by higher partition numbers,
+		/// and within the same partition, compares local number.  Useful for sorting by partition the number.
+		static bool part_based_compare(const Node& node1, const Node& node2);
+
 		///////////////////////
 		// Tolerance methods //
 		///////////////////////
@@ -123,8 +132,12 @@ namespace flex_mesh
 		/// forming a contiguous range from 0 to N-1, where N is the number of nodes.
 		GlobalIndex global_num_;
 		/// The coordinates of the node.  Assuemd to be 3D.
-		// TODO plurality
-		Point coords_;
+		Point coord_;
+		/// It is assumed that only one partition will be responsible for each node.
+		/// A mesh for a partition may have nodes belonging to other parititons depending
+		/// element connectivity and ghost elements.  A FEA code using this library may or may
+		/// not actually use this information.
+		PartitionIndex parent_partition_;
 
 		/// The mesh class will be responsible for using this property, but since the
 		/// NodeTopology class cannot know what type of element will contain it, the parents
@@ -138,29 +151,34 @@ namespace flex_mesh
 	// Definitions //
 	/////////////////
 
-	inline Node::Node()
-		: global_num_(0), coords_({ 0, 0, 0 })
+	inline Node::Node() noexcept
+		: global_num_(0), coord_({ 0, 0, 0 }), parent_partition_(0)
 	{
 	}
 
-	inline Node::Node(const GlobalIndex global_num, const Point & coords)
-		: global_num_(global_num), coords_(coords)
+	inline Node::Node(const Point& coord) noexcept
+		: global_num_(0), coord_(coord), parent_partition_(0)
 	{
 	}
 
-	inline Node::Node(const Point& coords)
-		: global_num_(0), coords_(coords)
+	inline Node::Node(const GlobalIndex global_num, const Point & coord) noexcept
+		: global_num_(global_num), coord_(coord), parent_partition_(0)
+	{
+	}
+
+	inline Node::Node(const GlobalIndex global_num, const Point & coord, const PartitionIndex & parent_partition) noexcept
+		: global_num_(global_num), coord_(coord), parent_partition_(parent_partition)
 	{
 	}
 
 	inline const Point& Node::get_coord() const
 	{
-		return coords_;
+		return coord_;
 	}
 
 	inline void Node::set_coord(const Point& coord)
 	{
-		coords_ = coord;
+		coord_ = coord;
 	}
 
 	inline const GlobalIndex & Node::get_global_number() const
@@ -168,29 +186,39 @@ namespace flex_mesh
 		return global_num_;
 	}
 
-	inline void Node::set_global_number(const GlobalIndex & globalNum)
+	inline void Node::set_global_number(const GlobalIndex & global_num)
 	{
-		global_num_ = globalNum;
+		global_num_ = global_num;
+	}
+
+	inline const PartitionIndex & Node::get_parent_partition() const
+	{
+		return parent_partition_;
+	}
+
+	inline void Node::set_parent_partition(const PartitionIndex & parent_partition)
+	{
+		parent_partition_ = parent_partition;
 	}
 
 	inline auto Node::as_eigen_vec2d()
 	{
-		return Eigen::Map<Eigen::Vector2d>(&coords_[0], 2);
+		return Eigen::Map<Eigen::Vector2d>(&coord_[0], 2);
 	}
 
 	inline auto Node::as_eigen_vec2d() const
 	{
-		return Eigen::Map<const Eigen::Vector2d>(&coords_[0], 2);
+		return Eigen::Map<const Eigen::Vector2d>(&coord_[0], 2);
 	}
 
 	inline auto Node::as_eigen_vec3d()
 	{
-		return Eigen::Map<Eigen::Vector3d>(&coords_[0], 3);
+		return Eigen::Map<Eigen::Vector3d>(&coord_[0], 3);
 	}
 
 	inline auto Node::as_eigen_vec3d() const
 	{
-		return Eigen::Map<const Eigen::Vector3d>(&coords_[0], 3);
+		return Eigen::Map<const Eigen::Vector3d>(&coord_[0], 3);
 	}
 
 	bool Node::operator==(const Node & other) const
@@ -205,35 +233,43 @@ namespace flex_mesh
 
 	inline bool Node::operator<(const Node & other) const
 	{
-		return compare_points(this->coords_, other.coords_, get_compare_tolerance());
+		return compare_points(this->coord_, other.coord_, get_compare_tolerance());
 	}
 
 	inline const FloatType & Node::operator[](unsigned int i) const
 	{
-		return coords_[i];
+		return coord_[i];
 	}
 
 	inline FloatType & Node::operator[](unsigned int i)
 	{
-		return coords_[i];
+		return coord_[i];
 	}
 
 	inline Node & Node::operator+=(const Point& translation_vec)
 	{
 		for (unsigned int i = 0; i < 3; i++)
-			coords_[i] += translation_vec[i];
+			coord_[i] += translation_vec[i];
 		return *this;
 	}
 
 	inline Node & Node::operator=(const Point& coord)
 	{
-		coords_ = coord;
+		coord_ = coord;
 		return *this;
 	}
 
 	inline bool Node::num_based_compare(const Node & node1, const Node & node2)
 	{
 		return node1.global_num_ < node2.global_num_;
+	}
+
+	inline bool Node::part_based_compare(const Node & node1, const Node & node2)
+	{
+		if (node1.parent_partition_ == node2.parent_partition_)
+			return node1.global_num_ < node2.global_num_;
+		else
+			return node1.parent_partition_ < node2.parent_partition_;
 	}
 
 	inline void Node::set_compare_tolerance(const double & tol)

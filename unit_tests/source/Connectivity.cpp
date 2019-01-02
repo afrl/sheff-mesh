@@ -6,13 +6,7 @@
 #include "flex_mesh/common/Common.h"
 #include "flex_mesh/common/Connectivity.h"
 #include "flex_mesh/node/Node.h"
-#include "flex_mesh/node/DistribNode.h"
 #include "flex_mesh/node/NodeUtilities.h"
-#include "flex_mesh/edge/Edge.h"
-#include "flex_mesh/face/Face.h"
-#include "flex_mesh/element/Element.h"
-#include "flex_mesh/element/DistribElement.h"
-#include "flex_mesh/element/MeshGenElement.h"
 
 using namespace flex_mesh;
 
@@ -20,10 +14,10 @@ int main()
 {
 	initialize_flex_mesh(1e-14);
 
-	using NodeTyped = DistribNode<Node>;
+	using NodeTyped = Node;
 
-	NodeTyped na(0, 0, { 0, 0, 0 });
-	NodeTyped nb(1, 1, { 0.5, 0, 0 });
+	NodeTyped na(0, { 0, 0, 0 });
+	NodeTyped nb(1, { 0.5, 0, 0 });
 	std::vector<NodeTyped*> c_vec;
 
 	{

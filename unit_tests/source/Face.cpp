@@ -6,13 +6,8 @@
 #include "flex_mesh/common/Common.h"
 #include "flex_mesh/common/Connectivity.h"
 #include "flex_mesh/node/Node.h"
-#include "flex_mesh/node/DistribNode.h"
 #include "flex_mesh/node/NodeUtilities.h"
-#include "flex_mesh/edge/Edge.h"
 #include "flex_mesh/face/Face.h"
-#include "flex_mesh/element/Element.h"
-#include "flex_mesh/element/DistribElement.h"
-#include "flex_mesh/element/MeshGenElement.h"
 
 using namespace flex_mesh;
 
@@ -20,13 +15,13 @@ int main()
 {
 	initialize_flex_mesh(1e-14);
 
-	using NodeTyped = DistribNode<Node>;
-	using FaceTyped = Face<DistribNode<Node>>;
+	using NodeTyped = Node;
+	using FaceTyped = Face<Node>;
 
-	NodeTyped na(0, 0, { 0, 0, 0 });
-	NodeTyped nb(1, 1, { 1, 0, 0 });
-	NodeTyped nc(2, 2, { 1, 1, 0 });
-	NodeTyped nd(2, 2, { 0, 1, 0 });
+	NodeTyped na(0, { 0, 0, 0 });
+	NodeTyped nb(1, { 1, 0, 0 });
+	NodeTyped nc(2, { 1, 1, 0 });
+	NodeTyped nd(2, { 0, 1, 0 });
 
 	FaceTyped a(FaceType::Q3D4N, { &na, &nb, &nc, &nd });
 	assert(a.get_type() == FaceType::Q3D4N);

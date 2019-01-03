@@ -284,7 +284,7 @@ namespace flex_mesh
 	inline void Element<NodeType>::get_global_node_numbers(std::vector<GlobalIndex>& numbers) const
 	{
 		numbers.resize(connectivity_.size());
-		for (auto i = 0; i < Parent::connectivity_.size(); i++) {
+		for (auto i = 0; i < connectivity_.size(); i++) {
 			numbers[i] = connectivity_[i]->get_global_number();
 		}
 	}

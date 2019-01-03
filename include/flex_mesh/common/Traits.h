@@ -52,8 +52,8 @@ namespace flex_mesh_traits
 		static constexpr bool value = type::value;						\
 	};																	\
 
-	GENERATE_HAS_MEMBER(get_local_number);
-	GENERATE_HAS_MEMBER(set_local_number);
+	//GENERATE_HAS_MEMBER(get_local_number);
+	//GENERATE_HAS_MEMBER(set_local_number);
 
 	#undef GENERATE_HAS_MEMBER
 }

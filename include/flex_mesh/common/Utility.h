@@ -97,7 +97,7 @@ namespace flex_mesh
 	// Definitions //
 	/////////////////
 
-	bool flex_mesh::compare_points(const Point & a, const Point & b, const double tolerance)
+	bool compare_points(const Point & a, const Point & b, const double tolerance)
 	{
 		return (a[0] < b[0] - tolerance)
 			|| ((fabs(a[0] - b[0]) < tolerance) && a[1] < b[1] - tolerance)

@@ -2,6 +2,9 @@
 #include <functional>
 #include <iostream>
 #include <iomanip>
+#include <memory>
+
+#define EIGEN_MAX_CPP_VER 11
 
 #include "flex_mesh/common/Common.h"
 #include "flex_mesh/common/Connectivity.h"

@@ -54,17 +54,17 @@ namespace flex_mesh
 		/// Returns an Eigen::Map object that maps the coordinates to a 2D Eigen vector.
 		/// It can be used as a normal Eigen vector, and it will modify the underlying
 		/// coordinates if the vector is modified.
-		auto as_eigen_vec2d();
+		Eigen::Map<Eigen::Vector2d> as_eigen_vec2d();
 		/// Const version of as_eigen_vec2d().  Will not allow modification to the underlying
 		/// coordinates of the node.
-		auto as_eigen_vec2d() const;
+		Eigen::Map<const Eigen::Vector2d> as_eigen_vec2d() const;
 		/// Returns an Eigen::Map object that maps the coordinates to a 3D Eigen vector.
 		/// It can be used as a normal Eigen vector, and it will modify the underlying
 		/// coordinates if the vector is modified.
-		auto as_eigen_vec3d();
+		Eigen::Map<Eigen::Vector3d> as_eigen_vec3d();
 		/// Const version of as_eigen_vec3d().  Will not allow modification to the underlying
 		/// coordinates of the node.
-		auto as_eigen_vec3d() const;
+		Eigen::Map<const Eigen::Vector3d> as_eigen_vec3d() const;
 
 		///////////////
 		// Operators //
@@ -201,22 +201,22 @@ namespace flex_mesh
 		parent_partition_ = parent_partition;
 	}
 
-	inline auto Node::as_eigen_vec2d()
+	inline Eigen::Map<Eigen::Vector2d> Node::as_eigen_vec2d()
 	{
 		return Eigen::Map<Eigen::Vector2d>(&coord_[0], 2);
 	}
 
-	inline auto Node::as_eigen_vec2d() const
+	inline Eigen::Map<const Eigen::Vector2d> Node::as_eigen_vec2d() const
 	{
 		return Eigen::Map<const Eigen::Vector2d>(&coord_[0], 2);
 	}
 
-	inline auto Node::as_eigen_vec3d()
+	inline Eigen::Map<Eigen::Vector3d> Node::as_eigen_vec3d()
 	{
 		return Eigen::Map<Eigen::Vector3d>(&coord_[0], 3);
 	}
 
-	inline auto Node::as_eigen_vec3d() const
+	inline Eigen::Map<const Eigen::Vector3d> Node::as_eigen_vec3d() const
 	{
 		return Eigen::Map<const Eigen::Vector3d>(&coord_[0], 3);
 	}

@@ -48,7 +48,8 @@ target_sources(flexmesh INTERFACE ${FLEXMESH_HEADER_LIST})
 add_library(FlexMesh::FlexMesh ALIAS flexmesh)
 # Add C++ 11 flag (at interface level since this is a header-only
 # library and downstream executables will also need the flag)
-target_compile_features(flexmesh INTERFACE cxx_std_11)
+target_compile_features(flexmesh INTERFACE cxx_std_14)
+#set_property(TARGET flexmesh PROPERTY CXX_STANDARD 11) 
 # Link dependencies
 target_include_directories(flexmesh INTERFACE ${EIGEN3_INCLUDE_DIR})
 if(FLEXMESH_USE_FEAIO AND FEAIO_FOUND)

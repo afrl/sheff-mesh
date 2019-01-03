@@ -34,7 +34,7 @@ namespace flex_mesh
 		T * const begin() const;
 		/// Returns the end of the connectivity with type of const pointer to const pointers of const objects.
 		/// Note: this points just beyond the array.  DO NOT use any methods.  Only use to test iterator.
-		const T * const end() const;
+		T * const end() const;
 		/// Returns the first node in the connectivity list
 		T front() const;
 		/// Returns the last node in the connectivity list
@@ -132,7 +132,7 @@ namespace flex_mesh
 	}
 
 	template<typename T, typename SizeType>
-	inline const T * const DynamicArray<T, SizeType>::end() const
+	inline T * const DynamicArray<T, SizeType>::end() const
 	{
 		return &objects_[size_];
 	}

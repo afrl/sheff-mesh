@@ -2,11 +2,13 @@
 
 #include "DynamicArray.h"
 
+#define EIGEN_MAX_CPP_VER 11
 #include "Eigen/Eigen"
 
 #include <cstdint>
 #include <numeric>
 #include <array>
+#include <memory>
 
 namespace flex_mesh
 {

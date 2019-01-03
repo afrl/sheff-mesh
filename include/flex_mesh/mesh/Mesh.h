@@ -44,6 +44,7 @@ namespace flex_mesh
 		auto begin() const { return objects_.begin(); }
 		/// Returns the begin iterator of the container (forcing const)
 		auto begin_const() const { return objects_.begin(); }
+		auto end() { return objects_.end(); }
 		/// Returns the end iterator of the container
 		auto end() const { return objects_.end(); }
 		/// Returns a raw pointer to the first object added
@@ -85,7 +86,7 @@ namespace flex_mesh
 		/// that must be done in the algorithm that call this.
 		void remove_nodes(std::set<T *> objects_to_remove) {
 			mark_as_changed();
-			for (auto it = begin(); nIt != end(); ) {
+			for (auto it = begin(); it != end(); ) {
 				auto setIt = objects_to_remove.find(it->get());
 				if (setIt != objects_to_remove.end()) {
 					objects_to_remove.erase(setIt);

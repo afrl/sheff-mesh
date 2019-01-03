@@ -8,6 +8,6 @@
 namespace stdext
 {
 	template<typename T, typename SizeType>
-	inline T* checked_array_iterator(T* arr, SizeType num_vals) { return arr; }
+	inline T checked_array_iterator(T arr, SizeType num_vals) { return arr; }
 };
 #endif

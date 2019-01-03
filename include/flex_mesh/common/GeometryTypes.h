@@ -170,14 +170,14 @@ namespace flex_mesh
 	// Definitiions //
 	//////////////////
 
-	unsigned int flex_mesh::get_num_nodes_for_type(const EdgeType & geom_type)
+	unsigned int get_num_nodes_for_type(const EdgeType & geom_type)
 	{
 		if (geom_type == EdgeType::E2N) return 2;
 		else if (geom_type == EdgeType::E3N) return 3;
 		else throw _FM_MSG_EXCEPT("Edge type not supported");
 	}
 
-	unsigned int flex_mesh::get_num_nodes_for_type(const FaceType & geom_type)
+	unsigned int get_num_nodes_for_type(const FaceType & geom_type)
 	{
 		if (geom_type == FaceType::L1D1N) return 1;
 		else if (geom_type == FaceType::L2D2N) return 2;
@@ -189,7 +189,7 @@ namespace flex_mesh
 		else throw _FM_MSG_EXCEPT("Face type not supported");
 	}
 
-	void flex_mesh::get_edge_info(const FaceType & geom_type, std::vector<EdgeType>& types, std::vector<std::vector<unsigned int>>& conn)
+	void get_edge_info(const FaceType & geom_type, std::vector<EdgeType>& types, std::vector<std::vector<unsigned int>>& conn)
 	{
 		conn.clear();
 		// 2D Connectivities
@@ -244,7 +244,7 @@ namespace flex_mesh
 			throw _FM_MSG_EXCEPT("Edge connectivity not implemented.");
 	}
 
-	FaceType flex_mesh::get_linearized_type(const FaceType & geom_type)
+	FaceType get_linearized_type(const FaceType & geom_type)
 	{
 		// 2D
 		if (geom_type == FaceType::L2D3N) return FaceType::L2D2N;
@@ -254,7 +254,7 @@ namespace flex_mesh
 		else return FaceType::UNKNGEOM;
 	}
 
-	std::vector<unsigned int> flex_mesh::get_linearized_permutation(const FaceType & geom_type)
+	std::vector<unsigned int> get_linearized_permutation(const FaceType & geom_type)
 	{
 		// We are going to cheat a bit here, since the permutations will act just like elements
 		// 2D
@@ -265,7 +265,7 @@ namespace flex_mesh
 		else throw _FM_MSG_EXCEPT("Unsupported face type.");
 	}
 
-	bool flex_mesh::is_type_linear(const FaceType & geom_type)
+	bool is_type_linear(const FaceType & geom_type)
 	{
 		return geom_type == FaceType::L1D1N ||
 			geom_type == FaceType::L2D2N ||
@@ -273,7 +273,7 @@ namespace flex_mesh
 			geom_type == FaceType::T3D3N;
 	}
 
-	std::vector<std::vector<unsigned int>> flex_mesh::connectivity_helper(int num_faces, int* nodes_per_face, int* face_nodes)
+	std::vector<std::vector<unsigned int>> connectivity_helper(int num_faces, int* nodes_per_face, int* face_nodes)
 	{
 		std::vector<std::vector<unsigned int>> faces_connectivities(num_faces);
 		int FaceNodesIndex = 0;

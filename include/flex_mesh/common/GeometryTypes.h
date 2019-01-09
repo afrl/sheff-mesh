@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Exceptions.h"
+#include "utility/Exceptions.h"
 
 #include <vector>
 
@@ -174,7 +174,7 @@ namespace flex_mesh
 	{
 		if (geom_type == EdgeType::E2N) return 2;
 		else if (geom_type == EdgeType::E3N) return 3;
-		else throw _FM_MSG_EXCEPT("Edge type not supported");
+		else throw _UTIL_MSG_EXCEPT("Edge type not supported");
 	}
 
 	unsigned int get_num_nodes_for_type(const FaceType & geom_type)
@@ -186,7 +186,7 @@ namespace flex_mesh
 		else if (geom_type == FaceType::Q3D4N) return 4;
 		else if (geom_type == FaceType::T3D6N) return 6;
 		else if (geom_type == FaceType::Q3D8N) return 8;
-		else throw _FM_MSG_EXCEPT("Face type not supported");
+		else throw _UTIL_MSG_EXCEPT("Face type not supported");
 	}
 
 	void get_edge_info(const FaceType & geom_type, std::vector<EdgeType>& types, std::vector<std::vector<unsigned int>>& conn)
@@ -241,7 +241,7 @@ namespace flex_mesh
 			conn = connectivity_helper(NumEdges, NodesPerEdge, EdgeIndices);
 		}
 		else
-			throw _FM_MSG_EXCEPT("Edge connectivity not implemented.");
+			throw _UTIL_MSG_EXCEPT("Edge connectivity not implemented.");
 	}
 
 	FaceType get_linearized_type(const FaceType & geom_type)
@@ -262,7 +262,7 @@ namespace flex_mesh
 		// 3D
 		else if (geom_type == FaceType::Q3D8N) return get_linearized_permutation(ElementType::Q2D8N);
 		else if (geom_type == FaceType::T3D6N) return get_linearized_permutation(ElementType::T2D6N);
-		else throw _FM_MSG_EXCEPT("Unsupported face type.");
+		else throw _UTIL_MSG_EXCEPT("Unsupported face type.");
 	}
 
 	bool is_type_linear(const FaceType & geom_type)
@@ -325,7 +325,7 @@ namespace flex_mesh
 		//else if (geom_type == ElementType::POLYHEDRON)
 		//	return ?;
 		else
-			throw _FM_MSG_EXCEPT("VTK type conversion not implemented.");
+			throw _UTIL_MSG_EXCEPT("VTK type conversion not implemented.");
 	}
 
 	std::vector<unsigned int> get_vtk_permutation(const ElementType & geom_type)
@@ -339,7 +339,7 @@ namespace flex_mesh
 		if (geom_type == ElementType::L1D2N)
 			return permutation; // Unchanged
 		else if (geom_type == ElementType::L1D3N)
-			throw _FM_MSG_EXCEPT("L1D2N type not implemented.");
+			throw _UTIL_MSG_EXCEPT("L1D2N type not implemented.");
 		// 2D
 		else if (geom_type == ElementType::T2D3N)
 			return permutation; // Unchanged

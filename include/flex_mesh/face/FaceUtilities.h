@@ -77,7 +77,7 @@ namespace flex_mesh
 		for (auto b_node_ptr : b) {
 			auto a_coincident_node_find = a_nodes.find(b_node_ptr);
 			if (a_coincident_node_find == a_nodes.end())
-				throw _FM_MSG_EXCEPT("Trying to get coincident node pairs for faces which don't have all coincident nodes.");
+				throw _UTIL_MSG_EXCEPT("Trying to get coincident node pairs for faces which don't have all coincident nodes.");
 			else
 				node_pairs[*a_coincident_node_find] = b_node_ptr;
 		}

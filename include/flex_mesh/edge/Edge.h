@@ -1,5 +1,7 @@
 #pragma once
 
+#include "utility/Exceptions.h"
+
 #include "flex_mesh/common/Connectivity.h"
 #include "flex_mesh/common/GeometryTypes.h"
 #include "flex_mesh/node/Node.h"
@@ -96,7 +98,7 @@ namespace flex_mesh
 		else if (type_ == EdgeType::E3N) // An approximation (should this be fixed?)
 			return distance(*connectivity_[0], *connectivity_[2]);
 		else
-			throw _FM_MSG_EXCEPT("Unsupported edge type.");
+			throw _UTIL_MSG_EXCEPT("Unsupported edge type.");
 	}
 
 	template<typename NodeType>

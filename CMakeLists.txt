@@ -18,10 +18,7 @@ include(${CMAKE_SOURCE_DIR}/cmake/CommonInputChecks.cmake)
 # Declare dependencies #
 ########################
 
-# Note: the Eigen3 config requires that you use the installation (not the build)
-find_package(Eigen3 3.3.0 CONFIG REQUIRED
-	HINTS "${CMAKE_SOURCE_DIR}/../third_party/eigen/install_dir" "${CMAKE_SOURCE_DIR}/../eigen/install_dir"
-)
+find_package(SIMPLEMATH CONFIG REQUIRED HINTS "${CMAKE_SOURCE_DIR}/../simple_math/build" "${CMAKE_SOURCE_DIR}/../simple_math/install_dir")
 if(FLEXMESH_USE_FEAIO)
 	find_package(FEAIO CONFIG REQUIRED HINTS "${CMAKE_SOURCE_DIR}/../fea_io/build" "${CMAKE_SOURCE_DIR}/../fea_io/install_dir")
 endif()
@@ -32,7 +29,6 @@ endif()
 
 # Set the variables for FLEXMESH
 set(FLEXMESH_INCLUDE ${CMAKE_SOURCE_DIR}/include)
-set(FLEXMESH_INCLUDE_SUB ${FLEXMESH_INCLUDE}/flexmesh)
 file (GLOB_RECURSE FLEXMESH_HEADER_LIST "${FLEXMESH_INCLUDE}/*.h")
 	
 # Create header-only target
@@ -51,7 +47,7 @@ add_library(FlexMesh::FlexMesh ALIAS flexmesh)
 target_compile_features(flexmesh INTERFACE cxx_std_14)
 #set_property(TARGET flexmesh PROPERTY CXX_STANDARD 11) 
 # Link dependencies
-target_include_directories(flexmesh INTERFACE ${EIGEN3_INCLUDE_DIR})
+target_link_libraries(flexmesh INTERFACE SimpleMath::SimpleMath)
 if(FLEXMESH_USE_FEAIO AND FEAIO_FOUND)
 	target_compile_definitions(flexmesh INTERFACE USE_FEAIO)
 	target_link_libraries(flexmesh INTERFACE FEAIO::FEAIO)

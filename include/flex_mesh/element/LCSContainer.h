@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Eigen/Eigen"
+#include "simple_math/EigenDefines.h"
 
 #include "flex_mesh/common/Defines.h"
 
@@ -23,7 +23,7 @@ namespace flex_mesh
 		Node
 	};
 
-	typedef Eigen::Quaternion<FloatType> Quaternion;
+	using Quaternion = simple_math::Quaternion;
 
 	template<typename SizeType>
 	class LCSContainer : public DynamicArray<Quaternion, SizeType>

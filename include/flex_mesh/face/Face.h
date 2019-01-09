@@ -112,7 +112,7 @@ namespace flex_mesh
 		std::vector<std::vector<unsigned int>> edge_indices;
 		get_edge_info(type_, edge_types, edge_indices);
 		if (edge_types.size() != edge_indices.size())
-			throw _FM_MSG_EXCEPT("Something went wrong in get_edge_info.");
+			throw _UTIL_MSG_EXCEPT("Something went wrong in get_edge_info.");
 
 		std::vector<Edge<const NodeType>> edges;
 		for (auto i = 0; i < edge_types.size(); i++) {
@@ -131,7 +131,7 @@ namespace flex_mesh
 		std::vector<std::vector<unsigned int>> edge_indices;
 		get_edge_info(type_, edge_types, edge_indices);
 		if (edge_types.size() != edge_indices.size())
-			throw _FM_MSG_EXCEPT("Something went wrong in get_edge_info.");
+			throw _UTIL_MSG_EXCEPT("Something went wrong in get_edge_info.");
 
 		std::vector<std::shared_ptr<Edge<const NodeType>>> edges;
 		for (auto i = 0; i < edge_types.size(); i++) {

@@ -1,11 +1,13 @@
 #pragma once
 
+#include "utility/Exceptions.h"
+
 #include "flex_mesh/common/Common.h"
-#include "flex_mesh/common/Exceptions.h"
 #include "flex_mesh/common/GeometryTypes.h"
 #include "flex_mesh/mesh/Mesh.h"
 #include "flex_mesh/node/Node.h"
 #include "flex_mesh/element/Element.h"
+
 #include "Search.h"
 
 #ifdef SWIG
@@ -100,7 +102,7 @@ namespace flex_mesh
 	{
 		std::ofstream fout(file_path.c_str());
 		if (!fout)
-			throw _FM_MSG_EXCEPT("Could not create file " + file_path);
+			throw _UTIL_MSG_EXCEPT("Could not create file " + file_path);
 
 		mesh.update_global_numbering();
 
@@ -351,7 +353,7 @@ namespace flex_mesh
 				}
 				else {
 					auto dataNameMap = PFECNativeInterface::get_data_type_name_map();
-					throw _BETA_MSG_EXCEPT2("Writing this type of data is not supported yet in the write_pfec_files method: " + dataNameMap[meta.type]);
+					throw _BETA_UTIL_MSG_EXCEPT2("Writing this type of data is not supported yet in the write_pfec_files method: " + dataNameMap[meta.type]);
 				}
 			}
 		}
@@ -405,7 +407,7 @@ namespace flex_mesh
 					}
 					else {
 						auto dataNameMap = PFECNativeInterface::get_data_type_name_map();
-						throw _BETA_MSG_EXCEPT2("Writing this type of data is not supported yet in the write_pfec_files method: " + dataNameMap[meta.type]);
+						throw _BETA_UTIL_MSG_EXCEPT2("Writing this type of data is not supported yet in the write_pfec_files method: " + dataNameMap[meta.type]);
 					}
 				}
 			} // End loop over partitions
@@ -444,7 +446,7 @@ namespace flex_mesh
 			auto front_lcs_assignment = elements_in_component.front()->get_lcs_assignment();
 			for (auto& e_ptr : elements_in_component) {
 				if (e_ptr->get_lcs_assignment() != front_lcs_assignment) {
-					throw _FM_MSG_EXCEPT("The elements within the same component must have the same LCSAssignment to be written to the fea_io format.");
+					throw _UTIL_MSG_EXCEPT("The elements within the same component must have the same LCSAssignment to be written to the fea_io format.");
 				}
 			}
 
@@ -591,7 +593,7 @@ namespace flex_mesh
 		else if (lcs_assignment == fea_io::LCSAssignment::None)
 			return LCSAssignment::None;
 		else
-			throw _MSG_EXCEPT("Cannot convert from fea_io::LCSAssignment.");
+			throw _UTIL_MSG_EXCEPT("Cannot convert from fea_io::LCSAssignment.");
 	}
 
 	template<typename MeshType>
@@ -606,7 +608,7 @@ namespace flex_mesh
 		else if (lcs_assignment == flex_mesh::LCSAssignment::None)
 			return fea_io::LCSAssignment::None;
 		else
-			throw _MSG_EXCEPT("Cannot convert from fea_io::LCSAssignment.");
+			throw _UTIL_MSG_EXCEPT("Cannot convert from fea_io::LCSAssignment.");
 	}
 
 	template<typename MeshType>
@@ -706,7 +708,7 @@ namespace flex_mesh
 		else if (type == flex_mesh::ElementType::C3D16N)
 			return fea_io::ElementType::C3D16N;
 		else
-			throw _MSG_EXCEPT("Failed to converge element type to fea_io type.");
+			throw _UTIL_MSG_EXCEPT("Failed to converge element type to fea_io type.");
 	}
 
 #endif

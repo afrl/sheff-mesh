@@ -1,8 +1,8 @@
 ﻿#pragma once
 
-#include "flex_mesh/common/Exceptions.h"
-#include "Element.h"
+#include "utility/Exceptions.h"
 
+#include "Element.h"
 #include "PolyhedronHelpers.h"
 
 namespace flex_mesh
@@ -76,7 +76,7 @@ namespace flex_mesh
 		// Create face structure
 		for (auto i = 0; i < polyhedron_faces.size(); i++) {
 			if (polyhedron_faces[i].size() != 3)
-				throw _FM_MSG_EXCEPT_C("Currently, only polyhedrons with triangular faces are accepted. TODO implement triangularization of faces.");
+				throw _UTIL_MSG_EXCEPT("Currently, only polyhedrons with triangular faces are accepted. TODO implement triangularization of faces.");
 
 			polyhedron_faces_.push_back(DynamicArray<ConnSize, ConnSize>(polyhedron_faces[i].size()));
 			for (auto j = 0; j < polyhedron_faces[i].size(); j++)
@@ -108,7 +108,7 @@ namespace flex_mesh
 	template<typename NodeType>
 	inline void PolyhedronElement<NodeType>::initialize(const ElementType type, const std::vector<NodeType*>& connectivity, const LCSAssignment lcs_assignment)
 	{
-		throw _FM_MSG_EXCEPT_C("Polyhedral elements require the other initialize method.");
+		throw _UTIL_MSG_EXCEPT("Polyhedral elements require the other initialize method.");
 	}
 
 	template<typename NodeType>

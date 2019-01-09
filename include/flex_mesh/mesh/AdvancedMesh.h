@@ -24,7 +24,7 @@ namespace BetaMesh
         typedef EdgeType* EdgePtr;
         typedef FaceType* FacePtr;
         typedef ElementType* ElementPtr;
-		
+
 		typedef std::unique_ptr<NodeType> NodeUniquePtr;
 		typedef std::unique_ptr<ElementType> ElementUniquePtr;
 
@@ -157,9 +157,9 @@ namespace BetaMesh
 		/// this class, since it will be called as needed internally.
 		void rebuild_node_kd() {
 			if (!storing_vectors_) // If vectors are not available, then we can't do a KD search.
-				throw _BETA_MSG_EXCEPT2("Cannot build KD tree if vectors are not being stored, since it cannot operator on a linked list.  Call build_vectors first.");
+				throw _UTIL_MSG_EXCEPT("Cannot build KD tree if vectors are not being stored, since it cannot operator on a linked list.  Call build_vectors first.");
 			if (nodes_vec_.size() == 0)
-				throw _BETA_MSG_EXCEPT2("Cannot build KD tree if the vector of nodes is empty.  Does the mesh have nodes?");
+				throw _UTIL_MSG_EXCEPT("Cannot build KD tree if the vector of nodes is empty.  Does the mesh have nodes?");
 			node_vec_kd_adapter_->initialize(SuperClass::nodes_front()->get_dimensionality());
 			node_kd_tree_->buildIndex();
 			node_kd_up_to_date_ = true;
@@ -170,9 +170,9 @@ namespace BetaMesh
         /// this class, since it will be called as needed internally.
         void rebuild_element_kd() {
             if (!storing_vectors_) // If vectors are not available, then we can't do a KD search.
-                throw _BETA_MSG_EXCEPT2("Cannot build KD tree if vectors are not being stored, since it cannot operator on a linked list.  Call build_vectors first.");
+                throw _UTIL_MSG_EXCEPT("Cannot build KD tree if vectors are not being stored, since it cannot operator on a linked list.  Call build_vectors first.");
             if (elements_vec_.size() == 0)
-                throw _BETA_MSG_EXCEPT2("Cannot build KD tree if the vector of elements is empty.  Does the mesh have elements?");
+                throw _UTIL_MSG_EXCEPT("Cannot build KD tree if the vector of elements is empty.  Does the mesh have elements?");
             element_vec_kd_adapter_->initialize(SuperClass::nodes_front()->get_dimensionality());
             element_kd_tree_->buildIndex();
             element_kd_up_to_date_ = true;
@@ -487,7 +487,7 @@ namespace BetaMesh
 		{
 			auto group = node_groups_.find(groupName);
 			if (group == node_groups_.end())
-				throw _BETA_MSG_EXCEPT2("Group " + groupName + " does not exist.");
+				throw _UTIL_MSG_EXCEPT("Group " + groupName + " does not exist.");
 			group->second.insert(n);
 		}
 		/// Adds a set of nodes to a group.  Will throw if the group doesn't exist.
@@ -495,7 +495,7 @@ namespace BetaMesh
 		{
 			auto group = node_groups_.find(groupName);
 			if (group == node_groups_.end())
-				throw _BETA_MSG_EXCEPT2("Group " + groupName + " does not exist.");
+				throw _UTIL_MSG_EXCEPT("Group " + groupName + " does not exist.");
 			for (auto n : nSet)
 				group->second.insert(n);
 		}
@@ -504,7 +504,7 @@ namespace BetaMesh
 		{
 			auto group = node_groups_.find(groupName);
 			if (group == node_groups_.end())
-				throw _BETA_MSG_EXCEPT2("Group " + groupName + " does not exist.");
+				throw _UTIL_MSG_EXCEPT("Group " + groupName + " does not exist.");
 			for (auto& n : SuperClass::nodes_)
 				group->second.insert(n.get());
 		}
@@ -513,7 +513,7 @@ namespace BetaMesh
 		{
 			auto group = node_groups_.find(groupName);
 			if (group == node_groups_.end())
-				throw _BETA_MSG_EXCEPT2("Group " + groupName + " does not exist.");
+				throw _UTIL_MSG_EXCEPT("Group " + groupName + " does not exist.");
 			group->second.erase(e);
 		}
 		/// Returns the node by const reference.  It can be looped over and the nodes can be modified
@@ -575,7 +575,7 @@ namespace BetaMesh
 		{
 			auto group = element_groups_.find(groupName);
 			if (group == element_groups_.end())
-				throw _BETA_MSG_EXCEPT2("Group " + groupName + " does not exist.");
+				throw _UTIL_MSG_EXCEPT("Group " + groupName + " does not exist.");
 			group->second.insert(e);
 		}
 		/// Adds a set of elements to a group.  Will throw if the group doesn't exist.
@@ -583,7 +583,7 @@ namespace BetaMesh
 		{
 			auto group = element_groups_.find(groupName);
 			if (group == element_groups_.end())
-				throw _BETA_MSG_EXCEPT2("Group " + groupName + " does not exist.");
+				throw _UTIL_MSG_EXCEPT("Group " + groupName + " does not exist.");
 			for (auto e : eSet)
 				group->second.insert(e);
 		}
@@ -592,7 +592,7 @@ namespace BetaMesh
 		{
 			auto group = element_groups_.find(groupName);
 			if (group == element_groups_.end())
-				throw _BETA_MSG_EXCEPT2("Group " + groupName + " does not exist.");
+				throw _UTIL_MSG_EXCEPT("Group " + groupName + " does not exist.");
 			for (auto& e : SuperClass::elements_)
 				group->second.insert(e.get());
 		}
@@ -601,7 +601,7 @@ namespace BetaMesh
 		{
 			auto group = element_groups_.find(groupName);
 			if (group == element_groups_.end())
-				throw _BETA_MSG_EXCEPT2("Group " + groupName + " does not exist.");
+				throw _UTIL_MSG_EXCEPT("Group " + groupName + " does not exist.");
 			group->second.erase(e);
 		}
 		/// Returns the element by const reference.  It can be looped over and the elements can be modified

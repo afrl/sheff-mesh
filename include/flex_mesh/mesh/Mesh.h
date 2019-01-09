@@ -1,7 +1,6 @@
 #pragma once
 
 #include "flex_mesh/common/Defines.h"
-#include "flex_mesh/common/Exceptions.h"
 #include "flex_mesh/common/Traits.h"
 
 #include <algorithm>

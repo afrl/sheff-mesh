@@ -153,7 +153,7 @@ namespace flex_mesh
 	inline std::vector<typename MeshGenElement<BaseType>::NodePtr> MeshGenElement<BaseType>::get_corner_nodes() const
 	{
 		std::vector<NodePtr> corner_nodes;
-		throw _FM_MSG_EXCEPT_C("Not implemented.");
+		throw _UTIL_MSG_EXCEPT("Not implemented.");
 		return corner_nodes;
 	}
 
@@ -168,7 +168,7 @@ namespace flex_mesh
 	template<typename BaseType>
 	inline void MeshGenElement<BaseType>::make_element_linear()
 	{
-		throw _FM_MSG_EXCEPT_C("Not implemented.");
+		throw _UTIL_MSG_EXCEPT("Not implemented.");
 	}
 
 	template<typename BaseType>

@@ -100,7 +100,7 @@ namespace flex_mesh
 		else if (type == ElementType::W3D15N)
 			shapeWedge15(parametric_coordinate, shape_func_values);
 		else
-			throw _FM_MSG_EXCEPT("Cannot find interpolation functions for element.");
+			throw _UTIL_MSG_EXCEPT("Cannot find interpolation functions for element.");
 	}
 
 	template<typename Coordinate, typename ElementVector, typename ElementVectorDeriv>
@@ -143,7 +143,7 @@ namespace flex_mesh
 		else if (type == ElementType::W3D15N)
 			shapeDerivWedge15(parametric_coordinate, shape_func_derivatives);
 		else
-			throw _FM_MSG_EXCEPT("Cannot find interpolation functions for element.");
+			throw _UTIL_MSG_EXCEPT("Cannot find interpolation functions for element.");
 	}
 
 #pragma region 1D Shape Function Methods

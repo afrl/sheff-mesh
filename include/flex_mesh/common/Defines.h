@@ -1,7 +1,5 @@
 #pragma once
 
-#include "DynamicArray.h"
-
 #define EIGEN_MAX_CPP_VER 11
 #include "Eigen/Eigen"
 

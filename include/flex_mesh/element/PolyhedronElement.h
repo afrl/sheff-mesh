@@ -49,8 +49,8 @@ namespace flex_mesh
 
 	protected:
 		/// TODO document
-		DynamicArray<DynamicArray<ConnSize, ConnSize>, ConnSize> polyhedron_faces_;
-		DynamicArray<Vertex<const NodeType>, ConnSize> graph_;
+		utility::DynamicArray<utility::DynamicArray<ConnSize, ConnSize>, ConnSize> polyhedron_faces_;
+		utility::DynamicArray<Vertex<const NodeType>, ConnSize> graph_;
 	};
 
 	/////////////////

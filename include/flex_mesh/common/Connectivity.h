@@ -1,6 +1,6 @@
 #pragma once
 
-#include "DynamicArray.h"
+#include "utility/DynamicArray.h"
 
 namespace flex_mesh
 {
@@ -8,10 +8,10 @@ namespace flex_mesh
 	/// Note: if the connectivity is pointers to constant nodes, use Connectivity<const Node, SizeType>
 	/// Note: specify SizeType such that the type can hold the longest size expected.
 	template<typename NodeType, typename SizeType>
-	class Connectivity : public DynamicArray<NodeType *, SizeType>
+	class Connectivity : public utility::DynamicArray<NodeType *, SizeType>
 	{
 	public:
-		using Parent = DynamicArray<NodeType *, SizeType>;
+		using Parent = utility::DynamicArray<NodeType *, SizeType>;
 
 		Connectivity() : Parent() {};
 		template<typename NodePtrContainer>

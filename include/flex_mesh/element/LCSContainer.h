@@ -1,6 +1,7 @@
 #pragma once
 
 #include "simple_math/EigenDefines.h"
+#include "utility/DynamicArray.h"
 
 #include "flex_mesh/common/Defines.h"
 
@@ -26,16 +27,16 @@ namespace flex_mesh
 	using Quaternion = simple_math::Quaternion;
 
 	template<typename SizeType>
-	class LCSContainer : public DynamicArray<Quaternion, SizeType>
+	class LCSContainer : public utility::DynamicArray<Quaternion, SizeType>
 	{
 	public:
-		using Parent = DynamicArray<Quaternion, SizeType>;
+		using Parent = utility::DynamicArray<Quaternion, SizeType>;
 
 		LCSContainer() : Parent() {};
 		template<typename QuaternionContainer>
 		LCSContainer(const QuaternionContainer& quaternions) : Parent(quaternions) {};
 		LCSContainer(const std::initializer_list<Quaternion>& quaternions) : Parent(quaternions) {};
-		LCSContainer(const DynamicArray<Quaternion, SizeType >& arg) : Parent(arg) {};
+		LCSContainer(const utility::DynamicArray<Quaternion, SizeType >& arg) : Parent(arg) {};
 
 		/// Assign the array to a new list of nodes
 		template<typename OrientationContainer>

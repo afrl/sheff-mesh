@@ -16,7 +16,7 @@ namespace flex_mesh
 		Connectivity() : Parent() {};
 		template<typename NodePtrContainer>
 		Connectivity(const NodePtrContainer& nodes) : Parent(nodes) {};
-		Connectivity(const std::initializer_list<NodeType *>& nodes) : Parent(nodes) {};
+		Connectivity(std::initializer_list<NodeType *> nodes) : Parent(nodes) {};
 		Connectivity(const Parent& arg) : Parent(arg) {};
 
 		/// Assign the array to a new list of nodes

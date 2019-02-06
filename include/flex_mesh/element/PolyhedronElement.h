@@ -78,7 +78,7 @@ namespace flex_mesh
 			if (polyhedron_faces[i].size() != 3)
 				throw _UTIL_MSG_EXCEPT("Currently, only polyhedrons with triangular faces are accepted. TODO implement triangularization of faces.");
 
-			polyhedron_faces_.push_back(DynamicArray<ConnSize, ConnSize>(polyhedron_faces[i].size()));
+			polyhedron_faces_.push_back(utility::DynamicArray<ConnSize, ConnSize>(polyhedron_faces[i].size()));
 			for (auto j = 0; j < polyhedron_faces[i].size(); j++)
 				polyhedron_faces_[i][j] = node_to_conn_index[polyhedron_faces[i][j]];
 		}

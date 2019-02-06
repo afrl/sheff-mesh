@@ -221,12 +221,12 @@ namespace flex_mesh
 		return Eigen::Map<const Eigen::Vector3d>(&coord_[0], 3);
 	}
 
-	bool Node::operator==(const Node & other) const
+	inline bool Node::operator==(const Node & other) const
 	{
 		return this == &other;
 	}
 
-	bool Node::operator>(const Node & other) const
+	inline bool Node::operator>(const Node & other) const
 	{
 		return other < *this;
 	}

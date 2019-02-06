@@ -9,10 +9,10 @@ endif()
 
 if(NOT TARGET FlexMesh::flexmesh)
 	get_filename_component(FLEXMESH_CMAKE_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
-    include("${FEAIO_CMAKE_DIR}/FlexMeshTargets.cmake")
+    include("${FLEXMESH_CMAKE_DIR}/FlexMeshTargets.cmake")
 endif()
 
-set(FEAIO_LIBRARIES FlexMesh::flexmesh)
+set(FLEXMESH_LIBRARIES FlexMesh::flexmesh)
 
 # For targets that use this project they can call this in order to group the
 # headers by directory in within Visual Studio.

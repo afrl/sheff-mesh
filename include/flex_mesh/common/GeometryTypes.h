@@ -160,11 +160,11 @@ namespace flex_mesh
 	/////////////////
 
 	/// Returns the integer used to indicate VTK cell types for a given ElementType
-	int get_vtk_element_type(const ElementType& geom_type);
+	static int get_vtk_element_type(const ElementType& geom_type);
 	/// Returns the permuation vector to go from the internal connectivity to the
 	/// connectivity used in VTK.  All types are not mappable to a VTK element,
 	/// in those cases, it will throw.
-	std::vector<unsigned int> get_vtk_permutation(const ElementType& geom_type);
+	static std::vector<unsigned int> get_vtk_permutation(const ElementType& geom_type);
 
 	//////////////////
 	// Definitiions //

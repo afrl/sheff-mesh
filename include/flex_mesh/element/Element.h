@@ -131,24 +131,24 @@ namespace flex_mesh
 		/// Resizes and fills the Eigen matrix with the shape function values
 		virtual void get_shape_function_values(
 			const Point& parametric_coordinate,
-			ElementVector& shape_function_values) const;
+			NodeVector& shape_function_values) const;
 		/// Evaluates the shape functions at the given parametric coordinate
-		ElementVector get_shape_function_values(const Point& parametric_coordinate) const;
+		NodeVector get_shape_function_values(const Point& parametric_coordinate) const;
 
 		/// Evaluates the derivatives of shape functions at the given parametric coordinate in
-		/// terms of the parametric coordinates (dPhi/dxi) 
+		/// terms of the parametric coordinates (dPhi/dxi)
 		/// Resizes and fills the Eigen matrix with the shape function derivatives
 		virtual void get_shape_function_derivatives(
 			const Point& parametric_coordinate,
-			ElementMatrix3D& shape_function_derivs) const;
+			NodeX3Matrix& shape_function_derivs) const;
 		/// Evaluates the derivatives of shape functions at the given parametric coordinate in
-		/// terms of the parametric coordinates (dPhi/dxi) 
-		ElementMatrix3D get_shape_function_derivatives(
+		/// terms of the parametric coordinates (dPhi/dxi)
+		NodeX3Matrix get_shape_function_derivatives(
 			const Point& parametric_coordinate) const;
 
 		/// Resizes and fills the Eigen matrix with the nodal coordinates
 		/// Will be arranged with each row being a node
-		void get_node_coordinates(ElementMatrix3D& coordinates) const;
+		void get_node_coordinates(NodeX3Matrix& coordinates) const;
 
 	protected:
 		GlobalIndex global_num_;
@@ -387,13 +387,13 @@ namespace flex_mesh
 	}
 
 	template<typename NodeType>
-	inline void flex_mesh::Element<NodeType>::get_shape_function_values(const Point & parametric_coordinate, ElementVector & shape_function_values) const
+	inline void flex_mesh::Element<NodeType>::get_shape_function_values(const Point & parametric_coordinate, NodeVector & shape_function_values) const
 	{
 		ShapeFunctions<Point, ElementVector, ElementMatrix3D>::values(type_, parametric_coordinate, shape_function_values);
 	}
 
 	template<typename NodeType>
-	inline ElementVector Element<NodeType>::get_shape_function_values(const Point & parametric_coordinate) const
+	inline NodeVector Element<NodeType>::get_shape_function_values(const Point & parametric_coordinate) const
 	{
 		ElementVector shape_function_values;
 		get_shape_function_values(shape_function_values);
@@ -401,13 +401,13 @@ namespace flex_mesh
 	}
 
 	template<typename NodeType>
-	inline void flex_mesh::Element<NodeType>::get_shape_function_derivatives(const Point & parametric_coordinate, ElementMatrix3D & shape_function_derivs) const
+	inline void flex_mesh::Element<NodeType>::get_shape_function_derivatives(const Point & parametric_coordinate, NodeX3Matrix & shape_function_derivs) const
 	{
 		ShapeFunctions<Point, ElementVector, ElementMatrix3D>::derivatives(type_, parametric_coordinate, shape_function_derivs);
 	}
 
 	template<typename NodeType>
-	inline ElementMatrix3D Element<NodeType>::get_shape_function_derivatives(const Point & parametric_coordinate) const
+	inline NodeX3Matrix Element<NodeType>::get_shape_function_derivatives(const Point & parametric_coordinate) const
 	{
 		ElementMatrix3D derivatives;
 		get_shape_function_derivatives(derivatives);
@@ -415,7 +415,7 @@ namespace flex_mesh
 	}
 
 	template<typename NodeType>
-	inline void Element<NodeType>::get_node_coordinates(ElementMatrix3D & coordinates) const
+	inline void Element<NodeType>::get_node_coordinates(NodeX3Matrix & coordinates) const
 	{
 		coordinates.resize(connectivity_.size(), 3);
 		for (ConnSize i = 0; i < connectivity_.size(); i++)

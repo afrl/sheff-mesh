@@ -100,8 +100,11 @@ namespace flex_mesh
 		W3D15N = 42, ///< 3D wedge 15-node  (quadratic) element
 		H3D20N = 43, ///< 3D hexahedral 20-node (quadratic) element
 		Q3D8N = 46, ///< quadrilateral shell element  (quadratic)
-		C3D16N = 48, ///< quadrilateral 16-node cohesive element (quadratic)
+		C3D16N = 48 ///< quadrilateral 16-node cohesive element (quadratic)
 	};
+	/// The maximum value that a ElementType enumeration can have.  This is only
+	/// used for classes like Mapping, which use the underlying type as an index.
+	static constexpr int8_t MAX_ELEMENT_TYPE_VALUE = 48;
 
 	/// Returns the number of nodes that the geometry type will have.
 	static unsigned int get_num_nodes_for_type(const ElementType& geom_type);

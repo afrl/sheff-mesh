@@ -39,13 +39,13 @@ namespace flex_mesh
 		/// Resizes and fills the Eigen matrix with the shape function values
 		virtual void get_shape_function_values(
 			const Point& cartesian_coordinate,
-			ElementVector& shape_function_values) const override;
+			NodeVector& shape_function_values) const override;
 
 		/// Resizes and fills the Eigen matrix with the shape function derivatives
 		/// Note: derivatives are in terms of parammetric coordinates (dPhi/dxi)
 		virtual void get_shape_function_derivatives(
 			const Point& cartesian_coordinate,
-			ElementMatrix3D& shape_function_derivs) const override;
+			NodeX3Matrix& shape_function_derivs) const override;
 
 	protected:
 		/// TODO document
@@ -112,7 +112,7 @@ namespace flex_mesh
 	}
 
 	template<typename NodeType>
-	inline void PolyhedronElement<NodeType>::get_shape_function_values(const Point & p, ElementVector & shape_function_values) const
+	inline void PolyhedronElement<NodeType>::get_shape_function_values(const Point & p, NodeVector & shape_function_values) const
 	{
 		// Following http://graphics.stanford.edu/~wicke/publications/FEM/wbg-afmocp-07.pdf
 		// Step 1: Compute weight ratios (Eqn. 7)
@@ -157,7 +157,7 @@ namespace flex_mesh
 	}
 
 	template<typename NodeType>
-	inline void PolyhedronElement<NodeType>::get_shape_function_derivatives(const Point & cartesian_coordinate, ElementMatrix3D & shape_function_derivs) const
+	inline void PolyhedronElement<NodeType>::get_shape_function_derivatives(const Point & cartesian_coordinate, NodeX3Matrix & shape_function_derivs) const
 	{
 		shape_function_derivs.resize(Parent::connectivity_.size(), 3);
 		/*

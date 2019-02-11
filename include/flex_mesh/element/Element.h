@@ -389,13 +389,13 @@ namespace flex_mesh
 	template<typename NodeType>
 	inline void flex_mesh::Element<NodeType>::get_shape_function_values(const Point & parametric_coordinate, NodeVector & shape_function_values) const
 	{
-		ShapeFunctions<Point, ElementVector, ElementMatrix3D>::values(type_, parametric_coordinate, shape_function_values);
+		ShapeFunctions<Point, NodeVector, NodeX3Matrix>::values(type_, parametric_coordinate, shape_function_values);
 	}
 
 	template<typename NodeType>
 	inline NodeVector Element<NodeType>::get_shape_function_values(const Point & parametric_coordinate) const
 	{
-		ElementVector shape_function_values;
+		NodeVector shape_function_values;
 		get_shape_function_values(shape_function_values);
 		return shape_function_values;
 	}
@@ -403,13 +403,13 @@ namespace flex_mesh
 	template<typename NodeType>
 	inline void flex_mesh::Element<NodeType>::get_shape_function_derivatives(const Point & parametric_coordinate, NodeX3Matrix & shape_function_derivs) const
 	{
-		ShapeFunctions<Point, ElementVector, ElementMatrix3D>::derivatives(type_, parametric_coordinate, shape_function_derivs);
+		ShapeFunctions<Point, NodeVector, NodeX3Matrix>::derivatives(type_, parametric_coordinate, shape_function_derivs);
 	}
 
 	template<typename NodeType>
 	inline NodeX3Matrix Element<NodeType>::get_shape_function_derivatives(const Point & parametric_coordinate) const
 	{
-		ElementMatrix3D derivatives;
+		NodeX3Matrix derivatives;
 		get_shape_function_derivatives(derivatives);
 		return derivatives;
 	}

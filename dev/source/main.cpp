@@ -206,8 +206,8 @@ bool test_element()
 	a.allocate_lcs(LCSAssignment::Node);
 	assert(a.get_lcs().size() == 4);
 
-	ElementVector S;
-	ElementMatrix3D dS;
+	NodeVector S;
+	NodeX3Matrix dS;
 	a.get_shape_function_values({ 0, 0, 0 }, S);
 	a.get_shape_function_derivatives({ 0, 0, 0 }, dS);
 
@@ -266,12 +266,12 @@ bool test_polyhedron()
 	for (auto i = 0; i < poly.get_conn().size(); i++)
 		poly_to_tet_node_map[i] = poly.get_conn()[i]->get_global_number();
 
-	ElementVector S_tet;
-	ElementVector S_poly;
-	ElementMatrix3D tet_node_coordinates;
+	NodeVector S_tet;
+	NodeVector S_poly;
+	NodeX3Matrix tet_node_coordinates;
 	Vector3D cartesian_point;
 
-	auto compare_shape = [&poly_to_tet_node_map](const ElementVector& S_tet, const ElementVector& S_poly) -> bool {
+	auto compare_shape = [&poly_to_tet_node_map](const NodeVector& S_tet, const NodeVector& S_poly) -> bool {
 		for (auto i = 0; i < S_tet.size(); i++)
 			if (fabs(S_poly[i] - S_tet[poly_to_tet_node_map[i]]) > 1e-12)
 				return false;

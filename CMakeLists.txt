@@ -18,9 +18,10 @@ include(${CMAKE_SOURCE_DIR}/cmake/CommonInputChecks.cmake)
 # Declare dependencies #
 ########################
 
-find_package(SIMPLEMATH CONFIG REQUIRED HINTS "${CMAKE_SOURCE_DIR}/../simple_math/build" "${CMAKE_SOURCE_DIR}/../simple_math/install_dir")
+find_package(SimpleMath CONFIG REQUIRED HINTS "${CMAKE_SOURCE_DIR}/../simple_math/build" "${CMAKE_SOURCE_DIR}/../simple_math/install_dir")
+find_package(Utility CONFIG REQUIRED HINTS "${CMAKE_SOURCE_DIR}/../utility/build" "${CMAKE_SOURCE_DIR}/../utility/install_dir")
 if(FLEXMESH_USE_FEAIO)
-	find_package(FEAIO CONFIG REQUIRED HINTS "${CMAKE_SOURCE_DIR}/../fea_io/build" "${CMAKE_SOURCE_DIR}/../fea_io/install_dir")
+	find_package(FeaIo CONFIG REQUIRED HINTS "${CMAKE_SOURCE_DIR}/../fea_io/build" "${CMAKE_SOURCE_DIR}/../fea_io/install_dir")
 endif()
 
 #######################################
@@ -48,9 +49,18 @@ target_compile_features(flexmesh INTERFACE cxx_std_14)
 #set_property(TARGET flexmesh PROPERTY CXX_STANDARD 11) 
 # Link dependencies
 target_link_libraries(flexmesh INTERFACE SimpleMath::SimpleMath)
-if(FLEXMESH_USE_FEAIO AND FEAIO_FOUND)
+if(FLEXMESH_USE_FEAIO AND FeaIo_FOUND)
 	target_compile_definitions(flexmesh INTERFACE USE_FEAIO)
-	target_link_libraries(flexmesh INTERFACE FEAIO::FEAIO)
+	target_link_libraries(flexmesh INTERFACE FeaIo::FeaIo)
+endif()
+
+# Assign source groups
+include(${CMAKE_SOURCE_DIR}/cmake/Utilities.cmake)
+assign_source_group("flex_mesh" ${FLEXMESH_HEADER_LIST})
+assign_source_group_SimpleMath()
+assign_source_group_Utility()
+if(FLEXMESH_USE_FEAIO)
+    assign_source_group_FeaIo()
 endif()
 
 #################################

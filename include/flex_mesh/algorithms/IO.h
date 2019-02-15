@@ -479,15 +479,15 @@ namespace flex_mesh
 
 			// Figure out what each subcomponent contains in this partition
 			std::vector<fea_io::SubcomponentInfo<LocalIndex>> subcomponent_infos;
-			for (auto& component_id : component_id_vector) {
+			for (auto& component_id : mesh.get_component_ids()) {
 				auto nodes_in_component = find_nodes_in_component<NodePtr>(elements_in_partition, component_id);
 				auto elements_in_component = find_elements_in_component(elements_in_partition, component_id);
 
 				subcomponent_infos.push_back({
 					component_id,
 					static_cast<LocalIndex>(nodes_in_component.size()),
-					static_cast<LocalIndex>(elements_in_component.size())
-					});
+					static_cast<LocalIndex>(elements_in_component.size()),
+					0});
 			}
 
 			LocalIndex total_num_connectivity_entries = 0;

@@ -26,6 +26,7 @@ namespace flex_mesh
 		typedef typename std::vector<std::unique_ptr<T>>::const_iterator ConstIterator;
 
 		MeshEntityContainer() {};
+		MeshEntityContainer(MeshEntityContainer&& other) noexcept = default;
 		~MeshEntityContainer() {};
 
 		/// Returns the size of the container
@@ -145,7 +146,7 @@ namespace flex_mesh
 		/// Destroys the current mesh and copies the other mesh.
 		Mesh& operator=(const Mesh& other) noexcept;
 		/// Destroys the current mesh and moves the other mesh to this one.
-		Mesh& operator=(Mesh&&) noexcept = default;
+		Mesh& operator=(Mesh&&) noexcept;
 
 		/// Clears the mesh object of its contents
 		void clear();
@@ -234,11 +235,12 @@ namespace flex_mesh
 		std::map<Node_ *, Node_ *> other_to_new_node_map;
 		for (auto& other_n_ptr : other.nodes_) {
 			auto new_node = std::make_unique<Node_>(*other_n_ptr);
-			this->nodes_.add(new_node);
-			other_to_new_node_map[other_n_ptr->get()] = nodes_.back();
+			this->nodes_.add(std::move(new_node));
+			other_to_new_node_map[other_n_ptr.get()] = nodes_.back();
 		}
 		for (auto& other_e_ptr : other.elements_) {
-			auto new_element = this->element_.add(std::make_unique<Element_>(*other_e_ptr));
+			auto new_element_unique = std::make_unique<Element_>(*other_e_ptr);
+			auto new_element = this->elements_.add(std::move(new_element_unique));
 			new_element->remap_element_nodes(other_to_new_node_map);
 		}
 		this->update_global_numbering();
@@ -264,12 +266,22 @@ namespace flex_mesh
 	}
 
 	template<typename Node_, typename Element_>
-	Mesh<Node_, Element_>& Mesh<Node_, Element_>::operator=(const Mesh & other) noexcept
+	inline Mesh<Node_, Element_>& Mesh<Node_, Element_>::operator=(const Mesh & other) noexcept
 	{
 		this->clear();
 		this->add_to_self(other);
 		this->mark_nodes_as_changed();
 		this->mark_elements_as_changed();
+		return *this;
+	}
+
+	template<typename Node_, typename Element_>
+	inline Mesh<Node_, Element_>& Mesh<Node_, Element_>::operator=(Mesh&& other) noexcept
+	{
+		if (this != &other)
+		{
+			this->move_to_self(other);
+		}
 		return *this;
 	}
 

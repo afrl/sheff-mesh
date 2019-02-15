@@ -44,8 +44,10 @@ namespace flex_mesh
 			current_shape_values_ = all_shape_values_[element_type_index][quad_type_index][int_order_index];
 			if (current_shape_values_.size() == 0)
 			{
-				using EigenRowType = Eigen::DenseBase<simple_math::GeneralMatrix>::RowXpr;
-				using ShapeFunctionsType = ShapeFunctions<Point, EigenRowType, simple_math::GeneralMatrix>;
+				//using EigenRowType = Eigen::DenseBase<simple_math::GeneralMatrix>::RowXpr;
+				using ShapeFunctionsType = ShapeFunctions<Point, simple_math::GeneralVector, simple_math::GeneralMatrix>;
+
+				simple_math::GeneralVector shape_values_for_quad(get_num_nodes_for_type(element_type));
 
 				current_shape_values_.resize(quadrature.n_quad_points(), get_num_nodes_for_type(element_type));
 				current_shape_derivs_.resize(quadrature.n_quad_points());
@@ -53,7 +55,8 @@ namespace flex_mesh
 				for (unsigned int qp = 0; qp < quadrature.n_quad_points(); qp++)
 				{
 					Point parametric_coord = quadrature.parametric_point(qp);
-					ShapeFunctionsType::values(element_type, parametric_coord, current_shape_values_.row(qp));
+					ShapeFunctionsType::values(element_type, parametric_coord, shape_values_for_quad);
+					current_shape_values_.row(qp) = shape_values_for_quad.transpose();
 					ShapeFunctionsType::derivatives(element_type, parametric_coord, current_shape_derivs_[qp]);
 				}
 			}

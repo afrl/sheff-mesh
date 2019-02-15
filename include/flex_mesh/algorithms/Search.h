@@ -59,7 +59,7 @@ namespace flex_mesh
 	template<typename ElementContainer>
 	std::pair<std::vector<LocalIndex>, std::vector<typename ElementContainer::value_type>> find_elements_in_component(const ElementContainer & elements, const ComponentIndex component_id)
 	{
-		using ElementPtr = ElementContainer::value_type;
+		using ElementPtr = typename ElementContainer::value_type;
 		LocalIndex count = 0;
 		std::vector<LocalIndex> relative_indices;
 		std::vector<ElementPtr> elements_in_component;

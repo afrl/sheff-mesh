@@ -30,7 +30,7 @@ namespace flex_mesh
 		/// Creates a node with all variables initialized, except the parent elements
 		Node(const GlobalIndex global_num, const Point& coord, const PartitionIndex& parent_partition) noexcept;
 		/// Copy constructor
-		Node(const Node& other) noexcept = default;
+		Node(const Node& other);
 		/// Move constructor
 		Node(Node&& other) noexcept = default;
 
@@ -168,6 +168,11 @@ namespace flex_mesh
 
 	inline Node::Node(const GlobalIndex global_num, const Point & coord, const PartitionIndex & parent_partition) noexcept
 		: global_num_(global_num), coord_(coord), parent_partition_(parent_partition)
+	{
+	}
+
+	inline Node::Node(const Node & other)
+		: global_num_(other.global_num_), coord_(other.coord_), parent_partition_(other.parent_partition_)
 	{
 	}
 

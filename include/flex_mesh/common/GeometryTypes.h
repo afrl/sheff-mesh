@@ -117,7 +117,7 @@ namespace flex_mesh
 	/// an empty vector is returned.  Will throw for unrecognized types.
 	std::vector<unsigned int> get_linearized_permutation(const ElementType& geom_type);
 	/// Returns a bool indicating if the geometry type is linear or not
-	bool is_type_linear(const ElementType& geom_type);
+	static bool is_type_linear(const ElementType& geom_type);
 
 	/// Returns the corresponding quadratic type for a given linear type
 	ElementType get_quadratic_type(const ElementType& geom_type);
@@ -402,5 +402,25 @@ namespace flex_mesh
 		else if (geom_type == ElementType::C3D16N) return 16;
 		// No match
 		else return 0;
+	}
+
+	bool is_type_linear(const ElementType & geom_type)
+	{
+		// 1D
+		if (geom_type == ElementType::L1D2N) return true;
+		// 2D
+		else if (geom_type == ElementType::T2D3N) return true;
+		else if (geom_type == ElementType::Q2D4N) return true;
+		else if (geom_type == ElementType::C2D4N) return true;
+		// 3D
+		else if (geom_type == ElementType::T3D4N) return true;
+		else if (geom_type == ElementType::P3D5N) return true;
+		else if (geom_type == ElementType::W3D6N) return true;
+		else if (geom_type == ElementType::H3D8N) return true;
+		else if (geom_type == ElementType::Q3D4N) return true;
+		else if (geom_type == ElementType::C3D8N) return true;
+
+		// No match
+		return false;
 	}
 };

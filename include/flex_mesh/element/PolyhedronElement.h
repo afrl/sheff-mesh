@@ -61,7 +61,7 @@ namespace flex_mesh
 	template<typename NodeType>
 	inline void PolyhedronElement<NodeType>::initialize(const std::vector<Connectivity<NodeType, ConnSize>>& polyhedron_faces)
 	{
-		type_ = ElementType::POLYHEDRON;
+		this->type_ = ElementType::POLYHEDRON;
 
 		std::set<NodeType*> unique_nodes;
 		for (auto& face : polyhedron_faces)

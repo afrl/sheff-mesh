@@ -29,12 +29,12 @@ namespace flex_mesh
 
 		/// Note: component ID and global number are 0 by default
 		///       use set_global_number() and set_component_id()
-		Element() noexcept;
+		Element();
 		Element(const GlobalIndex global_num,
 			const ElementType type,
 			const std::vector<NodeType *> & connectivity,
 			const LCSAssignment lcs_assignment = LCSAssignment::None) noexcept;
-		Element(const Element&) noexcept = default;
+		Element(const Element&) = default;
 		// Move constructor cannot be defaulted for MSVC, TODO implement
 		//Element(const Element&&) noexcept = default;
 		virtual ~Element() {};
@@ -167,7 +167,7 @@ namespace flex_mesh
 	/////////////////
 
 	template<typename NodeType>
-	inline Element<NodeType>::Element() noexcept
+	inline Element<NodeType>::Element()
 		: global_num_(0), component_id_(0), type_(ElementType::UNKNGEOM), lcs_assignment_(LCSAssignment::None), parent_partition_(0)
 	{
 	}
@@ -343,7 +343,7 @@ namespace flex_mesh
 	template<typename NodeType>
 	inline void Element<NodeType>::rotate_lcs(const Vector3D & axis, const double & angle)
 	{
-		Eigen::AngleAxis<FloatType> rotation(angle, axis);
+		Quaternion rotation(Eigen::AngleAxis<FloatType>(angle, axis));
 		for (auto& orient : lcs_)
 			orient += rotation;
 	}

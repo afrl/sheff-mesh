@@ -16,6 +16,6 @@ namespace flex_mesh
 	using FloatType = simple_math::FloatType;
 	using Point = simple_math::Point;
 	using Vector3D = simple_math::Vector3D;
-	using NodeVector = simple_math::NodeVector;
-	using NodeX3Matrix = simple_math::NodeX3Matrix;
+	using NodeVector = simple_math::GeneralVector;
+	using NodeX3Matrix = simple_math::GeneralMatrix;
 };

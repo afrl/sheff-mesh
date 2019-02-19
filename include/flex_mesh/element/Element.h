@@ -345,7 +345,7 @@ namespace flex_mesh
 	{
 		Quaternion rotation(Eigen::AngleAxis<FloatType>(angle, axis));
 		for (auto& orient : lcs_)
-			orient += rotation;
+			orient *= rotation;
 	}
 
 	template<typename NodeType>

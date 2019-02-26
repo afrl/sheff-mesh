@@ -52,6 +52,9 @@ namespace flex_mesh
 		const GlobalIndex& get_global_number() const;
 		void set_global_number(const GlobalIndex& global_num);
 
+		const LocalIndex& get_local_number() const;
+		void set_local_number(const LocalIndex& local_num);
+
 		const ComponentIndex& get_component_id() const;
 		void set_component_id(const ComponentIndex& component_id);
 
@@ -152,6 +155,7 @@ namespace flex_mesh
 
 	protected:
 		GlobalIndex global_num_;
+		LocalIndex local_num_;
 		ComponentIndex component_id_;
 		ElementType type_;
 		Connectivity<NodeType, ConnSize> connectivity_;
@@ -168,13 +172,13 @@ namespace flex_mesh
 
 	template<typename NodeType>
 	inline Element<NodeType>::Element()
-		: global_num_(0), component_id_(0), type_(ElementType::UNKNGEOM), lcs_assignment_(LCSAssignment::None), parent_partition_(0)
+		: global_num_(0), local_num_(0), component_id_(0), type_(ElementType::UNKNGEOM), lcs_assignment_(LCSAssignment::None), parent_partition_(0)
 	{
 	}
 
 	template<typename NodeType>
 	inline Element<NodeType>::Element(const GlobalIndex global_num, const ElementType type, const std::vector<NodeType*>& connectivity, const LCSAssignment lcs_assignment) noexcept
-		: global_num_(0), component_id_(0), parent_partition_(0)
+		: global_num_(global_num), local_num_(global_num), component_id_(0), parent_partition_(0)
 	{
 		initialize(type, connectivity, lcs_assignment);
 	}
@@ -197,6 +201,18 @@ namespace flex_mesh
 	inline void Element<NodeType>::set_global_number(const GlobalIndex & global_num)
 	{
 		global_num_ = global_num;
+	}
+
+	template<typename NodeType>
+	inline const LocalIndex & Element<NodeType>::get_local_number() const
+	{
+		return local_num_;
+	}
+
+	template<typename NodeType>
+	inline void Element<NodeType>::set_local_number(const LocalIndex & local_num)
+	{
+		local_num_;
 	}
 
 	template<typename NodeType>

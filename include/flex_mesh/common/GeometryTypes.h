@@ -115,7 +115,7 @@ namespace flex_mesh
 	/// Returns the permuation vector to go from the quadratic connectivity
 	/// to the linear connectivity.  If the type is already linear, then
 	/// an empty vector is returned.  Will throw for unrecognized types.
-	std::vector<unsigned int> get_linearized_permutation(const ElementType& geom_type);
+	static std::vector<unsigned int> get_linearized_permutation(const ElementType& geom_type) {return {}; };
 	/// Returns a bool indicating if the geometry type is linear or not
 	static bool is_type_linear(const ElementType& geom_type);
 

@@ -93,7 +93,7 @@ def process_args():
   # First, parse the options
   try:
     opts, args = getopt.gnu_getopt(sys.argv[1:], "h", ["help", "log", "release", "debug", "dir=",
-    "use-mpi=", "make-tests=", "make-dev=", "generator=", "print", "config", "build", "test", "doc", 
+    "use-mpi=", "make-tests=", "make-dev=", "use-feaio=", "generator=", "print", "config", "build", "test", "doc", 
     "clear-cache", "clean"])
 
   except getopt.GetoptError:
@@ -129,6 +129,9 @@ def process_args():
     if o in ("--make-dev"):
       if a in ("OFF", "0"):
         user_opts.make_dev="OFF"
+    if o in ("--use-feaio"):
+      if a in ("OFF", "0"):
+        user_opts.use_feaio="OFF"
     if o in ("--generator"):
       if a in ("codeblocks"):
         user_opts.generator = "CodeBlocks - Unix Makefiles"

@@ -48,8 +48,8 @@ int main()
 	a.allocate_lcs(LCSAssignment::Node);
 	assert(a.get_lcs().size() == 4);
 
-	ElementVector S;
-	ElementMatrix3D dS;
+	NodeVector S;
+	NodeX3Matrix dS;
 	a.get_shape_function_values({ 0, 0, 0 }, S);
 	a.get_shape_function_derivatives({ 0, 0, 0 }, dS);
 

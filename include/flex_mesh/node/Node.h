@@ -41,6 +41,9 @@ namespace flex_mesh
 		const Point& get_coord() const;
 		void set_coord(const Point& coord);
 
+		const GlobalIndex& get_local_number() const;
+		void set_local_number(const GlobalIndex& local_num);
+
 		const GlobalIndex& get_global_number() const;
 		void set_global_number(const GlobalIndex& global_num);
 
@@ -131,6 +134,9 @@ namespace flex_mesh
 		/// The global number of the node, which must be an unique, 0-based index with all of the nodes
 		/// forming a contiguous range from 0 to N-1, where N is the number of nodes.
 		GlobalIndex global_num_;
+		/// The local number of the node on the rank, which must be an unique, 0-based index with all
+		/// of the nodes on the rank forming a contiguous range from 0 to N-1, where N is the number of nodes.
+		GlobalIndex local_num_;
 		/// The coordinates of the node.  Assuemd to be 3D.
 		Point coord_;
 		/// It is assumed that only one partition will be responsible for each node.
@@ -152,27 +158,27 @@ namespace flex_mesh
 	/////////////////
 
 	inline Node::Node() noexcept
-		: global_num_(0), coord_({ 0, 0, 0 }), parent_partition_(0)
+		: global_num_(0), local_num_(0), coord_({ 0, 0, 0 }), parent_partition_(0)
 	{
 	}
 
 	inline Node::Node(const Point& coord) noexcept
-		: global_num_(0), coord_(coord), parent_partition_(0)
+		: global_num_(0), local_num_(0), coord_(coord), parent_partition_(0)
 	{
 	}
 
 	inline Node::Node(const GlobalIndex global_num, const Point & coord) noexcept
-		: global_num_(global_num), coord_(coord), parent_partition_(0)
+		: global_num_(global_num), local_num_(global_num), coord_(coord), parent_partition_(0)
 	{
 	}
 
 	inline Node::Node(const GlobalIndex global_num, const Point & coord, const PartitionIndex & parent_partition) noexcept
-		: global_num_(global_num), coord_(coord), parent_partition_(parent_partition)
+		: global_num_(global_num), local_num_(global_num), coord_(coord), parent_partition_(parent_partition)
 	{
 	}
 
 	inline Node::Node(const Node & other)
-		: global_num_(other.global_num_), coord_(other.coord_), parent_partition_(other.parent_partition_)
+		: global_num_(other.global_num_), local_num_(other.local_num_), coord_(other.coord_), parent_partition_(other.parent_partition_)
 	{
 	}
 
@@ -184,6 +190,16 @@ namespace flex_mesh
 	inline void Node::set_coord(const Point& coord)
 	{
 		coord_ = coord;
+	}
+
+	inline const GlobalIndex & Node::get_local_number() const
+	{
+		return local_num_;
+	}
+
+	inline void Node::set_local_number(const GlobalIndex & local_num)
+	{
+		local_num_ = local_num;
 	}
 
 	inline const GlobalIndex & Node::get_global_number() const

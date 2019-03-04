@@ -357,11 +357,13 @@ namespace flex_mesh
 		GlobalIndex current_num = 0;
 		for (auto& n_ptr : nodes_) {
 			n_ptr->set_global_number(current_num);
+			n_ptr->set_local_number(current_num);
 			current_num++;
 		}
 		current_num = 0;
 		for (auto& e_ptr : elements_) {
 			e_ptr->set_global_number(current_num);
+			e_ptr->set_local_number(current_num);
 			current_num++;
 		}
 	}

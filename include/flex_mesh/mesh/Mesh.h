@@ -275,7 +275,11 @@ namespace flex_mesh
 		MeshEntityContainer<Element_> elements_;
 		// TODO the type should be PolyhedronElement<Element_> but PolyhedronElement needs
 		// to be changed to take the base class as the template.
-		MeshEntityContainer<Element_> polyhedral_elements_;
+		//MeshEntityContainer<Element_> polyhedral_elements_;
+
+        // Groups
+        std::map<std::string, NodeGroup> node_groups_;
+        std::map<std::string, ElementGroup> element_groups_;
 	};
 
 	template<typename Node_, typename Element_>
@@ -435,13 +439,23 @@ namespace flex_mesh
         return true;
     }
 
+
+    template<typename Node_, typename Element_>
+    inline void Mesh<Node_, Element_>::add_node_to_group(const std::string & group_name, Node_ * node_ptr)
+    {
+        auto group = node_groups_.find(group_name);
+        if (group == node_groups_.end())
+            throw _UTIL_MSG_EXCEPT("Group " + group_name + " does not exist.");
+        group->second.insert(node_ptr);
+    }
+
     template<typename Node_, typename Element_>
     inline void Mesh<Node_, Element_>::add_nodes_to_group(const std::string & group_name, std::set<Node_*> node_set)
     {
         auto group = node_groups_.find(group_name);
         if (group == node_groups_.end())
             throw _UTIL_MSG_EXCEPT("Group " + group_name + " does not exist.");
-        for (auto n : nSet)
+        for (auto n : node_set)
             group->second.insert(n);
     }
 
@@ -451,7 +465,7 @@ namespace flex_mesh
         auto group = node_groups_.find(group_name);
         if (group == node_groups_.end())
             throw _UTIL_MSG_EXCEPT("Group " + group_name + " does not exist.");
-        for (auto& n : SuperClass::nodes_)
+        for (auto& n : nodes_)
             group->second.insert(n.get());
     }
 
@@ -548,7 +562,7 @@ namespace flex_mesh
         auto group = element_groups_.find(group_name);
         if (group == element_groups_.end())
             throw _UTIL_MSG_EXCEPT("Group " + group_name + " does not exist.");
-        for (auto& e : SuperClass::elements_)
+        for (auto& e : elements_)
             group->second.insert(e.get());
     }
 
@@ -567,7 +581,7 @@ namespace flex_mesh
         auto group = element_groups_.find(group_name);
         if (group == element_groups_.end()) {
             //std::cout << "Warning! Group " + group_name + " does not exist, but was requested.  Creating an empty group." << std::endl;
-            element_groups_[group_name] = std::set<ElementPtr>();
+            element_groups_[group_name] = ElementGroup();
             return element_groups_[group_name];
         }
         return group->second;
@@ -598,15 +612,6 @@ namespace flex_mesh
     inline void Mesh<Node_, Element_>::clear_element_groups()
     {
         element_groups_.clear();
-    }
-
-    template<typename Node_, typename Element_>
-    inline void Mesh<Node_, Element_>::add_node_to_group(const std::string & group_name, Node_ * node_ptr)
-    {
-        auto group = node_groups_.find(group_name);
-        if (group == node_groups_.end())
-            throw _UTIL_MSG_EXCEPT("Group " + group_name + " does not exist.");
-        group->second.insert(node_ptr);
     }
 
 	template<typename Node_, typename Element_>

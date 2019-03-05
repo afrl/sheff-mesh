@@ -523,7 +523,7 @@ namespace flex_mesh
         auto group = element_groups_.find(group_name);
         if (group != element_groups_.end())
             return false;
-        element_groups_[group_name] = std::set<ElementPtr>();
+        element_groups_[group_name] = ElementGroup();
         return true;
     }
 
@@ -552,7 +552,7 @@ namespace flex_mesh
         auto group = element_groups_.find(group_name);
         if (group == element_groups_.end())
             throw _UTIL_MSG_EXCEPT("Group " + group_name + " does not exist.");
-        for (auto e_ptr : e_set)
+        for (auto e_ptr : e_ptr_set)
             group->second.insert(e_ptr);
     }
 

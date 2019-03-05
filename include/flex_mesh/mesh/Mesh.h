@@ -125,6 +125,12 @@ namespace flex_mesh
 	public:
 		using NodeTypename = Node_;
 		using ElementTypename = Element_;
+        using NodeGroup = std::set<Node_ *>;
+        using NodeGroupMap = std::map<std::string, NodeGroup>;
+        using NodeGroupMapIt = typename NodeGroupMap::iterator;
+        using ElementGroup = std::set<Element_>;
+        using ElementGroupMap = std::map<std::string, ElementGroup>;
+        using ElementGroupMapIt = typename std::map<std::string, ElementGroup>::iterator;
 
 		//////////////////////////
 		// Constructors and     //
@@ -184,6 +190,62 @@ namespace flex_mesh
 		/// Note: only includes elements in this mesh object
 		std::vector<Element_ *> get_component(ComponentIndex component_id) const;
 
+        //////////////////////
+        // Grouping methods //
+        //////////////////////
+
+        // Node Groups
+
+        /// Create a new node group.  If it already exists, then it will do nothing.  Returns if one is created.
+        bool create_node_group(const std::string& group_name);
+        /// Gets rid of an node group.  Returns true if there was a group that was deleted
+        bool remove_node_group(const std::string& group_name);
+        /// Adds a single node to a group.  Will throw if the group doesn't exist.
+        void add_node_to_group(const std::string& group_name, Node_ * node_ptr);
+        /// Adds a set of nodes to a group.  Will throw if the group doesn't exist.
+        void add_nodes_to_group(const std::string& group_name, std::set<Node_ *> node_set);
+        /// Adds all the nodes in the mesh to a group.  Will throw if the group doesn't exist.
+        void add_all_nodes_to_group(const std::string& group_name);
+        /// Gets rid of an node group.  Will throw if the group doesn't exist.
+        void remove_node_from_group(const std::string& group_name, Node_ * node_ptr);
+        /// Returns the node by const reference.  It can be looped over and the nodes can be modified
+        /// but the set itself cannot be modified.
+        /// Because in distributed runs, some groups may or may not exist, this method will not throw
+        /// if the group does not exist.  But it will output a warning and create an empty group.
+        const NodeGroup& get_node_group(const std::string& group_name);
+        /// Returns the node group names
+        const std::vector<std::string> get_node_group_names();
+        /// Returns the iterator of the full map of groups, which is usually useful for I/O
+        NodeGroupMapIt node_groups_begin();
+        NodeGroupMapIt node_groups_end();
+        /// Clears all node groups
+        void clear_node_groups();
+
+        // Element Groups
+
+        /// Create a new element group.  If it already exists, it does nothing.  Returns if one was created.
+        bool create_element_group(const std::string& group_name);
+        /// Gets rid of an element group.  Returns true if there was a group that was deleted
+        bool remove_element_group(const std::string& group_name);
+        /// Adds a single element to a group.  Will throw if the group doesn't exist.
+        void add_element_to_group(const std::string& group_name, Element_ * e_ptr);
+        /// Adds a set of elements to a group.  Will throw if the group doesn't exist.
+        void add_elements_to_group(const std::string& group_name, const std::set<Element_ *>& e_ptr_set);
+        /// Adds all the elements in the mesh to a group.  Will throw if the group doesn't exist.
+        void add_all_elements_to_group(const std::string& group_name);
+        /// Gets rid of an element group.  Will throw if the group doesn't exist.
+        void remove_element_from_group(const std::string& group_name, Element_ * e_ptr);
+        /// Returns the element by const reference.  It can be looped over and the elements can be modified
+        /// but the set itself cannot be modified.
+        const ElementGroup& get_element_group(const std::string& group_name);
+        /// Returns the node group names
+        const std::vector<std::string> get_element_group_names();
+        /// Returns the iterator of the full map of groups, which is usually useful for I/O
+        ElementGroupMapIt element_groups_begin();
+        ElementGroupMapIt element_groups_end();
+
+        void clear_element_groups();
+
 		///////////
 		// Misc. //
 		///////////
@@ -192,7 +254,9 @@ namespace flex_mesh
 		/// the global numbering appropriately.  This should be called after
 		/// an operation of adding nodes or elements to the mesh.  It is not
 		/// called automatically for performance reasons.
-		void update_global_numbering();
+        /// \param set_local_number_to_global - indicates if the local node/element numbers
+        ///     should be set to the same value as the global numbers.
+		void update_global_numbering(const bool set_local_number_to_global = true);
 
 		/// Manually marks the nodes container as changed, which will force updates to
 		/// subcomponent lists or KD trees when they are requested.
@@ -351,18 +415,214 @@ namespace flex_mesh
 		return elements_in_component;
 	}
 
+    template<typename Node_, typename Element_>
+    inline bool Mesh<Node_, Element_>::create_node_group(const std::string & group_name)
+    {
+        auto group = node_groups_.find(group_name);
+        if (group != node_groups_.end())
+            return false;
+        node_groups_[group_name] = NodeGroup();
+        return true;
+    }
+
+    template<typename Node_, typename Element_>
+    inline bool Mesh<Node_, Element_>::remove_node_group(const std::string & group_name)
+    {
+        auto group = node_groups_.find(group_name);
+        if (group == node_groups_.end())
+            return false;
+        node_groups_.erase(group);
+        return true;
+    }
+
+    template<typename Node_, typename Element_>
+    inline void Mesh<Node_, Element_>::add_nodes_to_group(const std::string & group_name, std::set<Node_*> node_set)
+    {
+        auto group = node_groups_.find(group_name);
+        if (group == node_groups_.end())
+            throw _UTIL_MSG_EXCEPT("Group " + group_name + " does not exist.");
+        for (auto n : nSet)
+            group->second.insert(n);
+    }
+
+    template<typename Node_, typename Element_>
+    inline void Mesh<Node_, Element_>::add_all_nodes_to_group(const std::string & group_name)
+    {
+        auto group = node_groups_.find(group_name);
+        if (group == node_groups_.end())
+            throw _UTIL_MSG_EXCEPT("Group " + group_name + " does not exist.");
+        for (auto& n : SuperClass::nodes_)
+            group->second.insert(n.get());
+    }
+
+    template<typename Node_, typename Element_>
+    inline void Mesh<Node_, Element_>::remove_node_from_group(const std::string & group_name, Node_ * node_ptr)
+    {
+        auto group = node_groups_.find(group_name);
+        if (group == node_groups_.end())
+            throw _UTIL_MSG_EXCEPT("Group " + group_name + " does not exist.");
+        group->second.erase(node_ptr);
+    }
+
+    template<typename Node_, typename Element_>
+    inline const typename Mesh<Node_, Element_>::NodeGroup & Mesh<Node_, Element_>::get_node_group(const std::string & group_name)
+    {
+        auto group = node_groups_.find(group_name);
+        if (group == node_groups_.end()) {
+            //std::cout << "Warning! Group " + group_name + " does not exist, but was requested.  Creating an empty group." << std::endl;
+            node_groups_[group_name] = NodeGroup();
+            return node_groups_[group_name];
+        }
+        return group->second;
+    }
+
+    template<typename Node_, typename Element_>
+    inline const std::vector<std::string> Mesh<Node_, Element_>::get_node_group_names()
+    {
+        std::vector<std::string> names;
+        for (auto pair : node_groups_)
+            names.push_back(pair.first);
+        return names;
+    }
+
+    template<typename Node_, typename Element_>
+    inline typename Mesh<Node_, Element_>::NodeGroupMapIt Mesh<Node_, Element_>::node_groups_begin()
+    {
+        return node_groups_.begin();
+    }
+
+    template<typename Node_, typename Element_>
+    inline typename Mesh<Node_, Element_>::NodeGroupMapIt Mesh<Node_, Element_>::node_groups_end()
+    {
+        return node_groups_.end();
+    }
+
+    template<typename Node_, typename Element_>
+    inline void Mesh<Node_, Element_>::clear_node_groups()
+    {
+        node_groups_.clear();
+    }
+
+    template<typename Node_, typename Element_>
+    inline bool Mesh<Node_, Element_>::create_element_group(const std::string & group_name)
+    {
+        auto group = element_groups_.find(group_name);
+        if (group != element_groups_.end())
+            return false;
+        element_groups_[group_name] = std::set<ElementPtr>();
+        return true;
+    }
+
+    template<typename Node_, typename Element_>
+    inline bool Mesh<Node_, Element_>::remove_element_group(const std::string & group_name)
+    {
+        auto group = element_groups_.find(group_name);
+        if (group == element_groups_.end())
+            return false;
+        element_groups_.erase(group);
+        return true;
+    }
+
+    template<typename Node_, typename Element_>
+    inline void Mesh<Node_, Element_>::add_element_to_group(const std::string & group_name, Element_ * e_ptr)
+    {
+        auto group = element_groups_.find(group_name);
+        if (group == element_groups_.end())
+            throw _UTIL_MSG_EXCEPT("Group " + group_name + " does not exist.");
+        group->second.insert(e_ptr);
+    }
+
+    template<typename Node_, typename Element_>
+    inline void Mesh<Node_, Element_>::add_elements_to_group(const std::string & group_name, const std::set<Element_*>& e_ptr_set)
+    {
+        auto group = element_groups_.find(group_name);
+        if (group == element_groups_.end())
+            throw _UTIL_MSG_EXCEPT("Group " + group_name + " does not exist.");
+        for (auto e_ptr : e_set)
+            group->second.insert(e_ptr);
+    }
+
+    template<typename Node_, typename Element_>
+    inline void Mesh<Node_, Element_>::add_all_elements_to_group(const std::string & group_name)
+    {
+        auto group = element_groups_.find(group_name);
+        if (group == element_groups_.end())
+            throw _UTIL_MSG_EXCEPT("Group " + group_name + " does not exist.");
+        for (auto& e : SuperClass::elements_)
+            group->second.insert(e.get());
+    }
+
+    template<typename Node_, typename Element_>
+    inline void Mesh<Node_, Element_>::remove_element_from_group(const std::string & group_name, Element_ * e_ptr)
+    {
+        auto group = element_groups_.find(group_name);
+        if (group == element_groups_.end())
+            throw _UTIL_MSG_EXCEPT("Group " + group_name + " does not exist.");
+        group->second.erase(e_ptr);
+    }
+
+    template<typename Node_, typename Element_>
+    inline const typename Mesh<Node_, Element_>::ElementGroup & Mesh<Node_, Element_>::get_element_group(const std::string & group_name)
+    {
+        auto group = element_groups_.find(group_name);
+        if (group == element_groups_.end()) {
+            //std::cout << "Warning! Group " + group_name + " does not exist, but was requested.  Creating an empty group." << std::endl;
+            element_groups_[group_name] = std::set<ElementPtr>();
+            return element_groups_[group_name];
+        }
+        return group->second;
+    }
+
+    template<typename Node_, typename Element_>
+    inline const std::vector<std::string> Mesh<Node_, Element_>::get_element_group_names()
+    {
+        std::vector<std::string> names;
+        for (auto pair : element_groups_)
+            names.push_back(pair.first);
+        return names;
+    }
+
+    template<typename Node_, typename Element_>
+    inline typename Mesh<Node_, Element_>::ElementGroupMapIt Mesh<Node_, Element_>::element_groups_begin()
+    {
+        return element_groups_.begin();
+    }
+
+    template<typename Node_, typename Element_>
+    inline typename Mesh<Node_, Element_>::ElementGroupMapIt Mesh<Node_, Element_>::element_groups_end()
+    {
+        return element_groups_.end();
+    }
+
+    template<typename Node_, typename Element_>
+    inline void Mesh<Node_, Element_>::clear_element_groups()
+    {
+        element_groups_.clear();
+    }
+
+    template<typename Node_, typename Element_>
+    inline void Mesh<Node_, Element_>::add_node_to_group(const std::string & group_name, Node_ * node_ptr)
+    {
+        auto group = node_groups_.find(group_name);
+        if (group == node_groups_.end())
+            throw _UTIL_MSG_EXCEPT("Group " + group_name + " does not exist.");
+        group->second.insert(node_ptr);
+    }
+
 	template<typename Node_, typename Element_>
-	inline void Mesh<Node_, Element_>::update_global_numbering()
+	inline void Mesh<Node_, Element_>::update_global_numbering(const bool set_local_number_to_global)
 	{
 		GlobalIndex current_num = 0;
 		for (auto& n_ptr : nodes_) {
 			n_ptr->set_global_number(current_num);
-			n_ptr->set_local_number(current_num);
+            if (set_local_number_to_global)
+			    n_ptr->set_local_number(current_num);
 			current_num++;
 		}
 		current_num = 0;
 		for (auto& e_ptr : elements_) {
 			e_ptr->set_global_number(current_num);
+            if (set_local_number_to_global)
 			e_ptr->set_local_number(current_num);
 			current_num++;
 		}

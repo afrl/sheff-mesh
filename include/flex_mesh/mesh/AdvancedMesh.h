@@ -1,5 +1,5 @@
 #pragma once
-
+/*
 #include "PrimativeMesh.h"
 #include "nanoflann/nanoflannHelpers.h"
 
@@ -54,11 +54,11 @@ namespace BetaMesh
 		typedef nanoflann::KDTreeSingleIndexAdaptor<
 			nanoflann::L2_Simple_Adaptor<double, KDTreeAdapter<NodePtr, std::vector<double>> >,
 			KDTreeAdapter<NodePtr, std::vector<double>>,
-			3 /* dimension */> NodeKDTreeType;
+			3 > NodeKDTreeType; // dimension
         typedef nanoflann::KDTreeSingleIndexAdaptor<
             nanoflann::L2_Simple_Adaptor<double, KDTreeAdapter<ElementPtr, std::vector<double>> >,
             KDTreeAdapter<ElementPtr, std::vector<double>>,
-            3 /* dimension */> ElementKDTreeType;
+            3  > ElementKDTreeType; // dimension
 
 	protected:
 		// These vectors may or may not contain anything depending on storing_vectors_
@@ -433,7 +433,6 @@ namespace BetaMesh
                 node_parent_elements_[newNode].push_front(p);
         };
 
-        /* This is for a more efficient method of parent lookups, but it needs testing
 		/// Updates the parent elements for each node (clears the old list completely)
 		/// \attention { This will not be maintained during add or removal of nodes, so the algorithm using this
 		/// functionality is responsible for making sure updates are called appropriately. }
@@ -456,7 +455,6 @@ namespace BetaMesh
 
 		/// Just indicates if the current node parents map is up to date
 		bool is_parents_up_to_date() { return parents_up_to_date_; };
-        */
 
         //////////////////////
 		// Grouping methods //
@@ -727,3 +725,4 @@ namespace BetaMesh
         OtherMesh.clear();
     }
 };
+*/

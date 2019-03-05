@@ -40,6 +40,9 @@ namespace flex_mesh
 
 		const Point& get_coord() const;
 		void set_coord(const Point& coord);
+        const double& x() const;
+        const double& y() const;
+        const double& z() const;
 
 		const GlobalIndex& get_local_number() const;
 		void set_local_number(const GlobalIndex& local_num);
@@ -191,6 +194,21 @@ namespace flex_mesh
 	{
 		coord_ = coord;
 	}
+
+    inline const double & Node::x() const
+    {
+        return coord_[0];
+    }
+
+    inline const double & Node::y() const
+    {
+        return coord_[1];
+    }
+
+    inline const double & Node::z() const
+    {
+        return coord_[2];
+    }
 
 	inline const GlobalIndex & Node::get_local_number() const
 	{

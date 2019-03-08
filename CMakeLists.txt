@@ -8,6 +8,10 @@ option(FLEXMESH_BuildDev "Build the project in the dev folder. (intended for deb
 option(FLEXMESH_BuildTests "Build the unit tests." ON)
 option(FLEXMESH_USE_FEAIO "Indicates if the build will support the fea_io file format, requiring the library." ON)
 
+# For debugging, print generator, compiler, and options
+message(STATUS "Gen: ${CMAKE_GENERATOR}, CXX: ${CMAKE_CXX_COMPILER_ID}, Mode: ${CMAKE_BUILD_TYPE}")
+message(STATUS "Dev: ${FLEXMESH_BuildDev}, Tests: ${FLEXMESH_BuildTests}, FEAIO: ${FLEXMESH_USE_FEAIO}")
+
 ##################
 # Checking input #
 ##################

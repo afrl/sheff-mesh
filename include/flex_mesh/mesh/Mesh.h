@@ -22,8 +22,8 @@ namespace flex_mesh
 	class MeshEntityContainer
 	{
 	public:
-		typedef typename std::vector<std::unique_ptr<T>>::iterator Iterator;
-		typedef typename std::vector<std::unique_ptr<T>>::const_iterator ConstIterator;
+		using Iterator = typename std::vector<std::unique_ptr<T>>::iterator;
+		using ConstIterator = typename std::vector<std::unique_ptr<T>>::const_iterator;
 
 		MeshEntityContainer() {};
 		MeshEntityContainer(MeshEntityContainer&& other) noexcept = default;
@@ -165,7 +165,7 @@ namespace flex_mesh
 		MeshEntityContainer<Node_>& nodes();
 		/// Access element container by const reference
 		const MeshEntityContainer<Node_>& nodes() const;
-        /// Add a node via the coordinate
+        /// Add a node via the coordinate and return a non-owning pointer to it
 		Node_ * add_node_by_coord(const Point& coord);
 		/// Set the tolerance used for comparisons between node coordinates
 		/// Note: tolerance is common to all Mesh instances if they are templated
@@ -269,7 +269,7 @@ namespace flex_mesh
 		/// get a raw pointer from a method and then change it, this should be called.
 		void mark_elements_as_changed();
 
-	private:
+	protected:
 		// Containers
 		MeshEntityContainer<Node_> nodes_;
 		MeshEntityContainer<Element_> elements_;

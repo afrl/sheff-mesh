@@ -44,8 +44,8 @@ namespace flex_mesh
         const double& y() const;
         const double& z() const;
 
-		const GlobalIndex& get_local_number() const;
-		void set_local_number(const GlobalIndex& local_num);
+		const LocalIndex& get_local_number() const;
+		void set_local_number(const LocalIndex& local_num);
 
 		const GlobalIndex& get_global_number() const;
 		void set_global_number(const GlobalIndex& global_num);
@@ -139,7 +139,7 @@ namespace flex_mesh
 		GlobalIndex global_num_;
 		/// The local number of the node on the rank, which must be an unique, 0-based index with all
 		/// of the nodes on the rank forming a contiguous range from 0 to N-1, where N is the number of nodes.
-		GlobalIndex local_num_;
+        LocalIndex local_num_;
 		/// The coordinates of the node.  Assuemd to be 3D.
 		Point coord_;
 		/// It is assumed that only one partition will be responsible for each node.
@@ -210,12 +210,12 @@ namespace flex_mesh
         return coord_[2];
     }
 
-	inline const GlobalIndex & Node::get_local_number() const
+	inline const LocalIndex & Node::get_local_number() const
 	{
 		return local_num_;
 	}
 
-	inline void Node::set_local_number(const GlobalIndex & local_num)
+	inline void Node::set_local_number(const LocalIndex & local_num)
 	{
 		local_num_ = local_num;
 	}

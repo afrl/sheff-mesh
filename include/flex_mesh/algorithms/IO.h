@@ -520,7 +520,8 @@ namespace flex_mesh
 		// Populate node information
 		LocalIndex local_num = 0;
 		std::map<GlobalIndex, LocalIndex> global_to_local_node_num_map;
-		for (auto& n_ptr : nodes_in_partition) {
+		for (auto& n_ptr : nodes_in_partition)
+        {
 			partition.node_global_ids.push_back(n_ptr->get_global_number());
 			partition.node_parent_partitions.push_back(n_ptr->get_parent_partition());
 			for (auto i = 0; i < 3; i++)
@@ -531,7 +532,8 @@ namespace flex_mesh
 		}
 
 		// Populate element information
-		for (auto& e_ptr : elements_in_partition) {
+		for (auto& e_ptr : elements_in_partition)
+        {
 			partition.element_global_ids.push_back(e_ptr->get_global_number());
 			partition.element_parent_partitions.push_back(e_ptr->get_parent_partition());
 			partition.element_types.push_back(convert_element_type(e_ptr->get_type()));
@@ -544,12 +546,15 @@ namespace flex_mesh
 
 		// Find what components are in this partition
 		std::set<ComponentIndex> component_ids_in_partition;
-		for (auto& e_ptr : elements_in_partition)
-			component_ids_in_partition.insert(e_ptr->get_component_id());
+        for (auto& e_ptr : elements_in_partition)
+        {
+            component_ids_in_partition.insert(e_ptr->get_component_id());
+        }
 
 		// Figure out what each subcomponent contains in this partition
 		std::vector<fea_io::Subcomponent<LocalIndex, FloatType>> subcomponents;
-		for (auto& component_id : component_ids_in_partition) {
+		for (auto& component_id : component_ids_in_partition)
+        {
 			auto nodes_in_subcomponent_pair = find_nodes_in_component<NodePtr>(elements_in_partition, component_id);
 			auto elements_in_subcomponent_pair = find_elements_in_component(elements_in_partition, component_id);
 			std::vector<NodePtr>& nodes_in_subcomponent = nodes_in_subcomponent_pair.second;
@@ -558,15 +563,19 @@ namespace flex_mesh
 			fea_io::Subcomponent<LocalIndex, FloatType> subcomponent;
 			subcomponent.component_id = component_id;
 
-			for (auto& i : nodes_in_subcomponent_pair.first) {
+			for (auto& i : nodes_in_subcomponent_pair.first)
+            {
 				subcomponent.nodes_in_subcomponent.push_back(i);
 			}
-			for (auto& i : elements_in_subcomponent_pair.first) {
+			for (auto& i : elements_in_subcomponent_pair.first)
+            {
 				subcomponent.elements_in_subcomponent.push_back(i);
 			}
-			for (auto& e_ptr : elements_in_subcomponent) {
+			for (auto& e_ptr : elements_in_subcomponent)
+            {
 				auto& lcs = e_ptr->get_lcs();
-				for (auto i = 0; i < lcs.size(); i++) {
+				for (auto i = 0; i < lcs.size(); i++)
+                {
 					const Quaternion& quatern = lcs[i];
 					subcomponent.lcs_parameters_in_subcomponent.push_back(quatern.w());
 					subcomponent.lcs_parameters_in_subcomponent.push_back(quatern.x());

@@ -7,6 +7,7 @@
 #include "flex_mesh/node/Node.h"
 #include "flex_mesh/element/Element.h"
 
+#include <functional>
 #include <utility>
 #include <vector>
 
@@ -16,19 +17,32 @@ namespace flex_mesh
 	/// elements with the given component id.
 	/// Returns a pair of vectors.  The first in the pair is the indices relative to the
 	/// given elements container, and the second in the pair is the pointers.
-	template<typename ElementContainer>
-	static std::pair<std::vector<LocalIndex>, std::vector<typename ElementContainer::value_type>> find_elements_in_component(
-		const ElementContainer& elements,
+	template<typename Element_, typename ElementPtrContainer>
+	static std::pair<std::vector<LocalIndex>, std::vector<Element_ *>>
+        find_elements_in_component(
+		const ElementPtrContainer& elements,
 		const ComponentIndex component_id);
 
 	/// Given a container of node pointers, this method will find all of the
 	/// nodes that appear in an node with the given component id.
 	/// Returns a pair of vectors.  The first in the pair is the indices relative to the
 	/// given nodes container, and the second in the pair is the pointers.
-	template<typename NodePtr, typename ElementContainer>
-	static std::pair<std::vector<LocalIndex>, std::vector<NodePtr>> find_nodes_in_component(
-		const ElementContainer& elements,
+	template<typename Node_, typename ElementPtrContainer>
+	static std::pair<std::vector<LocalIndex>, std::vector<Node_ *>>
+        find_nodes_in_component(
+		const ElementPtrContainer& elements,
 		const ComponentIndex component_id);
+
+    /// Returns the set of component ids that are referenced in the elements provided.
+    template<typename ElementContainer>
+    static std::set<ComponentIndex> get_component_ids(const ElementContainer& elements);
+
+    /// Returns a pair with the first being the number of nodes in the component and
+    /// the second being the number of elements in the component.
+    template<typename Node_, typename ElementContainer>
+    static std::pair<LocalIndex, LocalIndex> get_n_nodes_and_elements_in_component(
+        const ElementContainer& elements,
+        const ComponentIndex component_id);
 
 	/// Returns the minimum coordinate (minimum x, minimum, y, minimum z) based
 	/// on a collectino of node pointers.
@@ -56,27 +70,28 @@ namespace flex_mesh
 	// Definitions //
 	/////////////////
 
-	template<typename ElementContainer>
-	std::pair<std::vector<LocalIndex>, std::vector<typename ElementContainer::value_type>> find_elements_in_component(const ElementContainer & elements, const ComponentIndex component_id)
+	template<typename Element_, typename ElementPtrContainer>
+    std::pair<std::vector<LocalIndex>, std::vector<Element_ *>>
+        find_elements_in_component(const ElementPtrContainer & elements, const ComponentIndex component_id)
 	{
-		using ElementPtr = typename ElementContainer::value_type;
 		LocalIndex count = 0;
 		std::vector<LocalIndex> relative_indices;
-		std::vector<ElementPtr> elements_in_component;
+		std::vector<Element_ *> elements_in_component;
 		for (auto& e_ptr : elements) {
 			if (e_ptr->get_component_id() == component_id) {
 				relative_indices.push_back(count);
-				elements_in_component.push_back(e_ptr);
+				elements_in_component.push_back(&(*e_ptr));
 			}
 			count++;
 		}
 		return { relative_indices, elements_in_component };
 	}
 
-	template<typename NodePtr, typename ElementContainer>
-	std::pair<std::vector<LocalIndex>, std::vector<NodePtr>> find_nodes_in_component(const ElementContainer & elements, const ComponentIndex component_id)
+	template<typename Node_, typename ElementPtrContainer>
+    std::pair<std::vector<LocalIndex>, std::vector<Node_ *>>
+        find_nodes_in_component(const ElementPtrContainer & elements, const ComponentIndex component_id)
 	{
-		std::set<std::pair<LocalIndex, NodePtr>> nodes_in_component_set;
+		std::set<std::pair<LocalIndex, Node_ *>> nodes_in_component_set;
 		LocalIndex count = 0;
 		for (auto& e_ptr : elements) {
 			if (e_ptr->get_component_id() == component_id) {
@@ -87,13 +102,40 @@ namespace flex_mesh
 			count++;
 		}
 		std::vector<LocalIndex> relative_indices;
-		std::vector<NodePtr> nodes_in_component;
+        std::vector<Node_ *> nodes_in_component;
 		for (auto& pair : nodes_in_component_set) {
 			relative_indices.push_back(pair.first);
-			nodes_in_component.push_back(pair.second);
+			nodes_in_component.push_back(&(*pair.second));
 		}
 		return { relative_indices, nodes_in_component };
 	}
+
+    template<typename ElementContainer>
+    std::set<ComponentIndex> get_component_ids(const ElementContainer & elements)
+    {
+        std::set<ComponentIndex> components_set;
+        for (auto& e_ptr : elements)
+        {
+            components_set.insert(e_ptr->get_component_id());
+        }
+        return components_set;
+    }
+
+    template<typename Node_, typename ElementContainer>
+    std::pair<LocalIndex, LocalIndex> get_n_nodes_and_elements_in_component(const ElementContainer & elements, const ComponentIndex component_id)
+    {
+        std::set<Node_ *> nodes_in_component_set;
+		LocalIndex n_elements_in_component = 0;
+		for (auto& e_ptr : elements) {
+			if (e_ptr->get_component_id() == component_id) {
+				for (auto& n_ptr : *e_ptr) {
+					nodes_in_component_set.insert(n_ptr);
+				}
+                n_elements_in_component++;
+			}
+		}
+		return { static_cast<LocalIndex>(nodes_in_component_set.size()), n_elements_in_component };
+    }
 
 	template<typename NodeContainer>
 	std::array<FloatType, 3> min_coord(const NodeContainer & nodes)

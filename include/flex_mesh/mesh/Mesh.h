@@ -51,6 +51,11 @@ namespace flex_mesh
 		T * const front() const { return  !objects_.empty() ? objects_.front().get() : nullptr; }
 		/// Returns a raw pointer to the last object added
 		T * const back() const { return !objects_.empty() ? objects_.back().get() : nullptr; }
+        /// Access a raw pointer to an object by index
+        T * const operator[] (std::size_t index) const
+        {
+            return objects_[index].get();
+        }
 		/// Add an object to the container
 		/// Returns a raw pointer to that object
 #ifndef SWIG

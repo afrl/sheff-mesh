@@ -50,9 +50,6 @@ namespace flex_mesh
 		const GlobalIndex& get_global_number() const;
 		void set_global_number(const GlobalIndex& global_num);
 
-		const PartitionIndex& get_parent_partition() const;
-		void set_parent_partition(const PartitionIndex& parent_partition);
-
 		/////////////////
 		// Eigen casts //
 		/////////////////
@@ -147,13 +144,6 @@ namespace flex_mesh
 		/// element connectivity and ghost elements.  A FEA code using this library may or may
 		/// not actually use this information.
 		PartitionIndex parent_partition_;
-
-		/// The mesh class will be responsible for using this property, but since the
-		/// NodeTopology class cannot know what type of element will contain it, the parents
-		/// will be stored as a vector of void pointers.  The mesh class will allocate and cast them.
-		/// DO NOT mess with the pointers outside of the mesh class.
-		/// AND NEVER delete these pointers.
-		std::unique_ptr<std::vector<void*>> parent_elements_;
 	};
 
 	/////////////////
@@ -228,16 +218,6 @@ namespace flex_mesh
 	inline void Node::set_global_number(const GlobalIndex & global_num)
 	{
 		global_num_ = global_num;
-	}
-
-	inline const PartitionIndex & Node::get_parent_partition() const
-	{
-		return parent_partition_;
-	}
-
-	inline void Node::set_parent_partition(const PartitionIndex & parent_partition)
-	{
-		parent_partition_ = parent_partition;
 	}
 
 	inline Eigen::Map<Eigen::Vector2d> Node::as_eigen_vec2d()
@@ -322,16 +302,6 @@ namespace flex_mesh
 	{
 		static double compare_tol_;
 		return compare_tol_;
-	}
-
-	inline void Node::reset_parents()
-	{
-		parent_elements_ = nullptr;
-	}
-
-	inline std::vector<void*> const * const Node::get_parent_elements() const
-	{
-		return parent_elements_.get();
 	}
 
 	template<typename ElementType>

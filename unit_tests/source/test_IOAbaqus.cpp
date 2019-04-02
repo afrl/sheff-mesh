@@ -25,7 +25,7 @@ int main()
 	assert(mesh.nodes().size() == 5724);
 	assert(mesh.elements().size() == 3596);
 	
-	FEAIOInterface<MeshType>::write(mesh, "BarWithHole", "BarWithHole");
+	FEAIOInterface<MeshType>::write(mesh, "./", "BarWithHole", "BarWithHole");
 
 	return 0;
 }

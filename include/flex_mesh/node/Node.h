@@ -50,6 +50,9 @@ namespace flex_mesh
 		const GlobalIndex& get_global_number() const;
 		void set_global_number(const GlobalIndex& global_num);
 
+        const PartitionIndex& get_parent_partition() const;
+        void set_parent_partition(const PartitionIndex& parent_partition);
+
 		/////////////////
 		// Eigen casts //
 		/////////////////
@@ -114,21 +117,6 @@ namespace flex_mesh
 		static void set_compare_tolerance(const double& tol);
 		/// Sets the tolerance used for > and < operators within the node class
 		static double get_compare_tolerance();
-
-		////////////////////////////
-		// Methods for mesh class //
-		////////////////////////////
-
-		/// Add a parent element to the vector of parents (which are internally stored as void*)
-		template<typename ElementType>
-		void add_parent_element(ElementType* elem);
-		/// Remove a parent element to the vector of parents (which are internally stored as void*)
-		template<typename ElementType>
-		void remove_parent_element(ElementType* elem);
-		/// Reset the partent list to contain nothing
-		void reset_parents();
-		/// Get the list of parent elements, though it must cast to the correct types
-		std::vector<void*> const * const get_parent_elements() const;
 
 	protected:
 		/// The global number of the node, which must be an unique, 0-based index with all of the nodes
@@ -220,6 +208,16 @@ namespace flex_mesh
 		global_num_ = global_num;
 	}
 
+    inline const PartitionIndex & Node::get_parent_partition() const
+    {
+        return parent_partition_;
+    }
+
+    inline void Node::set_parent_partition(const PartitionIndex & parent_partition)
+    {
+        parent_partition_ = parent_partition;
+    }
+
 	inline Eigen::Map<Eigen::Vector2d> Node::as_eigen_vec2d()
 	{
 		return Eigen::Map<Eigen::Vector2d>(&coord_[0], 2);
@@ -302,28 +300,5 @@ namespace flex_mesh
 	{
 		static double compare_tol_;
 		return compare_tol_;
-	}
-
-	template<typename ElementType>
-	inline void Node::add_parent_element(ElementType * elem)
-	{
-		if (parent_elements_ == nullptr)
-			parent_elements_ = std::make_unique<std::vector<void*>>();
-
-		parent_elements_->push_back(static_cast<void*>(elem));
-	}
-
-	template<typename ElementType>
-	inline void Node::remove_parent_element(ElementType * elem)
-	{
-		if (parent_elements_ == nullptr)
-			return;
-
-		for (auto i = 0; i < parent_elements_->size(); i++) {
-			if ((*parent_elements_)[i] == elem) {
-				(*parent_elements_)[i] = parent_elements_->back();
-				parent_elements_->resize(parent_elements_->size() - 1);
-			}
-		}
 	}
 };

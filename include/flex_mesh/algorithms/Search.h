@@ -9,6 +9,7 @@
 
 #include <functional>
 #include <utility>
+#include <unordered_set>
 #include <vector>
 
 namespace flex_mesh
@@ -91,21 +92,26 @@ namespace flex_mesh
     std::pair<std::vector<LocalIndex>, std::vector<Node_ *>>
         find_nodes_in_component(const ElementPtrContainer & elements, const ComponentIndex component_id)
 	{
-		std::set<std::pair<LocalIndex, Node_ *>> nodes_in_component_set;
-		LocalIndex count = 0;
-		for (auto& e_ptr : elements) {
-			if (e_ptr->get_component_id() == component_id) {
-				for (auto& n_ptr : *e_ptr) {
-					nodes_in_component_set.insert({ count, n_ptr });
+		std::unordered_set<Node_ *> nodes_in_component_set;
+		for (auto& e_ptr : elements)
+        {
+			if (e_ptr->get_component_id() == component_id)
+            {
+				for (auto& n_ptr : *e_ptr)
+                {
+					nodes_in_component_set.insert(n_ptr);
 				}
 			}
-			count++;
 		}
+
 		std::vector<LocalIndex> relative_indices;
         std::vector<Node_ *> nodes_in_component;
-		for (auto& pair : nodes_in_component_set) {
-			relative_indices.push_back(pair.first);
-			nodes_in_component.push_back(&(*pair.second));
+        LocalIndex count = 0;
+		for (auto& n_ptr : nodes_in_component_set)
+        {
+			relative_indices.push_back(count);
+			nodes_in_component.push_back(n_ptr);
+            count++;
 		}
 		return { relative_indices, nodes_in_component };
 	}

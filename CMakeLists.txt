@@ -78,7 +78,8 @@ endif()
     
 # Build tests
 if(FLEXMESH_BuildTests)
-	enable_testing()
+    include(CTest)
+    enable_testing()
     add_subdirectory(unit_tests)
 endif()
 

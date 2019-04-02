@@ -193,9 +193,22 @@ namespace flex_mesh
 	{
 		// Get the number of partitions first
 		std::set<PartitionIndex> partitions;
-		for (auto& n_ptr : mesh.nodes())
-			partitions.insert(n_ptr->get_parent_partition());
-		// Should we spend the time to ensure that the partitions are contiguous (no gaps)
+        for (auto& n_ptr : mesh.nodes())
+        {
+            partitions.insert(n_ptr->get_parent_partition());
+        }
+
+        // Ensure the partitions are contiguous
+        PartitionIndex curr_id = 0;
+        for (auto id : partitions)
+        {
+            if (id != curr_id)
+            {
+                throw _UTIL_MSG_EXCEPT("Partition " + std::string(curr_id) + " is missing from the mesh.");
+            }
+            curr_id++;
+        }
+
 		return static_cast<PartitionIndex>(partitions.size());
 	}
 

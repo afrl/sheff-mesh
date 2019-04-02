@@ -1,0 +1,52 @@
+#pragma once
+
+#include "flex_mesh/common/Defines.h"
+#include "utility/DynamicArray.h"
+#include "utility/VectorSet.h"
+
+namespace flex_mesh
+{
+    /// Stores a map from the local index number to the local indices of the elements that
+    /// contain the respective node.
+    template<typename MeshTypename>
+    class LocalNodeToElementMap
+    {
+    public:
+        /// Update the map given a mesh
+        void update(const MeshTypename & mesh);
+        /// Returns the list of indices of parent elements given a local index for a node
+        auto get_element_indices(const LocalIndex node_index) const;
+
+    private:
+        std::vector<std::vector<LocalIndex>> parent_element_indices_;
+    };
+
+    /////////////////
+    // Definitions //
+    /////////////////
+
+    template<typename MeshTypename>
+    inline void LocalNodeToElementMap<MeshTypename>::update(const MeshTypename & mesh)
+    {
+        parent_element_indices_.resize(mesh.nodes());
+
+        for (auto& v : parent_element_indices_)
+        {
+            v.clear();
+        }
+
+        for (auto& e : mesh.elements())
+        {
+            for (auto n : e)
+            {
+                parent_element_indices_[n->get_local_number()].push_back(e->get_local_number());
+            }
+        }
+    }
+
+    template<typename MeshTypename>
+    inline auto LocalNodeToElementMap<MeshTypename>::get_element_indices(const LocalIndex node_index) const
+    {
+        return parent_element_indices_[node_index];
+    }
+}

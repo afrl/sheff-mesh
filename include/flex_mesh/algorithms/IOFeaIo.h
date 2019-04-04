@@ -23,6 +23,7 @@
 #include "fea_io/meta/MetaWriter.h"
 #include "fea_io/mesh/MeshWriter.h"
 #include "fea_io/data/DataWriter.h"
+#include "fea_io/mesh/MeshReader.h"
 #endif
 
 #include <algorithm>
@@ -48,6 +49,7 @@ namespace flex_mesh
         using NodeByElemDataCallback = std::function<std::vector<std::vector<double>>(std::string, ElementPtr)>;
 
         using Partition = fea_io::Partition<GlobalIndex, LocalIndex, FloatType>;
+        using MeshReader = fea_io::MeshReader<GlobalIndex, LocalIndex, FloatType>;
 
         /// Writes the mesh, material information as a element group file, and
         /// the orientation information as the new compact, binary Beta IO Format.
@@ -88,9 +90,9 @@ namespace flex_mesh
             */
 
         static void read_partition(MeshType& mesh,
-            const std::string &MetaFileName,
-            const int Partition = 0,
-            const int TimeStep = 0);
+            const std::string & meta_filepath,
+            const PartitionIndex partition_id = 0,
+            const int time_step = 0);
 
         /// Computes the information for the mesh needed for writing with fea_io
         static fea_io::MeshInfo<GlobalIndex, LocalIndex, FloatType> get_fea_io_mesh_info(
@@ -431,6 +433,83 @@ namespace flex_mesh
     */
 
     template<typename MeshType>
+    inline void FEAIOInterface<MeshType>::read_partition(MeshType & mesh, const std::string & meta_filepath, const PartitionIndex partition_id, const int time_step)
+    {
+        fea_io::MetaReader meta_reader;
+        meta_reader.open(meta_filepath);
+        auto mesh_filepath = meta_reader.get_mesh_path(time_step);
+
+        MeshReader mesh_reader(mesh_filepath);
+        auto mesh_info = mesh_reader.get_mesh_info();
+        if (mesh_info.connectivity_scheme != fea_io::ConnectivityScheme::FlexMesh)
+        {
+            throw _UTIL_MSG_EXCEPT("The mesh was written with a different connectivity scheme.  A conversion has not been written.");
+        }
+
+        auto partition = mesh_reader.read_partition(partition_id);
+
+        for (auto i : utility::indices(partition.node_global_ids))
+        {
+            const auto offset = mesh_info.dimensionality * i;
+            Point p = { 0, 0, 0 };
+            switch (mesh_info.dimensionality)
+            {
+            case 3:
+                p[2] = partition.node_coords[offset + 2];
+            case 2:
+                p[1] = partition.node_coords[offset + 1];
+            case 1:
+                p[0] = partition.node_coords[offset];
+            }
+
+            auto n_ptr = mesh.add_node_by_coord(p);
+            n_ptr->set_global_number(partition.node_global_ids[i]);
+            n_ptr->set_local_number(static_cast<LocalIndex>(i));
+            n_ptr->set_parent_partition(partition.node_parent_partitions[i]);
+        }
+        
+        for (auto i : utility::indices(partition.element_global_ids))
+        {
+            std::vector<typename MeshType::NodeTypename *> connectivity;
+            for (auto local_node_id : partition.element_connectivities[i])
+            {
+                connectivity.push_back(mesh.nodes()[local_node_id]);
+            }
+
+            auto e_ptr = mesh.elements().add();
+            e_ptr->initialize(convert_element_type(partition.element_types[i]), connectivity);
+
+            e_ptr->set_global_number(partition.element_global_ids[i]);
+            e_ptr->set_local_number(static_cast<LocalIndex>(i));
+            e_ptr->set_parent_partition(partition.element_parent_partitions[i]);
+        }
+
+        for (auto& subcomponent : partition.subcomponents)
+        {
+            auto find_iter = std::find_if(std::begin(mesh_info.components), std::end(mesh_info.components),
+                [id = subcomponent.component_id](const fea_io::ComponentInfo<LocalIndex> & c)
+                { return c.id == id; });
+
+            if (find_iter == std::end(mesh_info.components))
+            {
+                throw _UTIL_MSG_EXCEPT("A subcomponent referenced a component id that did not exist in the mesh information.");
+            }
+            if (mesh_info.components[0].lcs_parameterization != fea_io::LCSParameterization::Quaternion)
+            {
+                throw _UTIL_MSG_EXCEPT("Local coordinate systems were parameterized with something other than Quaternions. A conversion needs to be added to read_partition.");
+            }
+
+            LCSAssignment component_lcs_assignment = convert_lcs_assignment((*find_iter).lcs_assignment);
+            for (auto local_elem_id : subcomponent.elements_in_subcomponent)
+            {
+                mesh.elements()[local_elem_id]->set_component_id(subcomponent.component_id);
+                mesh.elements()[local_elem_id]->allocate_lcs(component_lcs_assignment);
+                // TODO assign lcs
+            }
+        }
+    }
+
+    template<typename MeshType>
     inline fea_io::MeshInfo<GlobalIndex, LocalIndex, FloatType> FEAIOInterface<MeshType>::get_fea_io_mesh_info(
         const MeshType & mesh, const PartitionIndex n_partitions,
         const std::map<ComponentIndex, std::string> & component_names)
@@ -596,6 +675,7 @@ namespace flex_mesh
             return flex_mesh::ElementType::Q3D8N;
         else if (type == fea_io::ElementType::C3D16N)
             return flex_mesh::ElementType::C3D16N;
+        throw _UTIL_MSG_EXCEPT("No conversion available.");
     }
 
     template<typename MeshType>

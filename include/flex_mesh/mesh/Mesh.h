@@ -56,6 +56,11 @@ namespace flex_mesh
         {
             return objects_[index].get();
         }
+        /// Access a raw pointer to an object by index
+        T * operator[] (std::size_t index)
+        {
+            return objects_[index].get();
+        }
 		/// Add an object to the container
 		/// Returns a raw pointer to that object
 #ifndef SWIG

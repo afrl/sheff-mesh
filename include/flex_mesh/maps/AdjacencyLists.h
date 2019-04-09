@@ -7,7 +7,7 @@ namespace flex_mesh
     template<typename VertexIndexType>
     struct AdjacencyVertex
     {
-        AdjacencyVertex() : skip_in_neighbor_flag(false) {}
+        AdjacencyVertex() : skip_neighbor_flag(false) {}
 
         /// A flag that indicates if the this vertex should be skipped in
         /// an accumulation of neighbors search
@@ -26,15 +26,14 @@ namespace flex_mesh
 
         AdjacencyList() : underlying_vertex_pointers_(nullptr) {}
 
-        virtual void initialize(const MeshType & mesh,
-            const VertexPtrContainer & vertex_pointers) = 0;
+        virtual void initialize(const MeshType & mesh) = 0;
 
         template<typename IndexContainer>
         void skip_in_neighbor_search(const IndexContainer & vertex_indices_to_skip);
 
         std::vector<VertexType *> get_neighbors(const VertexIndexType & index) const;
 
-    private:
+    protected:
 
         std::vector<AdjacencyVertexType> adjacency_list_;
         const VertexPtrContainer * underlying_vertex_pointers_;
@@ -71,13 +70,13 @@ namespace flex_mesh
     template<typename VertexType, typename VertexPtrContainer, typename VertexIndexType, typename MeshType, typename AdjacencySizeType>
     inline std::vector<VertexType*> AdjacencyList<VertexType, VertexPtrContainer, VertexIndexType, MeshType, AdjacencySizeType>::get_neighbors(const VertexIndexType & index) const
     {
-        std::vector<VertexType> neighbors;
+        std::vector<VertexType*> neighbors;
         for (auto neighbor_index : adjacency_list_[index].neighbors)
         {
             if (!adjacency_list_[neighbor_index].skip_neighbor_flag)
             {
                 // Extra indirection to avoid issue with container of unique_ptr's
-                neighbors.push_back(&(*(*underlying_vertex_objects_)[neighbor_index]));
+                neighbors.push_back(&(*(*this->underlying_vertex_pointers_)[neighbor_index]));
             }
         }
         return neighbors;
@@ -93,7 +92,7 @@ namespace flex_mesh
 
         for (auto& n_ptr : mesh.nodes())
         {
-            auto& parent_indices = this->node_parent_map.get_element_indices(
+            auto& parent_indices = node_parent_map.get_element_indices(
                 n_ptr->get_local_number());
 
             for (auto i : parent_indices)

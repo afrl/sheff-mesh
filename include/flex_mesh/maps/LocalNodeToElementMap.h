@@ -28,18 +28,18 @@ namespace flex_mesh
     template<typename MeshTypename>
     inline void LocalNodeToElementMap<MeshTypename>::update(const MeshTypename & mesh)
     {
-        parent_element_indices_.resize(mesh.nodes());
+        parent_element_indices_.resize(mesh.nodes().size());
 
         for (auto& v : parent_element_indices_)
         {
             v.clear();
         }
 
-        for (auto& e : mesh.elements())
+        for (auto& e_ptr : mesh.elements())
         {
-            for (auto n : e)
+            for (auto n : *e_ptr)
             {
-                parent_element_indices_[n->get_local_number()].push_back(e->get_local_number());
+                parent_element_indices_[n->get_local_number()].push_back(e_ptr->get_local_number());
             }
         }
     }

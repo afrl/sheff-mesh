@@ -135,6 +135,7 @@ namespace flex_mesh
 	public:
 		using NodeTypename = Node_;
 		using ElementTypename = Element_;
+        using ElementContainer = MeshEntityContainer<Element_>;
         using NodeGroup = std::set<Node_ *>;
         using NodeGroupMap = std::map<std::string, NodeGroup>;
         using NodeGroupMapIt = typename NodeGroupMap::iterator;

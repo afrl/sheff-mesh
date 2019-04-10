@@ -97,6 +97,12 @@ namespace flex_mesh
 		void get_global_node_numbers(std::vector<GlobalIndex>& numbers) const;
 		/// Return a set of the nodes that are shared between this and another element
 		std::set<NodeType *> get_shared_nodes(const Element &other) const;
+        /// Returns a vector of pairs indicating the positions of any shared nodes in the
+        /// connectivity of each element.  For each pair in the vector, there is a shared
+        /// node.  For each pair, the first index is the position in this element's connectivity
+        /// and the second index is the position in the other element's connectivity.
+        /// Order of the vector is not predictable.
+        std::vector<std::pair<ConnSize, ConnSize>> get_shared_node_positions(const Element &other) const;
 		/// Returns if this element contains the given node
 		bool contains_node(const NodeType& node) const;
 		/// Given a map from old to new nodes, this will replace the pointers in
@@ -317,7 +323,25 @@ namespace flex_mesh
 		return common_nodes;
 	}
 
-	template<typename NodeType>
+    template<typename NodeType>
+    inline std::vector<std::pair<typename Element<NodeType>::ConnSize, typename Element<NodeType>::ConnSize>> Element<NodeType>::get_shared_node_positions(const Element & other) const
+    {
+        std::vector<std::pair<ConnSize, ConnSize>> shared_node_pos;
+        const auto & other_conn = other.get_conn();
+        for (ConnSize other_pos = 0; other_pos < other_conn.size(); other_pos++)
+        {
+            for (ConnSize this_pos = 0; this_pos < connectivity_.size(); this_pos++)
+            {
+                if (other_conn[other_pos] == connectivity_[this_pos])
+                {
+                    shared_node_pos.push_back({ this_pos, other_pos });
+                }
+            }
+        }
+        return shared_node_pos;
+    }
+
+    template<typename NodeType>
 	inline bool Element<NodeType>::contains_node(const NodeType & node) const
 	{
 		for (auto& n_ptr : *this)

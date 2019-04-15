@@ -218,7 +218,7 @@ namespace flex_mesh
 	template<typename NodeType>
 	inline void Element<NodeType>::set_local_number(const LocalIndex & local_num)
 	{
-		local_num_;
+		local_num_ = local_num;
 	}
 
 	template<typename NodeType>

@@ -86,6 +86,7 @@ namespace flex_mesh
     inline void ElementAdjacencyList<MeshType>::initialize(const MeshType & mesh)
     {
         this->adjacency_list_.resize(mesh.elements().size());
+        this->underlying_vertex_pointers_ = &mesh.elements();
 
         LocalNodeToElementMap<MeshType> node_parent_map;
         node_parent_map.update(mesh);

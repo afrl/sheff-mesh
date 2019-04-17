@@ -109,6 +109,10 @@ namespace flex_mesh
 	/// Returns the number of nodes that the geometry type will have.
 	static unsigned int get_num_nodes_for_type(const ElementType& geom_type);
 
+    /// This method will use the number of dimensions and number of nodes to infer
+    /// the type of solid element.
+    static ElementType infer_type(unsigned int dimensionality, unsigned int num_nodes);
+
 	/// Given a geometry type, this function will return the linear version
 	/// if one exists.  Otherwise it will return UNKNGEOM.
 	ElementType get_linearized_type(const ElementType& geom_type);
@@ -403,6 +407,48 @@ namespace flex_mesh
 		// No match
 		else return 0;
 	}
+
+    ElementType infer_type(unsigned int dimensionality, unsigned int num_nodes)
+    {
+        
+        switch (dimensionality)
+        {
+        case 1:
+            switch (num_nodes)
+            {
+            case 2: return ElementType::L1D2N;
+            case 3: return ElementType::L1D3N;
+            default:
+                throw _UTIL_MSG_EXCEPT("Cannot infer element type for 1D with " + std::to_string(num_nodes) + " nodes.");
+            }
+        case 2:
+            switch (num_nodes)
+            {
+            case 3: return ElementType::T2D3N;
+            case 4: return ElementType::Q2D4N;
+            case 6: return ElementType::T2D6N;
+            case 8: return ElementType::Q2D8N;
+            default:
+                throw _UTIL_MSG_EXCEPT("Cannot infer element type for 2D with " + std::to_string(num_nodes) + " nodes.");
+            }
+        case 3:
+            switch (num_nodes)
+            {
+            case 4: return ElementType::T3D4N;
+            case 5: return ElementType::P3D5N;
+            case 6: return ElementType::W3D6N;
+            case 8: return ElementType::H3D8N;
+            case 10: return ElementType::T3D10N;
+            case 13: return ElementType::P3D13N;
+            case 15: return ElementType::W3D15N;
+            case 20: return ElementType::H3D20N;
+            default:
+                throw _UTIL_MSG_EXCEPT("Cannot infer element type for 3D with " + std::to_string(num_nodes) + " nodes.");
+            }
+        default:
+            throw _UTIL_MSG_EXCEPT("Invalid dimensionality.");
+        }
+    }
 
 	bool is_type_linear(const ElementType & geom_type)
 	{

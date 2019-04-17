@@ -5,6 +5,7 @@
 #include "flex_mesh/common/GeometryTypes.h"
 #include "flex_mesh/mesh/Mesh.h"
 #include "flex_mesh/node/Node.h"
+#include "flex_mesh/maps/LocalNodeToElementMap.h"
 
 #include "utility/Range.h"
 
@@ -22,6 +23,50 @@ namespace flex_mesh
         const std::vector<double> & x_coordinates,
         const std::vector<double> & y_coordinates,
         const bool & is_quadratic = true);
+
+    /// Generate a 3D rectangular mesh with a uniform grid
+    /// \param x_coordinates - coordinates of the corners of the grid cells along x-axis
+    /// \param y_coordinates - coordinates of the corners of the grid cells along y-axis
+    /// \param z_coordinates - coordinates of the corners of the grid cells along z-axis
+    /// \param is_quadratic - indicates whether to use quadratic or linear elements
+    ///        (defaults to quadratic)
+    template<typename MeshType>
+    static MeshType make_grid(
+        const std::vector<double> & x_coordinates,
+        const std::vector<double> & y_coordinates,
+        const std::vector<double> & z_coordinates,
+        const bool & is_quadratic = true);
+
+    /// Extrude a 2D mesh along z direction
+    template<typename MeshType>
+    static MeshType extrude_2D_mesh(
+        MeshType & mesh,
+        const std::vector<double> & z_coordinates);
+
+    /// Extrude a 2D mesh along z direction with some offsets in x and y
+    template<typename MeshType>
+    static MeshType extrude_2D_meshalong_path(
+        MeshType & mesh,
+        const std::vector<double> & z_coordinates,
+        const std::vector<double> & x_offsets,
+        const std::vector<double> & y_offsets);
+
+    namespace detail
+    {
+        template<typename MeshType>
+        static MeshType extrude_2D_meshalong_path_linear(
+            MeshType & mesh,
+            const std::vector<double> & z_coordinates,
+            const std::vector<double> & x_offsets,
+            const std::vector<double> & y_offsets);
+
+        template<typename MeshType>
+        static MeshType extrude_2D_meshalong_path_quadratic(
+            MeshType & mesh,
+            const std::vector<double> & z_coordinates,
+            const std::vector<double> & x_offsets,
+            const std::vector<double> & y_offsets);
+    }
 
     /////////////////
     // Definitions //
@@ -124,5 +169,123 @@ namespace flex_mesh
 
         mesh.update_global_numbering();
         return mesh;
+    }
+
+    template<typename MeshType>
+    MeshType make_grid(const std::vector<double>& x_coordinates, const std::vector<double>& y_coordinates, const std::vector<double>& z_coordinates, const bool & is_quadratic)
+    {
+        auto mesh_2D = make_grid<MeshType>(x_coordinates, y_coordinates, is_quadratic);
+        return extrude_2D_mesh(mesh_2D, z_coordinates);
+    }
+
+    template<typename MeshType>
+    MeshType extrude_2D_mesh(MeshType & mesh, const std::vector<double> & z_coordinates)
+    {
+        return extrude_2D_meshalong_path(mesh,
+            z_coordinates,
+            std::vector<double>(z_coordinates.size(), 0.0),
+            std::vector<double>(z_coordinates.size(), 0.0));
+    }
+
+    template<typename MeshType>
+    MeshType extrude_2D_meshalong_path(MeshType & mesh, const std::vector<double>& z_coordinates, const std::vector<double>& x_offsets, const std::vector<double>& y_offsets)
+    {
+        if (mesh.nodes().size() == 0)
+            throw _UTIL_MSG_EXCEPT("Cannot extrude an empty mesh.");
+
+        if (is_type_linear(mesh.elements().front()->get_type()))
+        {
+            return detail::extrude_2D_meshalong_path_linear(mesh,
+                z_coordinates,
+                x_offsets,
+                y_offsets);
+        }
+        else
+        {
+            return detail::extrude_2D_meshalong_path_quadratic(mesh,
+                z_coordinates,
+                x_offsets,
+                y_offsets);
+        }
+    }
+
+    namespace detail
+    {
+        template<typename MeshType>
+        MeshType extrude_2D_meshalong_path_linear(MeshType & mesh, const std::vector<double>& z_coordinates, const std::vector<double>& x_offsets, const std::vector<double>& y_offsets)
+        {
+            mesh.update_global_numbering();
+            LocalNodeToElementMap<MeshType> node_to_element_map;
+            node_to_element_map.update(mesh);
+
+            using NodePtr = typename MeshType::NodeTypename *;
+            MeshType new_mesh;
+
+            // These will hold pointers to all the nodes that are attached to an element
+            std::vector<NodePtr> all_attached_nodes;
+            for (auto& n_ptr : mesh.nodes())
+            {
+                if (!node_to_element_map.get_element_indices(n_ptr->get_local_number()).empty())
+                {
+                    all_attached_nodes.push_back(n_ptr.get());
+                }
+            }
+            std::map<NodePtr, GlobalIndex> all_attached_node_to_local_index_map;
+            for (auto i : utility::indices(all_attached_nodes))
+            {
+                all_attached_node_to_local_index_map[all_attached_nodes[i]] = i;
+            }
+
+            // Lay out all the nodes in the new mesh
+            for (auto i : utility::indices(z_coordinates))
+            {
+                //Add layer of all nodes
+                for (auto n_ptr : all_attached_nodes)
+                {
+                    Point p = n_ptr->get_coord();
+                    p[0] += x_offsets[i];
+                    p[1] += y_offsets[i];
+                    p[2] = z_coordinates[i];
+                    new_mesh.add_node_by_coord(p);
+                }
+            }
+
+            new_mesh.update_global_numbering();
+
+            // Now that nodes have been placed in the mesh, make the elements
+            for (auto i : utility::range_from_zero(z_coordinates.size() - 1))
+            {
+                // Loop through each element in the old mesh
+                for (auto& e_ptr : mesh.elements())
+                {
+                    std::vector<NodePtr> connectivity;
+                    // Add nodes on the negative z face of the element (assuming positive direction z extrusion)
+                    for (auto n_ptr : *e_ptr)
+                    {
+                        auto index = all_attached_node_to_local_index_map[n_ptr] + i * all_attached_nodes.size();
+                        connectivity.push_back(new_mesh.nodes()[index]);
+                    }
+                    // Add nodes on the positive z face of the element (assuming positive direction z extrusion)
+                    for (auto n_ptr : *e_ptr)
+                    {
+                        auto index = all_attached_node_to_local_index_map[n_ptr] + (i + 1) * all_attached_nodes.size();
+                        connectivity.push_back(new_mesh.nodes()[index]);
+                    }
+
+                    auto new_element = new_mesh.elements().add();
+                    new_element->initialize(infer_type(3, static_cast<unsigned int>(connectivity.size())), connectivity);
+                    new_element->set_component_id(e_ptr->get_component_id());
+                }
+            }
+
+            new_mesh.update_global_numbering();
+            return new_mesh;
+        }
+
+        template<typename MeshType>
+        MeshType extrude_2D_meshalong_path_quadratic(MeshType & mesh, const std::vector<double>& z_coordinates, const std::vector<double>& x_offsets, const std::vector<double>& y_offsets)
+        {
+            throw _UTIL_MSG_EXCEPT("TODO Implement");
+        }
     }
 }

@@ -233,7 +233,7 @@ namespace flex_mesh
             std::map<NodePtr, GlobalIndex> all_attached_node_to_local_index_map;
             for (auto i : utility::indices(all_attached_nodes))
             {
-                all_attached_node_to_local_index_map[all_attached_nodes[i]] = i;
+                all_attached_node_to_local_index_map[all_attached_nodes[i]] = static_cast<GlobalIndex>(i);
             }
 
             // Lay out all the nodes in the new mesh

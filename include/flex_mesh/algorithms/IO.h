@@ -25,7 +25,8 @@ namespace flex_mesh
 	static void write_vtk(MeshType& mesh,
 		const std::string& file_path,
 		const bool write_partition_ids = true,
-		const bool write_lcs = true);
+		const bool write_lcs = true,
+        const std::vector<double> & point_data = std::vector<double>());
 
     template<typename MeshType>
     class AbaqusInterface
@@ -40,7 +41,7 @@ namespace flex_mesh
         struct AbaqusElementConversion
         {
             ElementType flex_mesh_type;
-            
+
             std::vector<NodePtr> convert_abaqus_to_flex_connectivity(const std::vector<NodePtr> & connectivity)
             {
                 return connectivity;
@@ -56,13 +57,13 @@ namespace flex_mesh
 	/////////////////
 
 	template<typename MeshType>
-	inline void write_vtk(MeshType & mesh, const std::string & file_path, const bool write_partition_ids, const bool write_lcs)
+	inline void write_vtk(MeshType & mesh, const std::string & file_path, const bool write_partition_ids, const bool write_lcs, const std::vector<double> & point_data)
 	{
 		std::ofstream fout(file_path.c_str());
 		if (!fout)
 			throw _UTIL_MSG_EXCEPT("Could not create file " + file_path);
 
-		mesh.update_global_numbering();
+		//mesh.update_global_numbering();
 
 		fout << "# vtk DataFile Version 2.0" << std::endl;
 		fout << "Mesh from BetaMesh utility" << std::endl;
@@ -70,8 +71,15 @@ namespace flex_mesh
 		fout << "DATASET UNSTRUCTURED_GRID" << std::endl;
 		fout << "POINTS " << mesh.nodes().size() << " double" << std::endl;
 
-		for (auto& n_ptr : mesh.nodes()) {
+        LocalIndex curr_local_index = 0;
+		for (auto& n_ptr : mesh.nodes())
+        {
+            if (n_ptr->get_local_number() != curr_local_index)
+            {
+                throw _UTIL_MSG_EXCEPT("The local numbers of the nodes are not consecutive.  Renumber the nodes (local) before writing to VTK or the connectivity will be messed up.");
+            }
 			fout << n_ptr->get_coord()[0] << " " << n_ptr->get_coord()[1] << " " << n_ptr->get_coord()[2] << "" << std::endl;
+            curr_local_index++;
 		}
 
 		int total_num_cell_conn_entries = 0;
@@ -91,7 +99,7 @@ namespace flex_mesh
 				// it to be interpretted as an integer.
 				fout << connectivity.size() + 0;
 				for (unsigned int i = 0; i < connectivity.size(); ++i) {
-					fout << " " << connectivity[vtk_permutation[i]]->get_global_number();
+					fout << " " << connectivity[vtk_permutation[i]]->get_local_number();
 				}
 			}
 			else {
@@ -107,6 +115,9 @@ namespace flex_mesh
 		for (auto& e_ptr : mesh.elements()) {
 			fout << get_vtk_element_type(e_ptr->get_type()) << std::endl;
 		}
+
+        // Write data
+        bool wrote_point_data_header = false;
 
 		// Write the component id's as cell data
 		// Note: the cell data has to all be together
@@ -139,6 +150,13 @@ namespace flex_mesh
 			}
 		}
 
+        fout << "SCALARS GlobalIDs int 1\n";
+        fout << "LOOKUP_TABLE default\n";
+        for (auto& e_ptr : mesh.elements())
+        {
+            fout << e_ptr->get_global_number() << std::endl;
+        }
+
 		// Write the partition id's if asked for
 		if (write_partition_ids) {
 			fout << "SCALARS PartitionIDs int 1\n";
@@ -147,13 +165,49 @@ namespace flex_mesh
 				fout << e_ptr->get_parent_partition() << std::endl;
 			}
 
-			fout << "POINT_DATA " << mesh.nodes().size() << std::endl;
+            if (!wrote_point_data_header)
+            {
+                fout << "POINT_DATA " << mesh.nodes().size() << std::endl;
+                wrote_point_data_header = true;
+            }
 			fout << "SCALARS PartitionIDs int 1\n";
 			fout << "LOOKUP_TABLE default\n";
 			for (auto& n_ptr : mesh.nodes()) {
 				fout << n_ptr->get_parent_partition() << std::endl;
 			}
 		}
+
+        if (!wrote_point_data_header)
+        {
+            fout << "POINT_DATA " << mesh.nodes().size() << std::endl;
+            wrote_point_data_header = true;
+        }
+        fout << "SCALARS GlobalIDs int 1\n";
+        fout << "LOOKUP_TABLE default\n";
+        for (auto& n_ptr : mesh.nodes())
+        {
+            fout << n_ptr->get_global_number() << std::endl;
+        }
+
+        if (!point_data.empty())
+        {
+            if (point_data.size() != mesh.nodes().size())
+            {
+                throw _UTIL_MSG_EXCEPT("The size of the given point data did not match the number of nodes.");
+            }
+
+            if (!wrote_point_data_header)
+            {
+                fout << "POINT_DATA " << mesh.nodes().size() << std::endl;
+                wrote_point_data_header = true;
+            }
+            fout << "SCALARS ExtraData float 1\n";
+            fout << "LOOKUP_TABLE default\n";
+            for (auto& value : point_data)
+            {
+                fout << value << std::endl;
+            }
+        }
 
 		fout.close();
 	}
@@ -219,7 +273,7 @@ namespace flex_mesh
 
             getline(input_stream, line);
         } while (line.find("*") == std::string::npos);
-        
+
         // TODO read multiple instances
 
         input_stream.close();

@@ -322,7 +322,6 @@ namespace flex_mesh
 			auto new_element = this->elements_.add(std::move(new_element_unique));
 			new_element->remap_element_nodes(other_to_new_node_map);
 		}
-		this->update_global_numbering();
 	}
 
 	template<typename Node_, typename Element_>
@@ -333,7 +332,6 @@ namespace flex_mesh
 
 		std::move(other.nodes_.objects_.begin(), other.nodes_.objects_.end(), std::back_inserter(this->nodes_.objects_));
 		std::move(other.elements_.objects_.begin(), other.elements_.objects_.end(), std::back_inserter(this->elements_.objects_));
-		update_global_numbering();
 		other.clear();
 	}
 

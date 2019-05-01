@@ -3,6 +3,7 @@
 #include "Mesh.h"
 
 #include "utility/MPIUtils.h"
+#include "utility/GlobalVariables.h"
 
 #include "flex_mesh/algorithms/Search.h"
 

@@ -15,7 +15,7 @@ namespace flex_mesh
         /// Update the map given a mesh
         void update(const MeshTypename & mesh);
         /// Returns the list of indices of parent elements given a local index for a node
-        auto get_element_indices(const LocalIndex node_index) const;
+        const std::vector<LocalIndex>& get_element_indices(const LocalIndex node_index) const;
 
     private:
         std::vector<std::vector<LocalIndex>> parent_element_indices_;
@@ -45,7 +45,7 @@ namespace flex_mesh
     }
 
     template<typename MeshTypename>
-    inline auto LocalNodeToElementMap<MeshTypename>::get_element_indices(const LocalIndex node_index) const
+    inline const std::vector<LocalIndex>& LocalNodeToElementMap<MeshTypename>::get_element_indices(const LocalIndex node_index) const
     {
         return parent_element_indices_[node_index];
     }

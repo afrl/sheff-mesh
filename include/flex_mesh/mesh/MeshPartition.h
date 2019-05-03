@@ -127,13 +127,13 @@ namespace flex_mesh
         partition_info.num_elements = static_cast<LocalIndex>(this->elements().size());
 
         partition_info.total_num_connectivity_entries = 0;
-        for (auto& e_ptr : elements())
+        for (auto& e_ptr : this->elements())
         {
             partition_info.total_num_connectivity_entries += e_ptr->get_num_nodes();
         }
 
-        auto min = min_coord(nodes());
-        auto max = max_coord(nodes());
+        auto min = min_coord(this->nodes());
+        auto max = max_coord(this->nodes());
         partition_info.extent = fea_io::Extent<FloatType>(min, max);
 
         auto component_ids = flex_mesh::get_component_ids(this->elements());

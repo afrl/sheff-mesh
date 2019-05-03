@@ -24,6 +24,7 @@
 #include "fea_io/mesh/MeshWriter.h"
 #include "fea_io/data/DataWriter.h"
 #include "fea_io/mesh/MeshReader.h"
+#include "fea_io/meta/MetaReader.h"
 #endif
 
 #include <algorithm>
@@ -203,7 +204,7 @@ namespace flex_mesh
             // Start a new meta file
             fea_io::MetaWriter meta_writer;
             meta_writer.open(base_directory, meta_file_name);
-            std::string mesh_filepath = meta_writer.add_mesh_path(0, 0, meta_name);
+            std::string mesh_filepath = meta_writer.add_mesh_path(0, 0, meta_file_name);
 
             fea_io::MeshWriter<GlobalIndex, LocalIndex, FloatType> mesh_writer;
             auto mesh_info = get_fea_io_mesh_info(mesh, component_names);

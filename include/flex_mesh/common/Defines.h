@@ -9,6 +9,7 @@
 
 namespace flex_mesh
 {
+    using ConnIndex = uint8_t;
 	using LocalIndex = std::uint32_t;
 	using GlobalIndex = std::uint32_t;
 	using PartitionIndex = std::uint16_t;

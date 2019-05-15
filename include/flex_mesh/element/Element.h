@@ -1,5 +1,6 @@
 #pragma once
 
+#include "flex_mesh/common/Defines.h"
 #include "flex_mesh/node/Node.h"
 #include "flex_mesh/edge/Edge.h"
 #include "flex_mesh/face/Face.h"
@@ -21,7 +22,7 @@ namespace flex_mesh
 		using NodePtr = NodeType*;
 		using FacePtr = Face<NodeType>*;
 		using EdgePtr = Edge<NodeType>*;
-		using ConnSize = uint8_t;
+		using ConnSize = ConnIndex;
 
 		//////////////////
 		// Constructors //

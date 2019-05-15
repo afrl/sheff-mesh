@@ -1,6 +1,7 @@
 #pragma once
 
 #include "utility/Exceptions.h"
+#include "Defines.h"
 
 #include <vector>
 
@@ -20,7 +21,14 @@ namespace flex_mesh
 	};
 
 	/// Returns the number of nodes that the geometry type will have.
-	static unsigned int get_num_nodes_for_type(const EdgeType& geom_type);
+	static ConnIndex get_num_nodes_for_type(const EdgeType& geom_type);
+
+    /// A simple struct to hold information about an edge that is part of a face/element.
+    struct EdgeInfo
+    {
+        EdgeType type;
+        std::vector<ConnIndex> connectivity;
+    };
 
 	////////////////
 	// Face Types //
@@ -44,21 +52,30 @@ namespace flex_mesh
 	};
 
 	/// Returns the number of nodes that the geometry type will have.
-	static unsigned int get_num_nodes_for_type(const FaceType& geom_type);
+	static ConnIndex get_num_nodes_for_type(const FaceType& geom_type);
 	/// Given an face geometry type, this function will fill the vectors:
 	/// - types: with the types of edges
 	/// - conn: with connectivity of each face relative to the face connectivity
 	/// \attention Will overwrite anything in the vectors!
-	static void get_edge_info(const FaceType& geom_type, std::vector<EdgeType>& types, std::vector<std::vector<unsigned int>>& conn);
+	static const std::vector<EdgeInfo> get_edge_info(const FaceType& geom_type);
 	/// Given a geometry type, this function will return the linear version
 	/// if one exists.  Otherwise it will return UNKNGEOM.
 	static FaceType get_linearized_type(const FaceType& geom_type);
 	/// Returns the permuation vector to go from the quadratic connectivity
 	/// to the linear connectivity.  If the type is already linear, then
 	/// an empty vector is returned.  Will throw for unrecognized types.
-	static std::vector<unsigned int> get_linearized_permutation(const FaceType& geom_type);
+	static std::vector<ConnIndex> get_linearized_permutation(const FaceType& geom_type);
 	/// Returns a bool indicating if the geometry type is linear or not
 	static bool is_type_linear(const FaceType& geom_type);
+
+    /// A simple struct to hold information about a face that is part
+    /// of a element.
+    struct FaceInfo
+    {
+        FaceType type;
+        std::vector<ConnIndex> edges;
+        std::vector<ConnIndex> connectivity;
+    };
 
 	///////////////////
 	// Element Types //
@@ -71,7 +88,7 @@ namespace flex_mesh
 	/// Additionally, you need to update the ParaViewReader project file vtkFEAIOReader.cxx methods
 	/// get_to_vtk_cell_map and get_to_vtk_reordering.
 	// TODO check names for ambiguity
-	enum class ElementType : char {
+	enum class ElementType : ConnIndex {
 		UNKNGEOM = 0, ///< Used if a conversion fails
 		// 1D types 10-19
 		DEF1D = 10, ///< 1-D Default
@@ -104,14 +121,14 @@ namespace flex_mesh
 	};
 	/// The maximum value that a ElementType enumeration can have.  This is only
 	/// used for classes like Mapping, which use the underlying type as an index.
-	static constexpr int8_t MAX_ELEMENT_TYPE_VALUE = 48;
+	static constexpr ConnIndex MAX_ELEMENT_TYPE_VALUE = 48;
 
 	/// Returns the number of nodes that the geometry type will have.
-	static unsigned int get_num_nodes_for_type(const ElementType& geom_type);
+	static ConnIndex get_num_nodes_for_type(const ElementType& geom_type);
 
     /// This method will use the number of dimensions and number of nodes to infer
     /// the type of solid element.
-    static ElementType infer_type(unsigned int dimensionality, unsigned int num_nodes);
+    static ElementType infer_type(unsigned int dimensionality, ConnIndex num_nodes);
 
 	/// Given a geometry type, this function will return the linear version
 	/// if one exists.  Otherwise it will return UNKNGEOM.
@@ -119,7 +136,7 @@ namespace flex_mesh
 	/// Returns the permuation vector to go from the quadratic connectivity
 	/// to the linear connectivity.  If the type is already linear, then
 	/// an empty vector is returned.  Will throw for unrecognized types.
-	static std::vector<unsigned int> get_linearized_permutation(const ElementType& geom_type) {return {}; };
+    std::vector<ConnIndex> get_linearized_permutation(const ElementType& geom_type);
 	/// Returns a bool indicating if the geometry type is linear or not
 	static bool is_type_linear(const ElementType& geom_type);
 
@@ -133,7 +150,7 @@ namespace flex_mesh
 	/// [2]: 4
 	/// which means that the first node in the linear connectivity belongs at index 0
 	/// in the quadratic connectivity, etc.
-	std::vector<unsigned int> get_quadratic_indices_of_linear_nodes(const ElementType& geom_type);
+	std::vector<ConnIndex> get_quadratic_indices_of_linear_nodes(const ElementType& geom_type);
 	/// Given an element geometry type, this function will fill the vectors:
 	/// - quadraticIndices: the indicides of hte midside nodes in the quadratic connectivity vector
 	/// - linearNodePairIndices: the corresponding pair the midside node lies on in terms of the linear
@@ -141,26 +158,23 @@ namespace flex_mesh
 	/// \attention Will overwrite anything in the vectors!
 	void get_quadratic_indices_of_midside_nodes(
 		const ElementType& geom_type,
-		std::vector<unsigned int>& quadratic_indices,
-		std::vector<std::pair<unsigned int, unsigned int>>& linear_node_pair_indices);
+		std::vector<ConnIndex>& quadratic_indices,
+		std::vector<std::pair<ConnIndex, ConnIndex>>& linear_node_pair_indices);
 
-	/// Given an element geometry type, this function will fill the vectors:
-	/// - types: with the types of faces
-	/// - conn: with connectivity of each face relative to the element connectivity
-	/// \attention Will overwrite anything in the vectors!
-	void get_face_info(const ElementType& geom_type, const unsigned int num_nodes_in_element, std::vector<FaceType>& types, std::vector<std::vector<unsigned int>>& conn);
-	/// Given an element geometry type, this function will fill the vectors:
-	/// - types: with the types of edges
-	/// - conn: with connectivity of each element relative to the element connectivity
-	/// \attention Will overwrite anything in the vectors!
-	void get_edge_info(const ElementType & geom_type, const unsigned int num_nodes_in_element, std::vector<EdgeType>& types, std::vector<std::vector<unsigned int>>& conn);
+    /// Given an element geometry type, returns the edges of the element
+    static const std::vector<EdgeInfo> get_edge_info(const ElementType& geom_type);
+    /// Given an element geometry type, returns the faces of the element
+    static const std::vector<FaceInfo> get_face_info(const ElementType& geom_type);
 
 	/////////////
 	// Helpers //
 	/////////////
 
 	/// A helper used in get_edge_info and get_face_info
-	static std::vector<std::vector<unsigned int>> connectivity_helper(int num_faces, int* nodes_per_face, int* face_nodes);
+	static std::vector<std::vector<ConnIndex>> connectivity_helper(
+        const ConnIndex num_faces,
+        const ConnIndex* nodes_per_face,
+        const ConnIndex* face_nodes);
 
 	/////////////////
 	// VTK Helpers //
@@ -171,20 +185,20 @@ namespace flex_mesh
 	/// Returns the permuation vector to go from the internal connectivity to the
 	/// connectivity used in VTK.  All types are not mappable to a VTK element,
 	/// in those cases, it will throw.
-	static std::vector<unsigned int> get_vtk_permutation(const ElementType& geom_type);
+	static std::vector<ConnIndex> get_vtk_permutation(const ElementType& geom_type);
 
 	//////////////////
 	// Definitiions //
 	//////////////////
 
-	unsigned int get_num_nodes_for_type(const EdgeType & geom_type)
+    ConnIndex get_num_nodes_for_type(const EdgeType & geom_type)
 	{
 		if (geom_type == EdgeType::E2N) return 2;
 		else if (geom_type == EdgeType::E3N) return 3;
 		else throw _UTIL_MSG_EXCEPT("Edge type not supported");
 	}
 
-	unsigned int get_num_nodes_for_type(const FaceType & geom_type)
+    ConnIndex get_num_nodes_for_type(const FaceType & geom_type)
 	{
 		if (geom_type == FaceType::L1D1N) return 1;
 		else if (geom_type == FaceType::L2D2N) return 2;
@@ -196,62 +210,52 @@ namespace flex_mesh
 		else throw _UTIL_MSG_EXCEPT("Face type not supported");
 	}
 
-	void get_edge_info(const FaceType & geom_type, std::vector<EdgeType>& types, std::vector<std::vector<unsigned int>>& conn)
-	{
-		conn.clear();
-		// 2D Connectivities
-		if (geom_type == FaceType::L2D2N) {
-			types = std::vector<EdgeType>(1, EdgeType::E2N);
-			conn.push_back({ 0, 1 });
-		}
-		else if (geom_type == FaceType::L2D3N) {
-			types = std::vector<EdgeType>(1, EdgeType::E3N);
-			conn.push_back({ 0, 1, 2 });
-		}
-		// 3D Connectivities
-		else if (geom_type == FaceType::T3D3N) {
-			int NumEdges = 3;
-			int NodesPerEdge[] = { 2, 2, 2 };
-			int EdgeIndices[] = { 0, 1,
-				1, 2,
-				2, 0 };
-			types = std::vector<EdgeType>(NumEdges, EdgeType::E2N);
-			conn = connectivity_helper(NumEdges, NodesPerEdge, EdgeIndices);
-		}
-		else if (geom_type == FaceType::Q3D4N) {
-			int NumEdges = 4;
-			int NodesPerEdge[] = { 2, 2, 2, 2 };
-			int EdgeIndices[] = { 0, 1,
-				1, 2,
-				2, 3,
-				3, 0 };
-			types = std::vector<EdgeType>(NumEdges, EdgeType::E2N);
-			conn = connectivity_helper(NumEdges, NodesPerEdge, EdgeIndices);
-		}
-		else if (geom_type == FaceType::T3D6N) {
-			int NumEdges = 3;
-			int NodesPerEdge[] = { 3, 3, 3 };
-			int EdgeIndices[] = { 0, 1, 2,
-				2, 3, 4,
-				4, 5, 0 };
-			types = std::vector<EdgeType>(NumEdges, EdgeType::E3N);
-			conn = connectivity_helper(NumEdges, NodesPerEdge, EdgeIndices);
-		}
-		else if (geom_type == FaceType::Q3D8N) {
-			int NumEdges = 4;
-			int NodesPerEdge[] = { 3, 3, 3, 3 };
-			int EdgeIndices[] = { 0, 1, 2,
-				2, 3, 4,
-				4, 5, 6,
-				6, 7, 0 };
-			types = std::vector<EdgeType>(NumEdges, EdgeType::E3N);
-			conn = connectivity_helper(NumEdges, NodesPerEdge, EdgeIndices);
-		}
-		else
-			throw _UTIL_MSG_EXCEPT("Edge connectivity not implemented.");
-	}
+    const std::vector<EdgeInfo> get_edge_info(const FaceType& geom_type)
+    {
+        switch (geom_type)
+        {
+        // 2D Connectivities
+        case FaceType::L2D2N:
+            return {
+                { EdgeType::E2N, {0, 1} }
+            };
+        case FaceType::L2D3N:
+            return {
+                { EdgeType::E3N, {0, 1, 2} }
+            };
+        // 3D Connectivities
+        case FaceType::T3D3N:
+            return {
+                { EdgeType::E2N, {0, 1} },
+                { EdgeType::E2N, {1, 2} },
+                { EdgeType::E2N, {2, 0} }
+            };
+        case FaceType::Q3D4N:
+            return {
+                { EdgeType::E2N, {0, 1} },
+                { EdgeType::E2N, {1, 2} },
+                { EdgeType::E2N, {2, 3} },
+                { EdgeType::E2N, {3, 0} }
+            };
+        case FaceType::T3D6N:
+            return {
+                { EdgeType::E3N, {0, 1, 2} },
+                { EdgeType::E3N, {2, 3, 4} },
+                { EdgeType::E3N, {4, 5, 0} }
+            };
+        case FaceType::Q3D8N:
+            return {
+                { EdgeType::E3N, {0, 1, 2} },
+                { EdgeType::E3N, {2, 3, 4} },
+                { EdgeType::E3N, {4, 5, 6} },
+                { EdgeType::E3N, {6, 7, 0} }
+            };
+        default:
+            throw _UTIL_MSG_EXCEPT("Edge connectivity not implemented.");
+        }
+    }
 
-	FaceType get_linearized_type(const FaceType & geom_type)
+    FaceType get_linearized_type(const FaceType & geom_type)
 	{
 		// 2D
 		if (geom_type == FaceType::L2D3N) return FaceType::L2D2N;
@@ -261,7 +265,7 @@ namespace flex_mesh
 		else return FaceType::UNKNGEOM;
 	}
 
-	std::vector<unsigned int> get_linearized_permutation(const FaceType & geom_type)
+	std::vector<ConnIndex> get_linearized_permutation(const FaceType & geom_type)
 	{
 		// We are going to cheat a bit here, since the permutations will act just like elements
 		// 2D
@@ -280,9 +284,284 @@ namespace flex_mesh
 			geom_type == FaceType::T3D3N;
 	}
 
-	std::vector<std::vector<unsigned int>> connectivity_helper(int num_faces, int* nodes_per_face, int* face_nodes)
+    const std::vector<EdgeInfo> get_edge_info(const ElementType& geom_type)
+    {
+        std::vector<EdgeInfo> edge_info;
+        switch (geom_type)
+        {
+        // 2D Connectivities
+        case ElementType::T2D3N:
+            // Linear triangle
+            edge_info = {
+                { EdgeType::E2N, {0, 1} },
+                { EdgeType::E2N, {1, 2} },
+                { EdgeType::E2N, {2, 0} }
+            };
+            break;
+        case ElementType::T2D6N:
+            // Quadratic triangle
+            edge_info = {
+                { EdgeType::E3N, {0, 1, 2} },
+                { EdgeType::E3N, {2, 3, 4} },
+                { EdgeType::E3N, {4, 5, 0} }
+            };
+            break;
+        case ElementType::Q2D4N:
+            // Linear quadralateral
+            edge_info = {
+                { EdgeType::E2N, {0, 1} },
+                { EdgeType::E2N, {1, 2} },
+                { EdgeType::E2N, {2, 3} },
+                { EdgeType::E2N, {3, 0} }
+            };
+            break;
+        case ElementType::Q2D8N:
+            // Quadratric quadralateral
+            edge_info = {
+                { EdgeType::E3N, {0, 1, 2} },
+                { EdgeType::E3N, {2, 3, 4} },
+                { EdgeType::E3N, {4, 5, 6} },
+                { EdgeType::E3N, {6, 7, 0} }
+            };
+            break;
+        case ElementType::C2D4N:
+            // Linear 2D cohesive element
+            edge_info = {
+                { EdgeType::E2N, {0, 1} },
+                { EdgeType::E2N, {2, 3} }
+            };
+            break;
+        case ElementType::C2D6N:
+            // Quadratic 2D cohesive element
+            edge_info = {
+                { EdgeType::E2N, {0, 1, 2} },
+                { EdgeType::E2N, {5, 4, 3} }
+            };
+            break;
+        // 3D Connectivities
+        case ElementType::T3D4N:
+            // Linear tetrahedral
+            edge_info = {
+                { EdgeType::E2N, {0, 1} },
+                { EdgeType::E2N, {0, 2} },
+                { EdgeType::E2N, {0, 3} },
+                { EdgeType::E2N, {1, 2} },
+                { EdgeType::E2N, {1, 3} },
+                { EdgeType::E2N, {2, 3} }
+            };
+            break;
+        case ElementType::P3D5N:
+            // Linear pyramid
+            edge_info = {
+                { EdgeType::E2N, {0, 1} },
+                { EdgeType::E2N, {1, 2} },
+                { EdgeType::E2N, {2, 3} },
+                { EdgeType::E2N, {3, 0} },
+                { EdgeType::E2N, {0, 4} },
+                { EdgeType::E2N, {1, 4} },
+                { EdgeType::E2N, {2, 4} },
+                { EdgeType::E2N, {3, 4} }
+            };
+            break;
+        case ElementType::W3D6N:
+            // Linear wedge
+            edge_info = {
+                { EdgeType::E2N, {0, 1} },
+                { EdgeType::E2N, {1, 2} },
+                { EdgeType::E2N, {2, 0} },
+                { EdgeType::E2N, {0, 3} },
+                { EdgeType::E2N, {1, 4} },
+                { EdgeType::E2N, {2, 5} },
+                { EdgeType::E2N, {3, 4} },
+                { EdgeType::E2N, {4, 5} },
+                { EdgeType::E2N, {5, 3} }
+            };
+            break;
+        case ElementType::H3D8N:
+            // Linear hexahedral
+            edge_info = {
+                { EdgeType::E2N, {0, 1} },
+                { EdgeType::E2N, {1, 2} },
+                { EdgeType::E2N, {2, 3} },
+                { EdgeType::E2N, {3, 0} },
+                { EdgeType::E2N, {0, 4} },
+                { EdgeType::E2N, {1, 5} },
+                { EdgeType::E2N, {2, 6} },
+                { EdgeType::E2N, {3, 7} },
+                { EdgeType::E2N, {4, 5} },
+                { EdgeType::E2N, {5, 6} },
+                { EdgeType::E2N, {6, 7} },
+                { EdgeType::E2N, {7, 4} }
+            };
+            break;
+        case ElementType::T3D10N:
+            // Quadratic tetrahedral
+            edge_info = {
+                { EdgeType::E3N, {0, 4, 1} },
+                { EdgeType::E3N, {0, 6, 2} },
+                { EdgeType::E3N, {0, 7, 3} },
+                { EdgeType::E3N, {1, 5, 2} },
+                { EdgeType::E3N, {1, 8, 3} },
+                { EdgeType::E3N, {2, 9, 3} }
+            };
+            break;
+        case ElementType::P3D13N:
+            // Quadratic Pyramid
+            edge_info = {
+                { EdgeType::E3N, {0, 5, 1} },
+                { EdgeType::E3N, {1, 6, 2} },
+                { EdgeType::E3N, {2, 7, 3} },
+                { EdgeType::E3N, {3, 8, 0} },
+                { EdgeType::E3N, {0, 9, 4} },
+                { EdgeType::E3N, {1, 10, 4} },
+                { EdgeType::E3N, {2, 11, 4} },
+                { EdgeType::E3N, {3, 12, 4} },
+            };
+            break;
+        case ElementType::W3D15N:
+            // Quadratic wedge
+            edge_info = {
+                { EdgeType::E3N, {0, 1, 2} },
+                { EdgeType::E3N, {2, 3, 4} },
+                { EdgeType::E3N, {4, 5, 6} },
+                { EdgeType::E3N, {0, 6, 9} },
+                { EdgeType::E3N, {2, 7, 11} },
+                { EdgeType::E3N, {4, 8, 13} },
+                { EdgeType::E3N, {9, 10, 11} },
+                { EdgeType::E3N, {11, 12, 13} },
+                { EdgeType::E3N, {13, 14, 9} }
+            };
+            break;
+        case ElementType::H3D20N:
+            // Quadratic hexahedral
+            edge_info = {
+                { EdgeType::E3N, {0, 1, 2} },
+                { EdgeType::E3N, {2, 3, 4} },
+                { EdgeType::E3N, {4, 5, 6} },
+                { EdgeType::E3N, {6, 7, 0} },
+                { EdgeType::E3N, {0, 8, 12} },
+                { EdgeType::E3N, {2, 9, 14} },
+                { EdgeType::E3N, {4, 10, 16} },
+                { EdgeType::E3N, {6, 11, 18} },
+                { EdgeType::E3N, {12, 13, 14} },
+                { EdgeType::E3N, {14, 15, 16} },
+                { EdgeType::E3N, {16, 17, 18} },
+                { EdgeType::E3N, {18, 19, 12} }
+            };
+            break;
+        default:
+            throw _UTIL_MSG_EXCEPT("Edge connectivity not implemented.");
+        }
+        return edge_info;
+    }
+
+    const std::vector<FaceInfo> get_face_info(const ElementType& geom_type)
+    {
+        // All the different face definitions
+        // Faces defined CCW from outside element and starting at a corner
+
+        // Faces for solid elements
+        // 2D Connectivities
+        switch (geom_type)
+        {
+        case ElementType::T2D3N:
+        case ElementType::T2D6N:
+        case ElementType::Q2D4N:
+        case ElementType::Q2D8N:
+        case ElementType::C2D4N:
+        case ElementType::C2D6N:
+            throw _UTIL_MSG_EXCEPT("Faces do not exist for 2D elements, only edges.");
+        // 3D Connectivitives
+        case ElementType::T3D4N:
+            // Linear tetrahedral
+            return {
+                { FaceType::T3D3N, {0, 3, 1}, {0, 2, 1} },
+                { FaceType::T3D3N, {2, 5, 1}, {0, 3, 2} },
+                { FaceType::T3D3N, {3, 5, 4}, {1, 2, 3} },
+                { FaceType::T3D3N, {0, 4, 2}, {0, 1, 3} }
+            };
+        case ElementType::P3D5N:
+            // Linear pyramid
+            return {
+                { FaceType::Q3D4N, {0, 1, 2, 3}, {0, 3, 2, 1} },
+                { FaceType::T3D3N, {0, 5, 4}, {0, 1, 4} },
+                { FaceType::T3D3N, {1, 6, 5}, {1, 2, 4} },
+                { FaceType::T3D3N, {2, 7, 6}, {2, 3, 4} },
+                { FaceType::T3D3N, {3, 4, 7}, {3, 0, 4} }
+            };
+        case ElementType::W3D6N:
+            // Linear wedge
+            return {
+                { FaceType::T3D3N, {0, 2, 1}, {0, 2, 1} },
+                { FaceType::T3D3N, {6, 7, 8}, {3, 4, 5} },
+                { FaceType::Q3D4N, {0, 4, 6, 3}, {0, 1, 4, 3} },
+                { FaceType::Q3D4N, {3, 8, 5, 2}, {0, 3, 5, 2} },
+                { FaceType::Q3D4N, {1, 5, 7, 4}, {1, 2, 5, 4} }
+            };
+        case ElementType::H3D8N:
+            // Linear hexahedral
+            return {
+                { FaceType::Q3D4N, {4, 2, 1, 0}, {0, 3, 2, 1} },
+                { FaceType::Q3D4N, {5, 12, 8, 4}, {0, 4, 7, 3} },
+                { FaceType::Q3D4N, {0, 6, 9, 5}, {0, 1, 5, 4} },
+                { FaceType::Q3D4N, {9, 10, 11, 12}, {4, 5, 6, 7} },
+                { FaceType::Q3D4N, {1, 7, 10, 6}, {1, 2, 6, 5} },
+                { FaceType::Q3D4N, {2, 8, 11, 7}, {2, 3, 7, 6} }
+            };
+        case ElementType::T3D10N:
+            // Quadratic tetrahedral
+            return {
+                { FaceType::T3D6N, {0, 3, 1}, {0, 6, 2, 5, 1, 4} },
+                { FaceType::T3D6N, {2, 5, 1}, {0, 7, 3, 9, 2, 6} },
+                { FaceType::T3D6N, {3, 5, 4}, {1, 5, 2, 9, 3, 8} },
+                { FaceType::T3D6N, {0, 4, 2}, {0, 4, 1, 8, 3, 7} }
+            };
+        case ElementType::P3D13N:
+            // quadratic pyramid
+            return {
+                { FaceType::Q3D8N, {0, 1, 2, 3}, {0,8,3,7,2,6,1,5} },
+                { FaceType::T3D6N, {0, 5, 4}, {0,5,1,10,4,9} },
+                { FaceType::T3D6N, {1, 6, 5}, {1,6,2,11,4,10} },
+                { FaceType::T3D6N, {2, 7, 6}, {2,7,3,12,4,11} },
+                { FaceType::T3D6N, {3, 4, 7}, {3,8,0,9,4,12} }
+            };
+        case ElementType::W3D15N:
+            // Quadratic wedge
+            return {
+                { FaceType::T3D6N, {0, 2, 1}, {0,5,4,3,2,1} },
+                { FaceType::T3D6N, {6, 7, 8}, {9,10,11,12,13,14} },
+                { FaceType::Q3D8N, {0, 4, 6, 3}, {0,1,2,7,11,10,9,6} },
+                { FaceType::Q3D8N, {3, 8, 5, 2}, {0,6,9,14,13,8,4,5} },
+                { FaceType::Q3D8N, {1, 5, 7, 4}, {2,3,4,8,13,12,11,7} }
+            };
+        case ElementType::H3D20N:
+            // Quadratic hexahedral
+            return {
+                { FaceType::Q3D8N, {3, 2, 1, 0}, {0,7,6,5,4,3,2,1} },
+                { FaceType::Q3D8N, {4, 11, 7, 3}, {0,8,12,19,18,11,6,7} },
+                { FaceType::Q3D8N, {0, 5, 8, 4}, {0,1,2,9,14,13,12,8} },
+                { FaceType::Q3D8N, {8, 9, 10, 11}, {12,13,14,15,16,17,18,19} },
+                { FaceType::Q3D8N, {1, 6, 9, 5}, {2,3,4,10,16,15,14,9} },
+                { FaceType::Q3D8N, {2, 7, 10, 6}, {4,5,6,11,18,17,16,10} }
+            };
+        case ElementType::C3D8N:
+            // Linear CZ
+            //int FN_3_8[] = { 3,2,1,0,
+            //    4,5,6,7 };
+        case ElementType::C3D16N:
+            // Quadratic CZ
+            //int FN_3_16[] = { 7,6,5,4,3,2,1,0,
+            //    8,9,10,11,12,13,14,15 };
+        default:
+            throw _UTIL_MSG_EXCEPT("Face connectivity not implemented.");
+        }
+    }
+
+	std::vector<std::vector<ConnIndex>> connectivity_helper(
+        const ConnIndex num_faces, const ConnIndex* nodes_per_face,
+        const ConnIndex* face_nodes)
 	{
-		std::vector<std::vector<unsigned int>> faces_connectivities(num_faces);
+		std::vector<std::vector<ConnIndex>> faces_connectivities(num_faces);
 		int FaceNodesIndex = 0;
 		for (int face = 0; face < num_faces; face++) {
 			faces_connectivities[face].resize(nodes_per_face[face]);
@@ -335,10 +614,10 @@ namespace flex_mesh
 			throw _UTIL_MSG_EXCEPT("VTK type conversion not implemented.");
 	}
 
-	std::vector<unsigned int> get_vtk_permutation(const ElementType & geom_type)
+	std::vector<ConnIndex> get_vtk_permutation(const ElementType & geom_type)
 	{
 		auto num_nodes = get_num_nodes_for_type(geom_type);
-		std::vector<unsigned int> permutation(num_nodes);
+		std::vector<ConnIndex> permutation(num_nodes);
 		// Fill permutation with 0 - num_nodes-1
 		std::iota(permutation.begin(), permutation.end(), 0);
 
@@ -379,7 +658,7 @@ namespace flex_mesh
 			return{};
 	}
 
-	unsigned int get_num_nodes_for_type(const ElementType & geom_type)
+    ConnIndex get_num_nodes_for_type(const ElementType & geom_type)
 	{
 		// 1D
 		if (geom_type == ElementType::L1D2N) return 2;
@@ -408,7 +687,7 @@ namespace flex_mesh
 		else return 0;
 	}
 
-    ElementType infer_type(unsigned int dimensionality, unsigned int num_nodes)
+    ElementType infer_type(unsigned int dimensionality, ConnIndex num_nodes)
     {
         
         switch (dimensionality)

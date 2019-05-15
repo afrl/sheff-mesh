@@ -501,12 +501,12 @@ namespace flex_mesh
         case ElementType::H3D8N:
             // Linear hexahedral
             return {
-                { FaceType::Q3D4N, {4, 2, 1, 0}, {0, 3, 2, 1} },
-                { FaceType::Q3D4N, {5, 12, 8, 4}, {0, 4, 7, 3} },
-                { FaceType::Q3D4N, {0, 6, 9, 5}, {0, 1, 5, 4} },
-                { FaceType::Q3D4N, {9, 10, 11, 12}, {4, 5, 6, 7} },
-                { FaceType::Q3D4N, {1, 7, 10, 6}, {1, 2, 6, 5} },
-                { FaceType::Q3D4N, {2, 8, 11, 7}, {2, 3, 7, 6} }
+                { FaceType::Q3D4N, {3, 2, 1, 0}, {0, 3, 2, 1} },
+                { FaceType::Q3D4N, {4, 11, 7, 3}, {0, 4, 7, 3} },
+                { FaceType::Q3D4N, {0, 5, 8, 4}, {0, 1, 5, 4} },
+                { FaceType::Q3D4N, {8, 9, 10, 11}, {4, 5, 6, 7} },
+                { FaceType::Q3D4N, {1, 6, 9, 5}, {1, 2, 6, 5} },
+                { FaceType::Q3D4N, {2, 7, 10, 6}, {2, 3, 7, 6} }
             };
         case ElementType::T3D10N:
             // Quadratic tetrahedral

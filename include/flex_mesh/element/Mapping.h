@@ -16,7 +16,6 @@ namespace flex_mesh
 	/// However, if you are just trying to evaulate the shape functions or derivatives at specific
 	/// point, then use the Element::get_shape_function_values and
 	/// Element::get_shape_function_derivatives methods instead.
-	template<typename ElementTypename>
 	class Mapping
 	{
 	public:
@@ -34,9 +33,8 @@ namespace flex_mesh
 		/// this method.  Note: the values are only actually calculated once per a combination
 		/// of element type, quadrature type, and integration order.  Subsequent calls will
 		/// use cached values.
-		void setup(const ElementTypename& element, const simple_math::Quadrature& quadrature)
+		void setup(const ElementType& element_type, const simple_math::Quadrature& quadrature)
 		{
-			const ElementType element_type = element.get_type();
 			const auto element_type_index = static_cast<std::underlying_type<ElementType>::type>(element_type);
 			const auto quad_type_index = static_cast<std::underlying_type<simple_math::QuadratureType>::type>(quadrature.get_type());
 			const auto int_order_index = quadrature.get_integration_order() - 1;

@@ -20,7 +20,7 @@ int main()
 	using MeshType = Mesh<NodeTyped, ElementTyped>;
 	
 	MeshType mesh;
-	AbaqusInterface<MeshType>::read(mesh, "BarWithHole.inp");
+	AbaqusInterface<MeshType>::read(mesh, "./BarWithHole.inp");
 
 	assert(mesh.nodes().size() == 5724);
 	assert(mesh.elements().size() == 3596);

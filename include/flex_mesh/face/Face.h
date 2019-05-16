@@ -108,18 +108,17 @@ namespace flex_mesh
 	template<typename NodeType>
 	inline std::vector<Edge<const NodeType>> Face<NodeType>::get_edges() const
 	{
-		std::vector<EdgeType> edge_types;
-		std::vector<std::vector<unsigned int>> edge_indices;
-		get_edge_info(type_, edge_types, edge_indices);
-		if (edge_types.size() != edge_indices.size())
-			throw _UTIL_MSG_EXCEPT("Something went wrong in get_edge_info.");
+		auto edge_info = get_edge_info(type_);
 
 		std::vector<Edge<const NodeType>> edges;
-		for (auto i = 0; i < edge_types.size(); i++) {
+		for (auto i = 0; i < edge_info.size(); i++)
+        {
 			std::vector<const NodeType*> edge_nodes;
-			for (auto node_index : edge_indices[i])
-				edge_nodes.push_back(connectivity_[node_index]);
-			edges.push_back(Edge<const NodeType>(edge_types[i], edge_nodes));
+            for (auto node_index : edge_info[i].connectivity)
+            {
+                edge_nodes.push_back(connectivity_[node_index]);
+            }
+			edges.push_back(Edge<const NodeType>(edge_info[i].type, edge_nodes));
 		}
 		return edges;
 	}
@@ -127,18 +126,17 @@ namespace flex_mesh
 	template<typename NodeType>
 	inline std::vector<std::shared_ptr<Edge<const NodeType>>> flex_mesh::Face<NodeType>::get_edges_shared_ptrs() const
 	{
-		std::vector<EdgeType> edge_types;
-		std::vector<std::vector<unsigned int>> edge_indices;
-		get_edge_info(type_, edge_types, edge_indices);
-		if (edge_types.size() != edge_indices.size())
-			throw _UTIL_MSG_EXCEPT("Something went wrong in get_edge_info.");
+		auto edge_info = get_edge_info(type_);
 
 		std::vector<std::shared_ptr<Edge<const NodeType>>> edges;
-		for (auto i = 0; i < edge_types.size(); i++) {
+		for (auto i = 0; i < edge_info.size(); i++)
+        {
 			std::vector<const NodeType*> edge_nodes;
-			for (auto node_index : edge_indices[i])
-				edge_nodes.push_back(connectivity_[node_index]);
-			edges.push_back(std::make_shared<Edge<const NodeType>>(edge_types[i], edge_nodes));
+            for (auto node_index : edge_info[i].connectivity)
+            {
+                edge_nodes.push_back(connectivity_[node_index]);
+            }
+			edges.push_back(std::make_shared<Edge<const NodeType>>(edge_info[i].type, edge_nodes));
 		}
 		return edges;
 	}

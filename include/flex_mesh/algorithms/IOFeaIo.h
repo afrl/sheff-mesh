@@ -25,6 +25,13 @@
 #include "fea_io/data/DataWriter.h"
 #include "fea_io/mesh/MeshReader.h"
 #include "fea_io/meta/MetaReader.h"
+
+#ifdef HAVE_FILESYSTEM
+#include<experimental/filesystem>
+#else
+#include "fea_io/common/Filesystem.h"
+#endif
+
 #endif
 
 #include <algorithm>
@@ -36,6 +43,8 @@
 
 namespace flex_mesh
 {
+    namespace fs = std::experimental::filesystem;
+
     /// This collection of mesh algorithms pertains to reading/writing with the fea_io format
     template<typename MeshType>
     class FEAIOInterface
@@ -142,7 +151,8 @@ namespace flex_mesh
     {
         // Start a new meta file
         fea_io::MetaWriter meta_writer;
-        meta_writer.open(base_directory, meta_file_name);
+        std::string meta_filepath = (fs::path(base_directory) / meta_file_name).string();
+        meta_writer.open(meta_filepath, meta_file_name);
         std::string mesh_filepath = meta_writer.add_mesh_path(0, 0, mesh_name);
         write(mesh, mesh_filepath);
     }

@@ -56,12 +56,12 @@ namespace flex_mesh
     template<typename IndexContainer>
     inline void AdjacencyList<VertexType, VertexPtrContainer, VertexIndexType, MeshType, AdjacencySizeType>::skip_in_neighbor_search(const IndexContainer & vertex_indices_to_skip)
     {
-        for (auto v : adjacency_list_)
+        for (auto& v : adjacency_list_)
         {
             v.skip_neighbor_flag = false;
         }
 
-        for (auto i : vertex_indices_to_skip)
+        for (auto& i : vertex_indices_to_skip)
         {
             adjacency_list_[i].skip_neighbor_flag = true;
         }

@@ -80,6 +80,7 @@ namespace flex_mesh
         MeshType mesh;
         if (is_quadratic)
         {
+            throw _UTIL_MSG_EXCEPT("TODO swap order of x and y to preserve +z normals.");
             // Create nodes
             NodeVector indexed_nodes;
             for (auto i : utility::indices(x_coordinates))
@@ -140,11 +141,11 @@ namespace flex_mesh
         {
             // Create nodes
             NodeVector indexed_nodes;
-            for (auto i : utility::indices(x_coordinates))
+            for (auto i : utility::indices(y_coordinates))
             {
-                for (auto j : utility::indices(y_coordinates))
+                for (auto j : utility::indices(x_coordinates))
                 {
-                    auto n_corner = mesh.add_node_by_coord({ x_coordinates[i], y_coordinates[j], 0 });
+                    auto n_corner = mesh.add_node_by_coord({ x_coordinates[j], y_coordinates[i], 0 });
                     indexed_nodes.push_back(n_corner);
                 }
             }
@@ -152,15 +153,15 @@ namespace flex_mesh
             // Create elements
             size_t n_elements_x = x_coordinates.size() - 1;
             size_t n_elements_y = y_coordinates.size() - 1;
-            for (size_t i : utility::range<size_t>(0, n_elements_x))
+            for (size_t i : utility::range<size_t>(0, n_elements_y))
             {
-                for (size_t j : utility::range<size_t>(0, n_elements_y))
+                for (size_t j : utility::range<size_t>(0, n_elements_x))
                 {
                     NodeVector elem_connectivity(4);
-                    elem_connectivity[0] = indexed_nodes[i + j * x_coordinates.size()];
-                    elem_connectivity[1] = indexed_nodes[(i + 1) + j * x_coordinates.size()];
-                    elem_connectivity[2] = indexed_nodes[(i + 1) + (j + 1) * x_coordinates.size()];
-                    elem_connectivity[3] = indexed_nodes[i + (j + 1) * x_coordinates.size()];
+                    elem_connectivity[0] = indexed_nodes[j + i * y_coordinates.size()];
+                    elem_connectivity[1] = indexed_nodes[(j + 1) + i * y_coordinates.size()];
+                    elem_connectivity[2] = indexed_nodes[(j + 1) + (i + 1) * y_coordinates.size()];
+                    elem_connectivity[3] = indexed_nodes[j + (i + 1) * y_coordinates.size()];
                     auto e_ptr = mesh.elements().add();
                     e_ptr->initialize(ElementType::Q2D4N, elem_connectivity);
                 }

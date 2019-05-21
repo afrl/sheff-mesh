@@ -160,6 +160,12 @@ namespace flex_mesh
 		/// Will be arranged with each row being a node
 		void get_node_coordinates(NodeX3Matrix& coordinates) const;
 
+        //////////
+        // Misc //
+        //////////
+
+        bool contains_coordinate(const Point& x) const;
+
 	protected:
 		GlobalIndex global_num_;
 		LocalIndex local_num_;
@@ -300,7 +306,7 @@ namespace flex_mesh
 	template<typename NodeType>
 	inline Point Element<NodeType>::get_mean_coordinate() const
 	{
-		return get_mean_coordinate_of_nodes(connectivity_.begin(), connectivity_.size());
+		return get_mean_coordinate_of_nodes(connectivity_);
 	}
 
 	template<typename NodeType>
@@ -463,5 +469,25 @@ namespace flex_mesh
 			for (auto j = 0; j < 3; j++)
 				coordinates(i, j) = (*connectivity_[i])[j];
 	}
+
+    template<typename NodeType>
+    inline bool Element<NodeType>::contains_coordinate(const Point& x) const
+    {
+        auto face_infos = get_face_info(type_);
+        for (auto& face_info : face_infos)
+        {
+            Connectivity<NodeType, ConnSize> face_connectivity;
+            for (auto node_index : face_info.connectivity)
+            {
+                face_connectivity.push_back(connectivity_[node_index]);
+            }
+            Face<NodeType> face(face_info.type, face_connectivity);
+            if (face.calc_signed_norm_projection(x) > 0)
+            {
+                return false;
+            }
+        }
+        return true;
+    }
 
 };

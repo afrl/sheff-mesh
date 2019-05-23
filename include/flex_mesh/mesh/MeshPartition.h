@@ -29,6 +29,8 @@ namespace flex_mesh
         using ElementGroupMap = std::map<std::string, ElementGroup>;
         using ElementGroupMapIt = typename std::map<std::string, ElementGroup>::iterator;
 
+        MeshPartition();
+
         PartitionIndex get_partition_id() const { return this_partition_; }
         /// Returns the total number of elements across all ranks, since last call of sync()
         GlobalIndex get_n_total_elements() const { return n_total_elements_; }
@@ -71,6 +73,12 @@ namespace flex_mesh
         /// The number of nodes in the total mesh since the last call to sync()
         GlobalIndex n_total_nodes_;
     };
+
+    template<typename Node_, typename Element_>
+    inline MeshPartition<Node_, Element_>::MeshPartition()
+    {
+        this_partition_ = utility::MPIUtils::get_local_rank();
+    }
 
     template<typename Node_, typename Element_>
     inline GlobalIndex MeshPartition<Node_, Element_>::get_n_owned_elements() const

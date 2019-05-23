@@ -67,6 +67,11 @@ namespace flex_mesh
 	template<typename MeshType>
 	void sort_by_partition(const MeshType& mesh);
 
+    template<typename MeshType>
+    static typename MeshType::ElementTypename* find_element_with_point(
+        const MeshType& mesh,
+        const simple_math::Point x);
+
 	/////////////////
 	// Definitions //
 	/////////////////
@@ -234,4 +239,19 @@ namespace flex_mesh
 			return e1->get_parent_partition() < e2->get_parent_partition();
 		});
 	}
+
+    template<typename MeshType>
+    typename MeshType::ElementTypename* find_element_with_point(
+        const MeshType& mesh,
+        const simple_math::Point x)
+    {
+        for (auto& e_ptr : mesh.elements())
+        {
+            if (e_ptr->contains_coordinate(x))
+            {
+                return e_ptr.get();
+            }
+        }
+        return nullptr;
+    }
 }

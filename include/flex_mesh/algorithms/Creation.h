@@ -158,10 +158,10 @@ namespace flex_mesh
                 for (size_t j : utility::range<size_t>(0, n_elements_x))
                 {
                     NodeVector elem_connectivity(4);
-                    elem_connectivity[0] = indexed_nodes[j + i * y_coordinates.size()];
-                    elem_connectivity[1] = indexed_nodes[(j + 1) + i * y_coordinates.size()];
-                    elem_connectivity[2] = indexed_nodes[(j + 1) + (i + 1) * y_coordinates.size()];
-                    elem_connectivity[3] = indexed_nodes[j + (i + 1) * y_coordinates.size()];
+                    elem_connectivity[0] = indexed_nodes[j + i * x_coordinates.size()];
+                    elem_connectivity[1] = indexed_nodes[(j + 1) + i * x_coordinates.size()];
+                    elem_connectivity[2] = indexed_nodes[(j + 1) + (i + 1) * x_coordinates.size()];
+                    elem_connectivity[3] = indexed_nodes[j + (i + 1) * x_coordinates.size()];
                     auto e_ptr = mesh.elements().add();
                     e_ptr->initialize(ElementType::Q2D4N, elem_connectivity);
                 }

@@ -64,7 +64,9 @@ namespace flex_mesh
 	/// Returns the permuation vector to go from the quadratic connectivity
 	/// to the linear connectivity.  If the type is already linear, then
 	/// an empty vector is returned.  Will throw for unrecognized types.
-	static std::vector<ConnIndex> get_linearized_permutation(const FaceType& geom_type);
+    // Note: definition commented out until get_linearized_permutation(const ElementType& geom_type)
+    // is defined, since it references it.
+	//static std::vector<ConnIndex> get_linearized_permutation(const FaceType& geom_type);
 	/// Returns a bool indicating if the geometry type is linear or not
 	static bool is_type_linear(const FaceType& geom_type);
 
@@ -265,6 +267,7 @@ namespace flex_mesh
 		else return FaceType::UNKNGEOM;
 	}
 
+    /*
 	std::vector<ConnIndex> get_linearized_permutation(const FaceType & geom_type)
 	{
 		// We are going to cheat a bit here, since the permutations will act just like elements
@@ -275,6 +278,7 @@ namespace flex_mesh
 		else if (geom_type == FaceType::T3D6N) return get_linearized_permutation(ElementType::T2D6N);
 		else throw _UTIL_MSG_EXCEPT("Unsupported face type.");
 	}
+    */
 
 	bool is_type_linear(const FaceType & geom_type)
 	{

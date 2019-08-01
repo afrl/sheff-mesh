@@ -165,6 +165,8 @@ namespace flex_mesh
     static const std::vector<EdgeInfo> get_edge_info(const ElementType& geom_type);
     /// Given an element geometry type, returns the faces of the element
     static const std::vector<FaceInfo> get_face_info(const ElementType& geom_type);
+    /// Returns the parametric coordinates of each of the nodes in the element
+    static const std::vector<Point> get_node_parametric_coordinates(const ElementType& geom_type);
 
 	/////////////
 	// Helpers //
@@ -554,6 +556,175 @@ namespace flex_mesh
             //    8,9,10,11,12,13,14,15 };
         default:
             throw _UTIL_MSG_EXCEPT("Face connectivity not implemented.");
+        }
+    }
+
+    const std::vector<Point> get_node_parametric_coordinates(const ElementType& geom_type)
+    {
+        switch (geom_type)
+        {
+        // 1D
+        case ElementType::L1D2N:
+            return {
+                {-1.0, 0.0, 0.0},
+                {1.0, 0.0, 0.0}
+            };
+            break;
+        case ElementType::L1D3N:
+            return {
+                {-1.0, 0.0, 0.0},
+                {0.5, 0.0, 0.0},
+                {1.0, 0.0, 0.0}
+            };
+            break;
+        // 2D
+        case ElementType::T2D3N:
+            return {
+                {0.0, 0.0, 0.0},
+                {1.0, 0.0, 0.0},
+                {0.0, 1.0, 0.0}
+            };
+            break;
+        case ElementType::Q2D4N:
+            return {
+                {-1.0, -1.0, 0.0},
+                {1.0, -1.0, 0.0},
+                {1.0, 1.0, 0.0},
+                {-1.0, 1.0, 0.0}
+            };
+            break;
+        case ElementType::T2D6N:
+            return {
+                {0.0, 0.0, 0.0},
+                {0.5, 0.0, 0.0},
+                {1.0, 0.0, 0.0},
+                {0.5, 0.5, 0.0},
+                {0.0, 1.0, 0.0},
+                {0.0, 0.5, 0.0}
+            };
+            break;
+        case ElementType::Q2D8N:
+            return {
+                {-1.0, -1.0, 0.0},
+                {0.0, -1.0, 0.0},
+                {1.0, -1.0, 0.0},
+                {1.0, 0.0, 0.0},
+                {1.0, 1.0, 0.0},
+                {0.0, 1.0, 0.0},
+                {-1.0, 1.0, 0.0},
+                {-1.0, 0.0, 0.0}
+            };
+            break;
+        // 3D
+        case ElementType::T3D4N:
+            return {
+                {0.0, 0.0, 0.0},
+                {1.0, 0.0, 0.0},
+                {0.0, 1.0, 0.0},
+                {0.0, 0.0, 1.0}
+            };
+            break;
+        case ElementType::P3D5N:
+            return {
+                {-1.0, -1.0, -1.0},
+                {1.0, -1.0, -1.0},
+                {1.0, 1.0, -1.0},
+                {-1.0, 1.0, -1.0},
+                {0.0, 0.0, 1.0}
+            };
+            break;
+        case ElementType::W3D6N:
+            return {
+                {0.0, 0.0, -1.0},
+                {1.0, 0.0, -1.0},
+                {0.0, 1.0, -1.0},
+                {0.0, 0.0, 1.0},
+                {1.0, 0.0, 1.0},
+                {0.0, 1.0, 1.0}
+            };
+            break;
+        case ElementType::H3D8N:
+            return {
+                {-1.0, -1.0, -1.0},
+                {-1.0, 1.0, -1.0},
+                {-1.0, 1.0, 1.0},
+                {-1.0, -1.0, 1.0},
+                {1.0, -1.0, -1.0},
+                {1.0, 1.0, -1.0},
+                {1.0, 1.0, 1.0},
+                {1.0, -1.0, 1.0}
+            };
+            break;
+        case ElementType::T3D10N:
+            return {
+                {0.0, 0.0, 0.0},
+                {1.0, 0.0, 0.0},
+                {0.0, 1.0, 0.0},
+                {0.0, 0.0, 1.0},
+                {0.5, 0.0, 0.0},
+                {0.5, 0.5, 0.0},
+                {0.0, 0.5, 0.0},
+                {0.0, 0.0, 0.5},
+                {0.5, 0.0, 0.5},
+                {0.0, 0.5, 0.5}
+            };
+            break;
+        case ElementType::P3D13N:
+            return {
+                {-1.0, -1.0, -1.0},
+                {1.0, -1.0, -1.0},
+                {1.0, 1.0, -1.0},
+                {-1.0, 1.0, -1.0},
+                {0.0, 0.0, 1.0},
+                {0.0, -1.0, -1.0},
+                {1.0, 0.0, -1.0},
+                {0.0, 1.0, -1.0},
+                {-1.0, 0.0, -1.0},
+                {0.0, -1.0, 0.0},
+                {1.0, 0.0, 0.0},
+                {0.0, 1.0, 0.0},
+                {-1.0, 0.0, 0.0}
+            };
+            break;
+        case ElementType::W3D15N:
+            return {
+                {0.0, 0.0, -1.0},
+                {0.5, 0.0, -1.0},
+                {1.0, 0.0, -1.0},
+                {0.5, 0.5, -1.0},
+                {0.0, 1.0, -1.0},
+                {0.0, 0.5, -1.0},
+                {0.0, 0.0, 0.0},
+                {1.0, 0.0, 0.0},
+                {0.0, 1.0, 0.0},
+                {0.0, 0.0, 1.0},
+                {0.5, 0.0, 1.0},
+                {1.0, 0.0, 1.0},
+                {0.5, 0.5, 1.0},
+                {0.0, 1.0, 1.0},
+                {0.0, 0.5, 1.0}
+            };
+            break;
+        case ElementType::H3D20N:
+            return {
+                {-1.0, -1.0, -1.0},
+                {-1.0, 0.0, -1.0},
+                {-1.0, 1.0, -1.0},
+                {-1.0, 1.0, 0.0},
+                {-1.0, 1.0, 1.0},
+                {-1.0, 0.0, 1.0},
+                {-1.0, -1.0, 1.0},
+                {1.0, -1.0, -1.0},
+                {1.0, 0.0, -1.0},
+                {1.0, 1.0, -1.0},
+                {1.0, 1.0, 0.0},
+                {1.0, 1.0, 1.0},
+                {1.0, 0.0, 1.0},
+                {1.0, -1.0, 1.0}
+            };
+            break;
+        default:
+            throw _UTIL_MSG_EXCEPT("Parametric coordinates not implemented for element type.");
         }
     }
 

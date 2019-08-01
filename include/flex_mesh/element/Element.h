@@ -443,7 +443,7 @@ namespace flex_mesh
 	inline NodeVector Element<NodeType>::get_shape_function_values(const Point & parametric_coordinate) const
 	{
 		NodeVector shape_function_values;
-		get_shape_function_values(shape_function_values);
+		get_shape_function_values(parametric_coordinate, shape_function_values);
 		return shape_function_values;
 	}
 

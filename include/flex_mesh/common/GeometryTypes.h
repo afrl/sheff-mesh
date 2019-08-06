@@ -102,6 +102,7 @@ namespace flex_mesh
 		T2D6N = 25, ///< triangular 2D 6-node element (quadratic)
 		Q2D8N = 26, ///< quadrilateral 8-node quadratic element (quadratic)
 		C2D6N = 28, ///< line 6-node cohesive element (quadratic)
+        POLYGON = 29, /// < general 2D N-sided polygon
 		// Linear 3D 30-39
 		DEF3D = 30, ///< 3-D Default
 		T3D4N = 31, ///< 3D tetrahedral 4-node  (linear) element
@@ -187,7 +188,8 @@ namespace flex_mesh
 	/// Returns the permuation vector to go from the internal connectivity to the
 	/// connectivity used in VTK.  All types are not mappable to a VTK element,
 	/// in those cases, it will throw.
-	static std::vector<ConnIndex> get_vtk_permutation(const ElementType& geom_type);
+	static std::vector<ConnIndex> get_vtk_permutation(const ElementType& geom_type,
+        const ConnIndex & n_nodes);
 
 	//////////////////
 	// Definitiions //
@@ -747,19 +749,21 @@ namespace flex_mesh
 	int get_vtk_element_type(const ElementType & geom_type)
 	{
 		// 1D
-		if (geom_type == ElementType::L1D2N)
-			return 3;
-		else if (geom_type == ElementType::L1D3N)
-			return 21;
-		// 2D
-		else if (geom_type == ElementType::T2D3N)
-			return 5;
-		else if (geom_type == ElementType::Q2D4N)
-			return 9;
-		else if (geom_type == ElementType::T2D6N)
-			return 22;
-		else if (geom_type == ElementType::Q2D8N)
-			return 23;
+        if (geom_type == ElementType::L1D2N)
+            return 3;
+        else if (geom_type == ElementType::L1D3N)
+            return 21;
+        // 2D
+        else if (geom_type == ElementType::T2D3N)
+            return 5;
+        else if (geom_type == ElementType::Q2D4N)
+            return 9;
+        else if (geom_type == ElementType::T2D6N)
+            return 22;
+        else if (geom_type == ElementType::Q2D8N)
+            return 23;
+        else if (geom_type == ElementType::POLYGON)
+            return 7;
 		//else if (geom_type == ElementType::POLYGON)
 		//	return 7;
 		// 3D
@@ -785,27 +789,30 @@ namespace flex_mesh
 			throw _UTIL_MSG_EXCEPT("VTK type conversion not implemented.");
 	}
 
-	std::vector<ConnIndex> get_vtk_permutation(const ElementType & geom_type)
+	std::vector<ConnIndex> get_vtk_permutation(
+        const ElementType & geom_type,
+        const ConnIndex & n_nodes)
 	{
-		auto num_nodes = get_num_nodes_for_type(geom_type);
-		std::vector<ConnIndex> permutation(num_nodes);
+		std::vector<ConnIndex> permutation(n_nodes);
 		// Fill permutation with 0 - num_nodes-1
 		std::iota(permutation.begin(), permutation.end(), 0);
 
 		// 1D
-		if (geom_type == ElementType::L1D2N)
-			return permutation; // Unchanged
-		else if (geom_type == ElementType::L1D3N)
-			throw _UTIL_MSG_EXCEPT("L1D2N type not implemented.");
-		// 2D
-		else if (geom_type == ElementType::T2D3N)
-			return permutation; // Unchanged
-		else if (geom_type == ElementType::Q2D4N)
-			return permutation; // Unchanged
-		else if (geom_type == ElementType::T2D6N)
-			return{ 0,2,4,1,3,5 }; // Different
-		else if (geom_type == ElementType::Q2D8N)
-			return{ 0,2,4,6,1,3,5,7 }; // Different
+        if (geom_type == ElementType::L1D2N)
+            return permutation; // Unchanged
+        else if (geom_type == ElementType::L1D3N)
+            throw _UTIL_MSG_EXCEPT("L1D2N type not implemented.");
+        // 2D
+        else if (geom_type == ElementType::T2D3N)
+            return permutation; // Unchanged
+        else if (geom_type == ElementType::Q2D4N)
+            return permutation; // Unchanged
+        else if (geom_type == ElementType::T2D6N)
+            return{ 0,2,4,1,3,5 }; // Different
+        else if (geom_type == ElementType::Q2D8N)
+            return{ 0,2,4,6,1,3,5,7 }; // Different
+        else if (geom_type == ElementType::POLYGON)
+            return permutation; // Unchanged
 		//else if (geom_type == ElementType::POLYGON)
 		//	return permutation; // Unchanged
 		// 3D

@@ -89,22 +89,24 @@ namespace flex_mesh
 
 		fout << "CELLS " << mesh.elements().size() << " " << total_num_cell_conn_entries << std::endl;
 
-		for (auto& e_ptr : mesh.elements()) {
-			auto vtk_permutation = get_vtk_permutation(e_ptr->get_type());
-			if (vtk_permutation.size() > 0) {
+		for (auto& e_ptr : mesh.elements())
+        {
+			auto vtk_permutation = get_vtk_permutation(e_ptr->get_type(), e_ptr->get_conn().size());
+			if (vtk_permutation.size() > 0)
+            {
 				auto& connectivity = e_ptr->get_conn();
 				// Note: connectivity may have uint8_t type, which will be interpretted as a char
 				// by ostream, resulting in an ASCII character instead of the integer. "+0" forces
 				// it to be interpretted as an integer.
 				fout << connectivity.size() + 0;
-				for (unsigned int i = 0; i < connectivity.size(); ++i) {
+				for (unsigned int i = 0; i < connectivity.size(); ++i)
+                {
 					fout << " " << connectivity[vtk_permutation[i]]->get_local_number();
 				}
 			}
 			else {
 				// How do we handle polygons and polyhedrons?
-				// For now, skip unsupported types
-				// Should there be a warning?
+                throw _UTIL_MSG_EXCEPT("Element type unsupported.");
 			}
 			fout << std::endl;
 		}

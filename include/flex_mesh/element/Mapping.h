@@ -50,7 +50,7 @@ namespace flex_mesh
 				current_shape_values_.resize(quadrature.n_quad_points(), get_num_nodes_for_type(element_type));
 				current_shape_derivs_.resize(quadrature.n_quad_points());
 
-				for (unsigned int qp = 0; qp < quadrature.n_quad_points(); qp++)
+				for (simple_math::QuadratureIndex qp = 0; qp < quadrature.n_quad_points(); qp++)
 				{
 					Point parametric_coord = quadrature.parametric_point(qp);
 					ShapeFunctionsType::values(element_type, parametric_coord, shape_values_for_quad);

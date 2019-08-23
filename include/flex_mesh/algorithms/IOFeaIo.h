@@ -16,22 +16,21 @@
 #include "flex_mesh/algorithms/Search.h"
 
 #ifdef SWIG
-#define USE_FEAIO
+#    define USE_FEAIO
 #endif
 
 #ifdef USE_FEAIO
-#include "fea_io/meta/MetaWriter.h"
-#include "fea_io/mesh/MeshWriter.h"
-#include "fea_io/data/DataWriter.h"
-#include "fea_io/mesh/MeshReader.h"
-#include "fea_io/meta/MetaReader.h"
+#    include "fea_io/meta/MetaWriter.h"
+#    include "fea_io/mesh/MeshWriter.h"
+#    include "fea_io/data/DataWriter.h"
+#    include "fea_io/mesh/MeshReader.h"
+#    include "fea_io/meta/MetaReader.h"
 
-#ifdef HAVE_FILESYSTEM
-#include<experimental/filesystem>
-#else
-#include "fea_io/common/Filesystem.h"
-#endif
-
+#    ifdef HAVE_FILESYSTEM
+#        include <experimental/filesystem>
+#    else
+#        include "fea_io/common/Filesystem.h"
+#    endif
 #endif
 
 #include <algorithm>

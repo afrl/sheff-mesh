@@ -8,6 +8,7 @@
 #include "flex_mesh/element/Element.h"
 #include "flex_mesh/mesh/Mesh.h"
 #include "flex_mesh/algorithms/IO.h"
+#include "flex_mesh/algorithms/IOFeaIo.h"
 
 using namespace flex_mesh;
 

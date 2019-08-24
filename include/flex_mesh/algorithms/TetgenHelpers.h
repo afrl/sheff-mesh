@@ -34,7 +34,7 @@ namespace flex_mesh
         // Create nodes
         NodeVector nodes;
         nodes.reserve(in.numberofpoints);
-        for (unsigned int i = 0; i < in.numberofpoints; i++)
+        for (int i = 0; i < in.numberofpoints; i++)
         {
             auto new_node = mesh.add_node_by_coord({
                 in.pointlist[i * 3],
@@ -46,14 +46,14 @@ namespace flex_mesh
         // Create elements
         tetgen::tetgenio::facet* f;
         tetgen::tetgenio::polygon* p;
-        for (unsigned int i = 0; i < in.numberoffacets; i++)
+        for (int i = 0; i < in.numberoffacets; i++)
         {
             f = &in.facetlist[i];
-            for (unsigned int j = 0; j < f->numberofpolygons; j++)
+            for (int j = 0; j < f->numberofpolygons; j++)
             {
                 p = &f->polygonlist[j];
                 NodeVector element_connectivity(p->numberofvertices, nullptr);
-                for (unsigned int j = 0; j < p->numberofvertices; j++)
+                for (int j = 0; j < p->numberofvertices; j++)
                 {
                     element_connectivity[j] = nodes[p->vertexlist[j]];
                 }
@@ -76,7 +76,7 @@ namespace flex_mesh
         // Create nodes
         NodeVector nodes;
         nodes.reserve(out.numberofpoints);
-        for (unsigned int i = 0; i < out.numberofpoints; i++)
+        for (int i = 0; i < out.numberofpoints; i++)
         {
             auto new_node = mesh.add_node_by_coord({
                 out.pointlist[i * 3],
@@ -87,9 +87,9 @@ namespace flex_mesh
 
         // Create elements
         NodeVector element_connectivity(4, nullptr);
-        for (unsigned int i = 0; i < out.numberoftetrahedra; i++)
+        for (int i = 0; i < out.numberoftetrahedra; i++)
         {
-            for (unsigned int j = 0; j < 4; j++)
+            for (int j = 0; j < 4; j++)
             {
                 element_connectivity[j] = nodes[out.tetrahedronlist[i * 4 + j]];
             }

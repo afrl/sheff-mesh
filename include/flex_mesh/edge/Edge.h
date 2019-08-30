@@ -54,10 +54,6 @@ namespace flex_mesh
 		/// An identifier that will match any other faces that have the exact same connectivity
 		/// This is generated when the face is created
 		std::size_t conn_hash_id_;
-
-		/// Calculate the unique id for the connectivity based on the hash of the sorted connectivity
-		/// pointers.  Any edge with the same nodes (in any order) will have the same hash.
-		void update_conn_hash_id();
 	};
 
 	/////////////////
@@ -69,7 +65,7 @@ namespace flex_mesh
 		: type_(geom_type), connectivity_(connectivity), conn_hash_id_(0)
 	{
 		assert(connectivity_.size() == get_num_nodes_for_type(type_));
-		update_conn_hash_id();
+        conn_hash_id_ = connectivity_.get_hash();
 	}
 
 	template<typename NodeType>
@@ -93,12 +89,15 @@ namespace flex_mesh
 	template<typename NodeType>
 	inline FloatType Edge<NodeType>::get_length() const
 	{
-		if (type_ == EdgeType::E2N)
-			return distance(*connectivity_[0], *connectivity_[1]);
-		else if (type_ == EdgeType::E3N) // An approximation (should this be fixed?)
-			return distance(*connectivity_[0], *connectivity_[2]);
-		else
-			throw _UTIL_MSG_EXCEPT("Unsupported edge type.");
+        switch (type_)
+        {
+        case EdgeType::E2N:
+            return distance(*connectivity_[0], *connectivity_[1]);
+        case EdgeType::E3N: // An approximation (should this be fixed?)
+            return distance(*connectivity_[0], *connectivity_[2]);
+        default:
+            throw _UTIL_MSG_EXCEPT("Unsupported edge type.");
+        }
 	}
 
 	template<typename NodeType>
@@ -116,10 +115,14 @@ namespace flex_mesh
 	template<typename NodeType>
 	inline void Edge<NodeType>::swap_nodes(const NodeType* old_node, NodeType* new_node)
 	{
-		for (unsigned int i = 0; i < get_num_nodes_for_type(type_); ++i)
-			if (connectivity_[i] == old_node)
-				connectivity_[i] = new_node;
-		update_conn_hash_id();
+        for (unsigned int i = 0; i < get_num_nodes_for_type(type_); ++i)
+        {
+            if (connectivity_[i] == old_node)
+            {
+                connectivity_[i] = new_node;
+            }
+        }
+        conn_hash_id_ = connectivity_.get_hash();
 	}
 
 	template<typename NodeType>
@@ -132,14 +135,6 @@ namespace flex_mesh
 	inline bool Edge<NodeType>::operator>(const Edge & other) const
 	{
 		return compare_points(other.get_mean_coordinate(), get_mean_coordinate(), NodeType::get_compare_tolerance());
-	}
-
-	template<typename NodeType>
-	inline void Edge<NodeType>::update_conn_hash_id()
-	{
-		std::vector<NodeType *> sorted_conn = connectivity_.copy_as_vector();
-		std::sort(sorted_conn.begin(), sorted_conn.end());
-		conn_hash_id_ = VectorPtrHasher<NodeType>::hash(sorted_conn);
 	}
 
 };

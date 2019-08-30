@@ -109,6 +109,9 @@ namespace flex_mesh
 		/// Given a map from old to new nodes, this will replace the pointers in
 		/// the element and face connectivity containers.
 		virtual void remap_element_nodes(const std::map<NodeType *, NodeType *> & old_to_new_nodes);
+        /// Find the face of the element that contains the nodes.
+        /// Returns a pair indicating if there was a face with the given nodes and the index of that face.
+        std::pair<bool, ConnSize> find_face_index_with_nodes(const std::vector<ConnSize>& node_indices) const;
 
 		//////////////////
 		// Orientations //
@@ -366,6 +369,36 @@ namespace flex_mesh
 				connectivity_[i] = find_iter->second;
 		}
 	}
+
+    template<typename NodeType>
+    inline std::pair<bool, typename Element<NodeType>::ConnSize>
+    Element<NodeType>::find_face_index_with_nodes(
+        const std::vector<ConnSize>& node_indices) const
+    {
+        Connectivity<NodeType, ConnSize> given_connectivity;
+        for (auto node_index : node_indices)
+        {
+            given_connectivity.push_back(connectivity_[node_index]);
+        }
+        auto given_hash = given_connectivity.get_hash();
+
+        auto face_infos = get_face_info(type_);
+        for (auto face_index : utility::range_from_zero(face_infos.size()))
+        {
+            auto& face_info = face_infos[face_index];
+            Connectivity<NodeType, ConnSize> face_connectivity;
+            for (auto node_index : face_info.connectivity)
+            {
+                face_connectivity.push_back(connectivity_[node_index]);
+            }
+            if (given_hash == face_connectivity.get_hash())
+            {
+                return { true, static_cast<ConnIndex>(face_index) };
+            }
+        }
+
+        return { false, 0 };
+    }
 
 	template<typename NodeType>
 	inline void Element<NodeType>::allocate_lcs(const LCSAssignment lcs_assignment)

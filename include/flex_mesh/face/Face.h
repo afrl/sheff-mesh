@@ -69,10 +69,6 @@ namespace flex_mesh
 		/// An identifier that will match any other faces that have the exact same connectivity
 		/// This is generated when the face is created
 		std::size_t conn_hash_id_;
-
-		/// Calculate the unique id for the connectivity based on the hash of the sorted connectivity
-		/// pointers.  Any edge with the same nodes (in any order) will have the same hash.
-		void update_conn_hash_id();
 	};
 
 	/////////////////
@@ -209,15 +205,6 @@ namespace flex_mesh
 	inline bool Face<NodeType>::operator>(const Face & other) const
 	{
 		return compare_points(other.get_mean_coordinate(), get_mean_coordinate(), NodeType::get_compare_tolerance());
-	}
-
-	template<typename NodeType>
-	inline void Face<NodeType>::update_conn_hash_id()
-	{
-		// Create connectivity hash
-		std::vector<NodeType *> sorted_conn = connectivity_.copy_as_vector();
-		std::sort(sorted_conn.begin(), sorted_conn.end());
-		conn_hash_id_ = VectorPtrHasher<NodeType>::hash(sorted_conn);
 	}
 
 	/*

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "utility/DynamicArray.h"
+#include "flex_mesh/common/Utility.h"
 
 namespace flex_mesh
 {
@@ -25,5 +26,15 @@ namespace flex_mesh
 			Parent::operator=(nodes);
 			return *this;
 		};
+
+        /// Returns a hashed value of the sorted pointers of the connectivity.
+        /// Two connectivities with the same nodes (even with different orders)
+        /// will have the same hash.
+        std::size_t get_hash() const
+        {
+            std::vector<NodeType*> sorted_conn = this->copy_as_vector();
+            std::sort(sorted_conn.begin(), sorted_conn.end());
+            return VectorPtrHasher<NodeType>::hash(sorted_conn);
+        }
 	};
 };

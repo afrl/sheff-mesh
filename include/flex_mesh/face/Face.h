@@ -80,7 +80,7 @@ namespace flex_mesh
 		: type_(geom_type), connectivity_(connectivity), conn_hash_id_(0)
 	{
 		assert(connectivity_.size() == get_num_nodes_for_type(type_));
-		update_conn_hash_id();
+        conn_hash_id_ = connectivity_.get_hash();
 	}
 
 	template<typename NodeType>

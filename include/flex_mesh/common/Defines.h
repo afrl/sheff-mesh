@@ -19,4 +19,12 @@ namespace flex_mesh
 	using Vector3D = simple_math::Vector3D;
 	using NodeVector = simple_math::GeneralVector;
 	using NodeX3Matrix = simple_math::GeneralMatrix;
+
+    enum class TopologyType
+    {
+        Node,
+        Edge,
+        Face,
+        Element
+    };
 };

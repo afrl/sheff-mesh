@@ -77,6 +77,14 @@ namespace flex_mesh
         std::vector<ConnIndex> connectivity;
     };
 
+    struct FacetInfo
+    {
+        /// Clock-wise points of the facet (relative to element connectivity)
+        std::vector<ConnIndex> points;
+        /// The edge index that the segment is a part of
+        std::vector<int8_t> segment_markers;
+    };
+
 	///////////////////
 	// Element Types //
 	///////////////////
@@ -166,6 +174,10 @@ namespace flex_mesh
     static const std::vector<EdgeInfo> get_edge_info(const ElementType& geom_type);
     /// Given an element geometry type, returns the faces of the element
     static const std::vector<FaceInfo> get_face_info(const ElementType& geom_type);
+    /// Given an element geometry type, returns the faces of the element as if each
+    /// higher-order edge is a collection of linear 2-node edges, and the nodes of
+    /// each face are ordered clockwise.
+    static const std::vector<FacetInfo> get_facet_info(const ElementType& geom_type);
     /// Returns the parametric coordinates of each of the nodes in the element
     static const std::vector<Point> get_node_parametric_coordinates(const ElementType& geom_type);
 
@@ -558,6 +570,74 @@ namespace flex_mesh
             //    8,9,10,11,12,13,14,15 };
         default:
             throw _UTIL_MSG_EXCEPT("Face connectivity not implemented.");
+        }
+    }
+
+    namespace detail
+    {
+        static const std::vector<FacetInfo> get_facet_info_helper_linear(
+            const std::vector<FaceInfo>& face_info)
+        {
+            std::vector<FacetInfo> facet_info;
+            facet_info.reserve(face_info.size());
+            for (auto& face : face_info)
+            {
+                facet_info.push_back({
+                    face.connectivity,
+                    std::vector<int8_t>(face.edges.begin(), face.edges.end()) });
+            }
+            return facet_info;
+        }
+
+        static const std::vector<FacetInfo> get_facet_info_helper_quadratic(
+            const std::vector<FaceInfo>& face_info)
+        {
+            std::vector<FacetInfo> facet_info;
+            facet_info.reserve(face_info.size());
+            for (auto& face : face_info)
+            {
+                std::vector<int8_t> segment_markers;
+                segment_markers.reserve(2 * face.edges.size());
+                for (auto& edge_index : face.edges)
+                {
+                    segment_markers.push_back(static_cast<int8_t>(edge_index));
+                    segment_markers.push_back(static_cast<int8_t>(edge_index));
+                }
+
+                facet_info.push_back({ face.connectivity, segment_markers });
+            }
+            return facet_info;
+        }
+    }
+
+    const std::vector<FacetInfo> get_facet_info(const ElementType& geom_type)
+    {
+        auto face_info = get_face_info(geom_type);
+
+        switch (geom_type)
+        {
+        // For these linear 3D elements, the faces for all of the following types are
+        // already ordered clock-wise, so no modification to the connectivity from
+        // face_info is needed.  Additionaly, each edge already has 2-nodes, so the
+        // edges and segments are equivalent (no modification needed).
+        case ElementType::T3D4N:
+        case ElementType::P3D5N:
+        case ElementType::W3D6N:
+        case ElementType::H3D8N:
+            return detail::get_facet_info_helper_linear(face_info);
+        // For these quadratic 3D elements, the faces for all of the following types are
+        // already ordered clock-wise, so no modification to the connectivity from
+        // face_info is needed.  However, each edge has 3-nodes, so the edge index
+        // needs to be repeated for each edge.
+        case ElementType::T3D10N:
+        case ElementType::P3D13N:
+        case ElementType::W3D15N:
+        case ElementType::H3D20N:
+            return detail::get_facet_info_helper_quadratic(face_info);
+        case ElementType::C3D8N:
+        case ElementType::C3D16N:
+        default:
+            throw _UTIL_MSG_EXCEPT("Facet converion is not implemented.");
         }
     }
 

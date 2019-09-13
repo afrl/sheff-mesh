@@ -12,6 +12,15 @@
 
 namespace flex_mesh
 {
+    /// \brief Describes a part of the topology of an element.
+    struct ElementSubTopology
+    {
+        /// Will either be Node, Edge, or Face since this is a topology part of an element
+        const TopologyType type;
+        /// The index of the respective node, face or edge relative to the element
+        const ConnIndex index;
+    };
+
 	template<typename NodeType>
 	class Element
 	{
@@ -112,6 +121,13 @@ namespace flex_mesh
         /// Find the face of the element that contains the nodes.
         /// Returns a pair indicating if there was a face with the given nodes and the index of that face.
         std::pair<bool, ConnSize> find_face_index_with_nodes(const std::vector<ConnSize>& node_indices) const;
+        /// Find the edge of the element that contains the nodes.
+        /// Returns a pair indicating if there was a face with the given nodes and the index of that edge.
+        std::pair<bool, ConnSize> find_edge_index_with_nodes(const std::vector<ConnSize>& node_indices) const;
+        /// Determines the sub-topology of this element given the nodes (i.e. finds the face, edge, or
+        /// node given a list of nodes).  First, tests for node if node_indices has size of 1.  Second,
+        /// tests for a face.  Finally, tests for an edge.  Throws if none could be found.
+        ElementSubTopology find_subtopology_from_nodes(const std::vector<ConnSize>& node_indices) const;
 
 		//////////////////
 		// Orientations //
@@ -398,6 +414,60 @@ namespace flex_mesh
         }
 
         return { false, 0 };
+    }
+
+    template<typename NodeType>
+    inline std::pair<bool, typename Element<NodeType>::ConnSize>
+        Element<NodeType>::find_edge_index_with_nodes(
+            const std::vector<ConnSize>& node_indices) const
+    {
+        Connectivity<NodeType, ConnSize> given_connectivity;
+        for (auto node_index : node_indices)
+        {
+            given_connectivity.push_back(connectivity_[node_index]);
+        }
+        auto given_hash = given_connectivity.get_hash();
+
+        auto edge_infos = get_edge_info(type_);
+        for (auto edge_index : utility::range_from_zero(edge_infos.size()))
+        {
+            auto& edge_info = edge_infos[edge_index];
+            Connectivity<NodeType, ConnSize> edge_connectivity;
+            for (auto node_index : edge_info.connectivity)
+            {
+                edge_connectivity.push_back(connectivity_[node_index]);
+            }
+            if (given_hash == edge_connectivity.get_hash())
+            {
+                return { true, static_cast<ConnIndex>(edge_index) };
+            }
+        }
+
+        return { false, 0 };
+    }
+
+    template<typename NodeType>
+    inline ElementSubTopology Element<NodeType>::find_subtopology_from_nodes(
+        const std::vector<ConnSize>& node_indices) const
+    {
+        if (node_indices.size() == 1)
+        {
+            return { TopologyType::Node, node_indices.front() };
+        }
+
+        auto result = find_face_index_with_nodes(node_indices);
+        if (result.first == true)
+        {
+            return { TopologyType::Face, result.second };
+        }
+
+        result = find_edge_index_with_nodes(node_indices);
+        if (result.first == true)
+        {
+            return { TopologyType::Edge, result.second };
+        }
+
+        throw _UTIL_MSG_EXCEPT("There was no sub-topology in the element found that contains the given nodes.");
     }
 
 	template<typename NodeType>

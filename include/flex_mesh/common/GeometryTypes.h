@@ -132,6 +132,8 @@ namespace flex_mesh
 	/// used for classes like Mapping, which use the underlying type as an index.
 	static constexpr ConnIndex MAX_ELEMENT_TYPE_VALUE = 48;
 
+    static std::string to_string(const ElementType& type);
+
 	/// Returns the number of nodes that the geometry type will have.
 	static ConnIndex get_num_nodes_for_type(const ElementType& geom_type);
 
@@ -915,6 +917,69 @@ namespace flex_mesh
 		else
 			return{};
 	}
+
+    std::string to_string(const ElementType& type)
+    {
+        switch (type)
+        {
+        case ElementType::UNKNGEOM:
+            return "UNKNGEOM";
+        case ElementType::DEF1D:
+            return "DEF1D";
+        case ElementType::L1D2N:
+            return "L1D2N";
+        case ElementType::L1D3N:
+            return "L1D3N";
+        // 2D types 20-24 is linear and 25-29 is quadratic
+        case ElementType::DEF2D:
+            return "DEF2D";
+        case ElementType::T2D3N:
+            return "T2D3N";
+        case ElementType::Q2D4N:
+            return "Q2D4N";
+        case ElementType::C2D4N:
+            return "C2D4N";
+        case ElementType::T2D6N:
+            return "T2D6N";
+        case ElementType::Q2D8N:
+            return "Q2D8N";
+        case ElementType::C2D6N:
+            return "C2D6N";
+        case ElementType::POLYGON:
+            return "POLYGON";
+        // Linear 3D 30-39
+        case ElementType::DEF3D:
+            return "DEF3D";
+        case ElementType::T3D4N:
+            return "T3D4N";
+        case ElementType::P3D5N:
+            return "P3D5N";
+        case ElementType::W3D6N:
+            return "W3D6N";
+        case ElementType::H3D8N:
+            return "H3D8N";
+        case ElementType::Q3D4N:
+            return "Q3D4N";
+        case ElementType::C3D8N:
+            return "C3D8N";
+        case ElementType::POLYHEDRON:
+            return "POLYHEDRON";
+        // Quadratic 3D 41-49
+        case ElementType::T3D10N:
+            return "T3D10N";
+        case ElementType::P3D13N:
+            return "P3D13N";
+        case ElementType::W3D15N:
+            return "W3D15N";
+        case ElementType::H3D20N:
+            return "H3D20N";
+        case ElementType::Q3D8N:
+            return "Q3D8N";
+        case ElementType::C3D16N:
+            return "C3D16N";
+        }
+        throw _UTIL_MSG_EXCEPT("String conversion not implemented for element type.");
+    }
 
     ConnIndex get_num_nodes_for_type(const ElementType & geom_type)
 	{

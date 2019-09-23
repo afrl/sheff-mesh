@@ -104,7 +104,8 @@ namespace flex_mesh
 		/// Returns vector that is mean coordinate of the nodes defining this face
 		Point get_mean_coordinate() const;
 		/// Fills a vector (which it will resize) with the global numbers of the nodes
-		void get_global_node_numbers(std::vector<GlobalIndex>& numbers) const;
+        void get_global_node_numbers(std::vector<GlobalIndex>& numbers) const;
+        std::vector<GlobalIndex> get_global_node_numbers() const;
 		/// Return a set of the nodes that are shared between this and another element
 		std::set<NodeType *> get_shared_nodes(const Element &other) const;
         /// Returns a vector of pairs indicating the positions of any shared nodes in the
@@ -336,6 +337,14 @@ namespace flex_mesh
 			numbers[i] = connectivity_[i]->get_global_number();
 		}
 	}
+
+    template<typename NodeType>
+    inline std::vector<GlobalIndex> Element<NodeType>::get_global_node_numbers() const
+    {
+        std::vector<GlobalIndex> numbers;
+        get_global_node_numbers(numbers);
+        return numbers;
+    }
 
 	template<typename NodeType>
 	inline std::set<NodeType*> Element<NodeType>::get_shared_nodes(const Element & other) const

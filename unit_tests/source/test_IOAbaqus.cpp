@@ -14,9 +14,11 @@
 
 using namespace flex_mesh;
 
-int main()
+int main(int argc, char** argv)
 {
 	initialize_flex_mesh(1e-14);
+    utility::MPIUtils::init(&argc, &argv);
+    fea_io::MPIUtils::init(&argc, &argv);
 
 	using NodeTyped = Node;
 	using ElementTyped = Element<NodeTyped>;

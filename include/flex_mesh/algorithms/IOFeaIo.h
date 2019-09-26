@@ -16,7 +16,7 @@
 #include "flex_mesh/algorithms/Search.h"
 
 #ifdef SWIG
-#define USE_FEAIO
+#    define USE_FEAIO
 #endif
 
 #ifdef USE_FEAIO

@@ -8,8 +8,8 @@
 #include "flex_mesh/algorithms/Search.h"
 
 #ifdef USE_FEAIO
-#include "fea_io/mesh/MeshEnums.h"
-#include "fea_io/mesh/MeshInfoStructs.h"
+#    include "fea_io/mesh/MeshEnums.h"
+#    include "fea_io/mesh/MeshInfoStructs.h"
 #endif
 
 namespace flex_mesh

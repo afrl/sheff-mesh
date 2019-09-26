@@ -328,10 +328,6 @@ class SpecializedOptionType( Enum ):
 # End class SpecializedOptionType
 #####################################################################################
 
-#
-# End class CMakeOptionType
-#####################################################################################
-
 class SpecializedCMakeOption:
     def __init__( self, \
                   option_type=SpecializedOptionType.CMakeUserDefinedBool, \
@@ -458,7 +454,7 @@ def parse_options( specialized_options = [] ):
         if special_opt.type == SpecializedOptionType.EnvVarSetTrue:
             misc_group.add_argument(
                 special_opt.cmd_line_flag, action='store_true', help=special_opt.help_str)
-    
+
     ####################################
     # If no args provided, show help...
     if( len( sys.argv ) == 1 ):
@@ -698,19 +694,19 @@ def config( opts, module_dir, specialized_options = [] ):
     if opts.print_cmd:
         print_color( cmd, "cyan" )
 
-    config_flag = subprocess.call( cmd, shell=True )
+    config_flag = subprocess.call(cmd, shell=True)
 
     if config_flag != 0:
         if write_log:
             with open( "cmake.log", 'r', encoding=get_write_encoding() ) as fin:
-                file_str = fin.read()
-                print( file_str )
-                print_color("===ERROR during configuration. (See cmake.log for details)", "red")
+                    file_str = fin.read()
+                    print( file_str )
+                    print_color("===ERROR during configuration. (See cmake.log for details)", "red")
 
-                # Note: the string "CMake Error is looked for because warnings will still generate
-                # the words containing the text "Error" in the description of the warnings (for some reason).
-                if "CMake Error" in file_str:
-                    sys.exit()
+                    # Note: the string "CMake Error is looked for because warnings will still generate
+                    # the words containing the text "Error" in the description of the warnings (for some reason).
+                    if "CMake Error" in file_str:
+                        sys.exit()
         else:
             print_color("===ERROR during configuration. (See cmake.log for details)", "red")
 
@@ -753,11 +749,16 @@ def build( opts, module_dir ):
 #####################################################################################
 
 def test(opts, selected_modules_dirs):
+
+    vflag = ""
+    if( opts.verbose ):
+        vflag = " --verbose "
+
     for module_dir in selected_modules_dirs:
         os.chdir(module_dir.build_dir)
 
         print_color("Testing----------------" + module_dir.name, "blue")
-        cmd = mod_for_os('ctest -C ' + opts.cmake_opts["build-type"] + ' -j ' + str(opts.n_jobs))
+        cmd = mod_for_os('ctest ' + vflag + ' -C ' + opts.cmake_opts["build-type"] + ' -j ' + str(opts.n_jobs))
 
         test_flag = subprocess.call(cmd, shell = True)
 

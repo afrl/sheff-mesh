@@ -82,6 +82,12 @@ namespace flex_mesh
 		const Connectivity<NodeType, ConnSize>& get_conn() const;
 		/// Get the connectivity in terms of the local node numbering for a partition
 		std::vector<LocalIndex> get_local_conn() const;
+        /// Get the expanded connectivity in terms of the local node numbering for a
+        /// partition that can used for output.  For polyhedral elements and any 
+        /// other type that cannot be fully described with a list, this will encode
+        /// extra information needed to plot the element.  For most element types, this
+        /// is equivalent to get_local_conn().
+        virtual std::vector<LocalIndex> get_expanded_local_conn() const;
 
 		/// Returns the node pointer at the beginning of the connectivity
 		auto begin() const;
@@ -298,6 +304,12 @@ namespace flex_mesh
 			local_indices.push_back(n_ptr->get_local_number());
 		return local_indices;
 	}
+
+    template<typename NodeType>
+    inline std::vector<LocalIndex> Element<NodeType>::get_expanded_local_conn() const
+    {
+        return get_local_conn();
+    }
 
 	template<typename NodeType>
 	inline auto Element<NodeType>::begin() const

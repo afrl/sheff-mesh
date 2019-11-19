@@ -82,26 +82,28 @@ namespace flex_mesh
 		}
 
 		int total_num_cell_conn_entries = 0;
-		for (auto& e_ptr : mesh.elements()) {
+		for (auto& e_ptr : mesh.elements())
+        {
 			total_num_cell_conn_entries++;
-			total_num_cell_conn_entries += e_ptr->get_num_nodes();
+			total_num_cell_conn_entries += e_ptr->get_expanded_local_conn().size();
 		}
 
 		fout << "CELLS " << mesh.elements().size() << " " << total_num_cell_conn_entries << std::endl;
 
 		for (auto& e_ptr : mesh.elements())
         {
-			auto vtk_permutation = get_vtk_permutation(e_ptr->get_type(), e_ptr->get_conn().size());
+            auto& local_numbered_conn = e_ptr->get_expanded_local_conn();
+			auto vtk_permutation = get_vtk_permutation(
+                e_ptr->get_type(), local_numbered_conn.size());
 			if (vtk_permutation.size() > 0)
             {
-				auto& connectivity = e_ptr->get_conn();
 				// Note: connectivity may have uint8_t type, which will be interpretted as a char
 				// by ostream, resulting in an ASCII character instead of the integer. "+0" forces
 				// it to be interpretted as an integer.
-				fout << connectivity.size() + 0;
-				for (unsigned int i = 0; i < connectivity.size(); ++i)
+				fout << local_numbered_conn.size() + 0;
+				for (unsigned int i = 0; i < local_numbered_conn.size(); ++i)
                 {
-					fout << " " << connectivity[vtk_permutation[i]]->get_local_number();
+					fout << " " << local_numbered_conn[vtk_permutation[i]];
 				}
 			}
 			else {
@@ -113,7 +115,8 @@ namespace flex_mesh
 
 		fout << "CELL_TYPES " << mesh.elements().size() << std::endl;
 
-		for (auto& e_ptr : mesh.elements()) {
+		for (auto& e_ptr : mesh.elements())
+        {
 			fout << get_vtk_element_type(e_ptr->get_type()) << std::endl;
 		}
 

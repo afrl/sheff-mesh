@@ -25,24 +25,34 @@ namespace flex_mesh
 		virtual ~PolyhedronElement() {};
 
 		/// Initializes the polyhedron element provided the connecitivty of the faces.
-		/// Note: nodes should be repeated in the connectivity of each face as needed.
-		void initialize(const std::vector<Connectivity<NodeType, ConnSize>>& polyhedron_faces);
+		/// Note: nodes should be repeated in polyhedron_faces as needed, but unique_nodes
+        /// should only contain the set of unique nodes in the order that output will be done.
+        void initialize(
+            const Connectivity<NodeType, ConnSize>& unique_nodes,
+            const std::vector<utility::DynamicArray<ConnSize, ConnSize>>& polyhedron_faces);
 		/// Throws an error to prevent use
 		virtual void initialize(const ElementType type,
 			const std::vector<NodeType *> & connectivity,
 			const LCSAssignment lcs_assignment = LCSAssignment::None) override;
 
+        /// Get the expanded connectivity in terms of the local node numbering for a
+        /// partition that can used for output.  For polyhedral elements and any 
+        /// other type that cannot be fully described with a list, this will encode
+        /// extra information needed to plot the element.
+        /// This expands to: 
+        /// { (# of faces), (# nodes in face 0), ... local numbers for face 0, ... }
+        virtual std::vector<LocalIndex> get_expanded_local_conn() const override;
+
 		///////////////////
 		// Interpolation //
 		///////////////////
 
-		/// Resizes and fills the Eigen matrix with the shape function values
+		/// Currently, this type of element does not have shape functions, so it throws.
 		virtual void get_shape_function_values(
 			const Point& cartesian_coordinate,
 			NodeVector& shape_function_values) const override;
 
-		/// Resizes and fills the Eigen matrix with the shape function derivatives
-		/// Note: derivatives are in terms of parammetric coordinates (dPhi/dxi)
+        /// Currently, this type of element does not have shape functions, so it throws.
 		virtual void get_shape_function_derivatives(
 			const Point& cartesian_coordinate,
 			NodeX3Matrix& shape_function_derivs) const override;
@@ -50,7 +60,7 @@ namespace flex_mesh
 	protected:
 		/// TODO document
 		utility::DynamicArray<utility::DynamicArray<ConnSize, ConnSize>, ConnSize> polyhedron_faces_;
-		utility::DynamicArray<Vertex<const NodeType>, ConnSize> graph_;
+		//utility::DynamicArray<Vertex<const NodeType>, ConnSize> graph_;
 	};
 
 	/////////////////
@@ -59,30 +69,25 @@ namespace flex_mesh
 
 
 	template<typename NodeType>
-	inline void PolyhedronElement<NodeType>::initialize(const std::vector<Connectivity<NodeType, ConnSize>>& polyhedron_faces)
+	inline void PolyhedronElement<NodeType>::initialize(
+        const Connectivity<NodeType, ConnSize>& unique_nodes,
+        const std::vector<utility::DynamicArray<ConnSize, ConnSize>>& polyhedron_faces)
 	{
 		this->type_ = ElementType::POLYHEDRON;
 
-		std::set<NodeType*> unique_nodes;
-		for (auto& face : polyhedron_faces)
-			for (auto& n_ptr : face)
-				unique_nodes.insert(n_ptr);
-
 		Parent::connectivity_ = unique_nodes;
+        polyhedron_faces_.resize(polyhedron_faces.size());
+        for (auto i : utility::range_from_zero(polyhedron_faces.size()))
+        {
+            polyhedron_faces_[i] = polyhedron_faces[i];
+        }
 		std::map<NodeType*, ConnSize> node_to_conn_index;
-		for (ConnSize i = 0; i < Parent::connectivity_.size(); i++)
-			node_to_conn_index[Parent::connectivity_[i]] = i;
+        for (ConnSize i = 0; i < Parent::connectivity_.size(); i++)
+        {
+            node_to_conn_index[Parent::connectivity_[i]] = i;
+        }
 
-		// Create face structure
-		for (auto i = 0; i < polyhedron_faces.size(); i++) {
-			if (polyhedron_faces[i].size() != 3)
-				throw _UTIL_MSG_EXCEPT("Currently, only polyhedrons with triangular faces are accepted. TODO implement triangularization of faces.");
-
-			polyhedron_faces_.push_back(utility::DynamicArray<ConnSize, ConnSize>(polyhedron_faces[i].size()));
-			for (auto j = 0; j < polyhedron_faces[i].size(); j++)
-				polyhedron_faces_[i][j] = node_to_conn_index[polyhedron_faces[i][j]];
-		}
-
+        /* The graph is not needed except for the shape function calculations
 		// Build the graph
 		// Note: we have half edges for the faces
 		// In other words, when we are looping over the edges for the faces, the connecitivty will
@@ -94,9 +99,7 @@ namespace flex_mesh
 				graph_[face[i]].neighbors.push_back(Parent::connectivity_[face[i + 1]]);
 			graph_[face.back()].neighbors.push_back(Parent::connectivity_[face.front()]);
 		}
-
 		// DEBUG Print the graph
-		/*
 		for (auto node_index = 0; node_index < graph_.size(); node_index++) {
 			std::cout << "- " << node_index << std::endl;
 			for (auto& n : graph_[node_index].neighbors)
@@ -111,9 +114,27 @@ namespace flex_mesh
 		throw _UTIL_MSG_EXCEPT("Polyhedral elements require the other initialize method.");
 	}
 
+    template<typename NodeType>
+    inline std::vector<LocalIndex> PolyhedronElement<NodeType>::get_expanded_local_conn() const
+    {
+        std::vector<LocalIndex> local_indices;
+        local_indices.push_back(polyhedron_faces_.size());
+        for (auto& face_indices : polyhedron_faces_)
+        {
+            local_indices.push_back(face_indices.size());
+            for (auto& i : face_indices)
+            {
+                local_indices.push_back(Parent::connectivity_[i]->get_local_number());
+            }
+        }
+        return local_indices;
+    }
+
 	template<typename NodeType>
 	inline void PolyhedronElement<NodeType>::get_shape_function_values(const Point & p, NodeVector & shape_function_values) const
 	{
+        throw _UTIL_MSG_EXCEPT("Shape functions are not implemented for polyhedral elements.");
+        /*
 		// Following http://graphics.stanford.edu/~wicke/publications/FEM/wbg-afmocp-07.pdf
 		// Step 1: Compute weight ratios (Eqn. 7)
 		//  - 1.1: Compute constants c for each neighbor (2 constants per a node per a neighbor) (Eqn 8)
@@ -154,12 +175,14 @@ namespace flex_mesh
 		}
 		// Normalize weights to ensure partition of unity (PUM)
 		shape_function_values /= sum_weights;
+        */
 	}
 
 	template<typename NodeType>
 	inline void PolyhedronElement<NodeType>::get_shape_function_derivatives(const Point & cartesian_coordinate, NodeX3Matrix & shape_function_derivs) const
 	{
-		shape_function_derivs.resize(Parent::connectivity_.size(), 3);
+        throw _UTIL_MSG_EXCEPT("Shape function derivatives are not implemented for polyhedral elements.");
+		//shape_function_derivs.resize(Parent::connectivity_.size(), 3);
 		/*
 		// Compute weight ratios and gradient of weight ratios
 		std::vector<double> weights();

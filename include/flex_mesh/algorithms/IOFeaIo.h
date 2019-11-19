@@ -146,8 +146,20 @@ namespace flex_mesh
         // Start a new meta file
         fea_io::MetaWriter meta_writer;
         std::string meta_filepath = (fs::path(base_directory) / meta_file_name).string();
-        meta_writer.open(meta_filepath, meta_file_name);
-        std::string mesh_filepath = meta_writer.add_mesh_path(0, 0, mesh_name);
+        meta_writer.open(meta_filepath);
+        meta_writer.get_analysis_meta().name = meta_file_name;
+        meta_writer.get_analysis_meta().levels_of_detail_names.push_back("original");
+
+        fea_io::LevelOfDetail lod;
+        lod.level = 0;
+        lod.relationship_with_parent = fea_io::LODParentRelation::None;
+        fea_io::MeshObect mesh_object;
+        mesh_object.type = fea_io::MeshObjectType::Volume;
+        mesh_object.mesh_path = mesh_name;
+        lod.mesh_objects.push_back(mesh_object);
+        meta_writer.get_analysis_meta().input_info.levels_of_detail.push_back(lod);
+
+        std::string mesh_filepath = (fs::path(base_directory) / meta_file_name).string();
         write(mesh, mesh_filepath);
     }
 
@@ -442,9 +454,10 @@ namespace flex_mesh
     {
         fea_io::MetaReader meta_reader;
         meta_reader.open(meta_filepath);
-        auto mesh_filepath = meta_reader.get_mesh_path(time_step);
+        auto& analysis_meta_info = meta_reader.get_analysis_meta();
+        auto mesh_relative_path = analysis_meta_info.input_info.levels_of_detail[0].mesh_objects[0].mesh_path;
 
-        MeshReader mesh_reader(mesh_filepath);
+        MeshReader mesh_reader((fs::path(meta_filepath).parent_path() / mesh_relative_path).string());
         auto mesh_info = mesh_reader.get_mesh_info();
         if (mesh_info.connectivity_scheme != fea_io::ConnectivityScheme::FlexMesh)
         {
@@ -589,7 +602,9 @@ namespace flex_mesh
 
             LocalIndex total_num_connectivity_entries = 0;
             for (auto& e_ptr : elements_in_partition)
-                total_num_connectivity_entries += e_ptr->get_num_nodes();
+            {
+                total_num_connectivity_entries += e_ptr->get_local_conn().size();
+            }
 
             fea_io::PartitionInfo<GlobalIndex, LocalIndex, FloatType> partition_info;
             partition_info.partition_id = partition_id;
@@ -687,51 +702,56 @@ namespace flex_mesh
     inline fea_io::ElementType FEAIOInterface<MeshType>::convert_element_type(flex_mesh::ElementType type)
     {
         // 1D
-        if (type == flex_mesh::ElementType::L1D2N)
+        switch (type)
+        {
+        case flex_mesh::ElementType::L1D2N:
             return fea_io::ElementType::L1D2N;
-        else if (type == flex_mesh::ElementType::L1D3N)
+        case flex_mesh::ElementType::L1D3N:
             return fea_io::ElementType::L1D3N;
-        // 2D
-        else if (type == flex_mesh::ElementType::T2D3N)
+            // 2D
+        case flex_mesh::ElementType::T2D3N:
             return fea_io::ElementType::T2D3N;
-        else if (type == flex_mesh::ElementType::Q2D4N)
+        case flex_mesh::ElementType::Q2D4N:
             return fea_io::ElementType::Q2D4N;
-        else if (type == flex_mesh::ElementType::C2D4N)
+        case flex_mesh::ElementType::C2D4N:
             return fea_io::ElementType::C2D4N;
-        else if (type == flex_mesh::ElementType::T2D6N)
+        case flex_mesh::ElementType::T2D6N:
             return fea_io::ElementType::T2D6N;
-        else if (type == flex_mesh::ElementType::Q2D8N)
+        case flex_mesh::ElementType::Q2D8N:
             return fea_io::ElementType::Q2D8N;
-        else if (type == flex_mesh::ElementType::C2D6N)
+        case flex_mesh::ElementType::C2D6N:
             return fea_io::ElementType::C2D6N;
-        // 3D Linear
-        else if (type == flex_mesh::ElementType::T3D4N)
+            // 3D Linear
+        case flex_mesh::ElementType::T3D4N:
             return fea_io::ElementType::T3D4N;
-        else if (type == flex_mesh::ElementType::P3D5N)
+        case flex_mesh::ElementType::P3D5N:
             return fea_io::ElementType::P3D5N;
-        else if (type == flex_mesh::ElementType::W3D6N)
+        case flex_mesh::ElementType::W3D6N:
             return fea_io::ElementType::W3D6N;
-        else if (type == flex_mesh::ElementType::H3D8N)
+        case flex_mesh::ElementType::H3D8N:
             return fea_io::ElementType::H3D8N;
-        else if (type == flex_mesh::ElementType::Q3D4N)
+        case flex_mesh::ElementType::Q3D4N:
             return fea_io::ElementType::Q3D4N;
-        else if (type == flex_mesh::ElementType::C3D8N)
+        case flex_mesh::ElementType::C3D8N:
             return fea_io::ElementType::C3D8N;
-        // 3D Quadratic
-        else if (type == flex_mesh::ElementType::T3D10N)
+            // 3D Quadratic
+        case flex_mesh::ElementType::T3D10N:
             return fea_io::ElementType::T3D10N;
-        else if (type == flex_mesh::ElementType::P3D13N)
+        case flex_mesh::ElementType::P3D13N:
             return fea_io::ElementType::P3D13N;
-        else if (type == flex_mesh::ElementType::W3D15N)
+        case flex_mesh::ElementType::W3D15N:
             return fea_io::ElementType::W3D15N;
-        else if (type == flex_mesh::ElementType::H3D20N)
+        case flex_mesh::ElementType::H3D20N:
             return fea_io::ElementType::H3D20N;
-        else if (type == flex_mesh::ElementType::Q3D8N)
+        case flex_mesh::ElementType::Q3D8N:
             return fea_io::ElementType::Q3D8N;
-        else if (type == flex_mesh::ElementType::C3D16N)
+        case flex_mesh::ElementType::C3D16N:
             return fea_io::ElementType::C3D16N;
-        else
-            throw _UTIL_MSG_EXCEPT("Failed to converge element type to fea_io type.");
+        case flex_mesh::ElementType::POLYHEDRON:
+            return fea_io::ElementType::POLYHEDRON;
+        default:
+            throw _UTIL_MSG_EXCEPT("Failed to convert element type to fea_io type.");
+        }
     }
 
     template<typename MeshType>
@@ -762,11 +782,7 @@ namespace flex_mesh
             partition.element_global_ids.push_back(e_ptr->get_global_number());
             partition.element_parent_partitions.push_back(e_ptr->get_parent_partition());
             partition.element_types.push_back(convert_element_type(e_ptr->get_type()));
-            std::vector<LocalIndex> local_connectivity;
-            for (auto& n_ptr : *e_ptr)
-            {
-                local_connectivity.push_back(n_ptr->get_local_number());
-            }
+            std::vector<LocalIndex> local_connectivity = e_ptr->get_expanded_local_conn();
             partition.element_connectivities.push_back(local_connectivity);
         }
 

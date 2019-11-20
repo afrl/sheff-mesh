@@ -92,7 +92,7 @@ namespace flex_mesh
 
 		for (auto& e_ptr : mesh.elements())
         {
-            auto& local_numbered_conn = e_ptr->get_expanded_local_conn();
+            auto local_numbered_conn = e_ptr->get_expanded_local_conn();
 			auto vtk_permutation = get_vtk_permutation(
                 e_ptr->get_type(), local_numbered_conn.size());
 			if (vtk_permutation.size() > 0)

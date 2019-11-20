@@ -206,6 +206,8 @@ namespace flex_mesh
         const std::string & meta_file_name, const std::map<ComponentIndex, std::string> & component_names,
         const LocalIndex n_ghost_levels)
     {
+		throw _UTIL_MSG_EXCEPT_C("This implementation needs to be updated.");
+		/* TODO update interface like write() and test
         // If the program is not distributed, then we can assume this process will write all of the partitions
         // and is given the entire mesh.
         if (!utility::MPIUtils::is_distributed())
@@ -244,7 +246,7 @@ namespace flex_mesh
                 mesh_writer.write_partition(partition);
             }
         }
-        
+        */
     }
 
     /*

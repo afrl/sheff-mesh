@@ -153,7 +153,7 @@ namespace flex_mesh
         fea_io::LevelOfDetail lod;
         lod.level = 0;
         lod.relationship_with_parent = fea_io::LODParentRelation::None;
-        fea_io::MeshObect mesh_object;
+        fea_io::MeshObject mesh_object;
         mesh_object.type = fea_io::MeshObjectType::Volume;
         mesh_object.mesh_path = mesh_name;
         lod.mesh_objects.push_back(mesh_object);

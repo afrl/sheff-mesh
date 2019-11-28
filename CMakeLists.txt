@@ -4,13 +4,12 @@ cmake_minimum_required(VERSION 3.8)
 project(FLEXMESH VERSION 1.0.0 LANGUAGES CXX)
 
 # Options
-option(FLEXMESH_BuildDev "Build the project in the dev folder. (intended for debugging this project by devs)" ON)
 option(FLEXMESH_BuildTests "Build the unit tests." ON)
 option(FLEXMESH_USE_FEAIO "Indicates if the build will support the fea_io file format, requiring the library." ON)
 
 # For debugging, print generator, compiler, and options
 message(STATUS "Gen: ${CMAKE_GENERATOR}, CXX: ${CMAKE_CXX_COMPILER_ID}, Mode: ${CMAKE_BUILD_TYPE}")
-message(STATUS "Dev: ${FLEXMESH_BuildDev}, Tests: ${FLEXMESH_BuildTests}, FEAIO: ${FLEXMESH_USE_FEAIO}")
+message(STATUS "Tests: ${FLEXMESH_BuildTests}, FEAIO: ${FLEXMESH_USE_FEAIO}")
 
 ##################
 # Checking input #
@@ -70,11 +69,6 @@ endif()
 #################################
 # Add dev and unit test targets #
 #################################
-
-# Build dev
-if(FLEXMESH_BuildDev)
-    add_subdirectory(dev)
-endif()
     
 # Build tests
 if(FLEXMESH_BuildTests)

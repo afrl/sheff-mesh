@@ -897,8 +897,6 @@ namespace flex_mesh
             return{ 0,2,4,6,1,3,5,7 }; // Different
         case ElementType::POLYGON:
             return permutation; // Unchanged
-        //else if (geom_type == ElementType::POLYGON)
-        //	return permutation; // Unchanged
         // 3D
         case ElementType::T3D4N:
             return permutation; // Unchanged

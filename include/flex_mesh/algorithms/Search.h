@@ -151,28 +151,42 @@ namespace flex_mesh
 	template<typename NodeContainer>
 	std::array<FloatType, 3> min_coord(const NodeContainer & nodes)
 	{
-		Point min = nodes.front()->get_coord();
-		for (auto& n_ptr : nodes) {
-			for (auto i = 0; i < 3; i++) {
-				if ((*n_ptr)[i] < min[i]) {
-					min[i] = (*n_ptr)[i];
+		if (nodes.size() > 0)
+		{
+			Point min = nodes.front()->get_coord();
+			for (auto& n_ptr : nodes) {
+				for (auto i = 0; i < 3; i++) {
+					if ((*n_ptr)[i] < min[i]) {
+						min[i] = (*n_ptr)[i];
+					}
 				}
 			}
+			return min;
 		}
-		return min;
+		else
+		{
+			return { 0, 0, 0 };
+		}
 	}
 	template<typename NodeContainer>
 	std::array<FloatType, 3> max_coord(const NodeContainer & nodes)
 	{
-		Point max = nodes.front()->get_coord();
-		for (auto& n_ptr : nodes) {
-			for (auto i = 0; i < 3; i++) {
-				if ((*n_ptr)[i] > max[i]) {
-					max[i] = (*n_ptr)[i];
+		if (nodes.size() > 0)
+		{
+			Point max = nodes.front()->get_coord();
+			for (auto& n_ptr : nodes) {
+				for (auto i = 0; i < 3; i++) {
+					if ((*n_ptr)[i] > max[i]) {
+						max[i] = (*n_ptr)[i];
+					}
 				}
 			}
+			return max;
 		}
-		return max;
+		else
+		{
+			return { 0, 0, 0 };
+		}
 	}
 
 	template<typename MeshType>

@@ -723,6 +723,8 @@ namespace flex_mesh
             return fea_io::ElementType::Q2D8N;
         case flex_mesh::ElementType::C2D6N:
             return fea_io::ElementType::C2D6N;
+        case flex_mesh::ElementType::POLYGON:
+            return fea_io::ElementType::POLYGON;
             // 3D Linear
         case flex_mesh::ElementType::T3D4N:
             return fea_io::ElementType::T3D4N;

@@ -25,6 +25,7 @@ namespace flex_mesh
         Node,
         Edge,
         Face,
-        Element
+        Element,
+        None
     };
 };

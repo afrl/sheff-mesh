@@ -146,7 +146,9 @@ namespace flex_mesh
 			throw _UTIL_MSG_EXCEPT("Cannot find interpolation functions for element.");
 	}
 
+#ifdef __MSC_VER
 #pragma region 1D Shape Function Methods
+#endif 
 
 	template<typename Coordinate, typename ElementVector, typename ElementVectorDeriv>
 	inline void ShapeFunctions<Coordinate, ElementVector, ElementVectorDeriv>::shapeLine2(const Coordinate & xi, ElementVector & S)
@@ -229,9 +231,11 @@ namespace flex_mesh
 		SDeriv(4, 0) = -1.0 / 6.0 - xi[0] / 3 + 2.0*t1 + 8.0 / 3.0*t2;
 	}
 
+#ifdef __MSC_VER
 #pragma endregion
 
 #pragma region 2D Shape Function Methods
+#endif 
 
 	template<typename Coordinate, typename ElementVector, typename ElementVectorDeriv>
 	inline void ShapeFunctions<Coordinate, ElementVector, ElementVectorDeriv>::shapeTri3(const Coordinate & p, ElementVector & S)
@@ -365,9 +369,11 @@ namespace flex_mesh
 		SDeriv(7, 1) = -(eta*(1 - xi));
 	}
 
+#ifdef __MSC_VER
 #pragma endregion
 
 #pragma region 3D Shape Function Methods
+#endif 
 
 	template<typename Coordinate, typename ElementVector, typename ElementVectorDeriv>
 	inline void ShapeFunctions<Coordinate, ElementVector, ElementVectorDeriv>::shapePyr5(const Coordinate & p, ElementVector & S)
@@ -1020,6 +1026,8 @@ namespace flex_mesh
 		}
 	}
 
+#ifdef __MSC_VER
 #pragma endregion
+#endif 
 
 }

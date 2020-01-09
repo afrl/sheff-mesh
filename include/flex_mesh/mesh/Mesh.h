@@ -48,11 +48,11 @@ namespace flex_mesh
         /// Returns the end iterator of the container
         auto end() const { return objects_.end(); }
         /// Returns a raw pointer to the first object added
-        T * const front() const { return  !objects_.empty() ? objects_.front().get() : nullptr; }
+        T * front() const { return  !objects_.empty() ? objects_.front().get() : nullptr; }
         /// Returns a raw pointer to the last object added
-        T * const back() const { return !objects_.empty() ? objects_.back().get() : nullptr; }
+        T * back() const { return !objects_.empty() ? objects_.back().get() : nullptr; }
         /// Access a raw pointer to an object by index
-        T * const operator[] (std::size_t index) const
+        T * operator[] (std::size_t index) const
         {
             return objects_[index].get();
         }

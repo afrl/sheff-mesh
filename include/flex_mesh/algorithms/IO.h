@@ -85,7 +85,8 @@ namespace flex_mesh
 		for (auto& e_ptr : mesh.elements())
         {
 			total_num_cell_conn_entries++;
-			total_num_cell_conn_entries += e_ptr->get_expanded_local_conn().size();
+			total_num_cell_conn_entries +=
+                static_cast<int>(e_ptr->get_expanded_local_conn().size());
 		}
 
 		fout << "CELLS " << mesh.elements().size() << " " << total_num_cell_conn_entries << std::endl;
@@ -94,7 +95,7 @@ namespace flex_mesh
         {
             auto local_numbered_conn = e_ptr->get_expanded_local_conn();
 			auto vtk_permutation = get_vtk_permutation(
-                e_ptr->get_type(), local_numbered_conn.size());
+                e_ptr->get_type(), static_cast<ConnIndex>(local_numbered_conn.size()));
 			if (vtk_permutation.size() > 0)
             {
 				// Note: connectivity may have uint8_t type, which will be interpretted as a char

@@ -2156,8 +2156,7 @@ SKIP_FUNCTION_MACROS   = NO
 # the path). If a tag file is not located in the directory in which doxygen is
 # run, you must also specify the path to the tagfile here.
 
-TAGFILES               = ../../utility/docs/utility_tagfile=../../../utility/docs/html \
-../../fea_io/docs/fea_io_tagfile=../../../fea_io/docs/html 
+TAGFILES               = ../../simple_math/docs/simple_math_tagfile=../../../simple_math/docs/html ../../utility/docs/utility_tagfile=../../../utility/docs/html ../../fea_io/docs/fea_io_tagfile=../../../fea_io/docs/html 
 
 # When a file name is specified after GENERATE_TAGFILE, doxygen will create a
 # tag file that is based on the input files it reads. See section "Linking to

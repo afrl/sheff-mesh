@@ -1,15 +1,37 @@
-cmake_policy(SET CMP0048 NEW)
 cmake_minimum_required(VERSION 3.8)
 
+cmake_policy(SET CMP0048 NEW)
 project(FLEXMESH VERSION 1.0.0 LANGUAGES CXX)
 
+# Set package toolchain location for Linux. To enable efficient switching between
+# toolchains for cross-compiling, we modify the location where CMake looks for 
+# packages using the find_package command by symbolically linking the default location,
+# $HOME/.cmake/packages, to a similar location with the folder name given by the 
+# compiler family. 
+if (UNIX)
+    execute_process(COMMAND "mkdir" "-p" "$ENV{HOME}/.cmake/${CMAKE_CXX_COMPILER_ID}"
+      RESULT_VARIABLE toolchain_res OUTPUT_VARIABLE toolchain_out)
+    if (toolchain_res)
+        message(ERROR "Couldn't create toolchain dir: $ENV{HOME}/.cmake/${CMAKE_CXX_COMPILER_ID} ${toolchain_out}")
+    endif ()
+    execute_process(COMMAND "ln" "-sfn" "$ENV{HOME}/.cmake/${CMAKE_CXX_COMPILER_ID}" "$ENV{HOME}/.cmake/packages"
+      RESULT_VARIABLE toolchain_res OUTPUT_VARIABLE toolchain_out)
+    if (toolchain_res)
+        message(ERROR "Couldn't create toolchain link: $ENV{HOME}/.cmake/packages ${toolchain_out}")
+    endif ()
+endif()
+
+
 # Options
-option(FLEXMESH_BuildTests "Build the unit tests." ON)
+option(FLEXMESH_BuildTests "Build the unit tests." OFF)
 option(FLEXMESH_USE_FEAIO "Indicates if the build will support the fea_io file format, requiring the library." ON)
 
 # For debugging, print generator, compiler, and options
 message(STATUS "Gen: ${CMAKE_GENERATOR}, CXX: ${CMAKE_CXX_COMPILER_ID}, Mode: ${CMAKE_BUILD_TYPE}")
 message(STATUS "Tests: ${FLEXMESH_BuildTests}, FEAIO: ${FLEXMESH_USE_FEAIO}")
+
+# Add cmake dir to module path
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
 ##################
 # Checking input #
@@ -21,10 +43,14 @@ include(${CMAKE_SOURCE_DIR}/cmake/CommonInputChecks.cmake)
 # Declare dependencies #
 ########################
 
-find_package(SimpleMath CONFIG REQUIRED HINTS "${CMAKE_SOURCE_DIR}/../simple_math/build" "${CMAKE_SOURCE_DIR}/../simple_math/install_dir")
-find_package(Utility CONFIG REQUIRED HINTS "${CMAKE_SOURCE_DIR}/../utility/build" "${CMAKE_SOURCE_DIR}/../utility/install_dir")
+
+find_package(SimpleMath CONFIG REQUIRED HINTS 
+  "${CMAKE_SOURCE_DIR}/../simple_math/install_dir" "${CMAKE_SOURCE_DIR}/../../simple_math/install_dir" "${CMAKE_SOURCE_DIR}/modules/simple_math/install_dir")
+find_package(Utility CONFIG REQUIRED HINTS 
+  "${CMAKE_SOURCE_DIR}/../utility/install_dir" "${CMAKE_SOURCE_DIR}/../../utility/install_dir" "${CMAKE_SOURCE_DIR}/modules/utility/install_dir")
 if(FLEXMESH_USE_FEAIO)
-	find_package(FeaIo CONFIG REQUIRED HINTS "${CMAKE_SOURCE_DIR}/../fea_io/build" "${CMAKE_SOURCE_DIR}/../fea_io/install_dir")
+find_package(FeaIo CONFIG REQUIRED HINTS 
+  "${CMAKE_SOURCE_DIR}/../fea_io/install_dir" "${CMAKE_SOURCE_DIR}/../../fea_io/install_dir" "${CMAKE_SOURCE_DIR}/modules/fea_io/install_dir")
 endif()
 
 #######################################
@@ -46,12 +72,12 @@ target_include_directories(flexmesh INTERFACE
 target_sources(flexmesh INTERFACE ${FLEXMESH_HEADER_LIST})
 # Add an alias so that a library can be used inside the build tree, eg when testing
 add_library(FlexMesh::FlexMesh ALIAS flexmesh)
-# Add C++ 11 flag (at interface level since this is a header-only
+# Add C++ 14 flag (at interface level since this is a header-only
 # library and downstream executables will also need the flag)
 target_compile_features(flexmesh INTERFACE cxx_std_14)
-#set_property(TARGET flexmesh PROPERTY CXX_STANDARD 11) 
 # Link dependencies
 target_link_libraries(flexmesh INTERFACE SimpleMath::SimpleMath)
+
 if(FLEXMESH_USE_FEAIO AND FeaIo_FOUND)
 	target_compile_definitions(flexmesh INTERFACE USE_FEAIO)
 	target_link_libraries(flexmesh INTERFACE FeaIo::FeaIo)
@@ -67,7 +93,7 @@ if(FLEXMESH_USE_FEAIO)
 endif()
 
 #################################
-# Add dev and unit test targets #
+# Add unit test targets #
 #################################
     
 # Build tests
@@ -119,7 +145,7 @@ install(FILES
 # Exports #
 ###########
 
-# Export just the flexmesh target (not the dev, tests, ParaViewReader, etc.)
+# Export just the flexmesh target (not tests, etc.)
 export(
     TARGETS flexmesh
 	FILE ${CMAKE_CURRENT_BINARY_DIR}/FlexMeshTargets.cmake

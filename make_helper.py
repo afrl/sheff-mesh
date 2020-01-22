@@ -6,7 +6,7 @@ behave more like a makefile. """
 # is that the compiler has C++14 standard enabled. So theoretically GNU 5.0 should work.
 # Note that <experimental/filesystem> requires g++ 5.3 or higher and -lstdc++fs flag, but
 # we have a workaround implemented for now, and you can choose to use this or the compiler's
-# version of filesystem.
+# version of filesystem. 
 
 from __future__ import print_function
 
@@ -157,6 +157,7 @@ class MakeOptions:
         self.doc = False
         self.clear_cache = False
         self.clean = False
+        self.clean_toolchain = False
         self.copy_make = False
         # Store cmake cmd, since on some linux installs it is cmake3
         self.cmake_cmd = "cmake"
@@ -166,8 +167,8 @@ class MakeOptions:
         self.cmake_opts = {
             "generator": "Visual Studio 15 2017",
             "architecture": "x64",
+            "toolset" : "",
             "build-type": "Debug",
-            "make-dev": "OFF",
             "make-tests": "OFF" }
         # Note: this default should never get used due to find_generator()
         # set defaults there.
@@ -435,13 +436,12 @@ def parse_options( specialized_options = [] ):
     config_group.add_argument('--generator', default='', action='store',
                               choices=('VS2015', 'VS2017', 'VS2019',
                                        'make', 'codeblocks'),
-                              help='Specify the CMake generator to use.  Default is `VS2017` (Visual Studio 15 2017 Win64) for windows and `make` (Unix Makefiles) for linux')
+                              help='Specify the CMake generator to use.  Default is `VS2017` (Visual Studio 15 2017) for windows with x64 architecture and `make` (Unix Makefiles) for linux')
+    config_group.add_argument('--toolset', default='', action='store',
+                              choices=('Intel17','Intel18'),
+                              help='Specify Intel toolset for use with Visual Studio. Default is the native toolset (MSVC)')
     config_group.add_argument(
         '--release', action='store_true', help='Build in release mode (debug is default)')
-    config_group.add_argument(
-        '--make-dev', action='store_true', help='Build the dev projects')
-    config_group.add_argument(
-        '--nomake-dev', action='store_true')
     config_group.add_argument(
         '--make-tests', action='store_true', help='Build the submodule unit-tests')
     config_group.add_argument(
@@ -470,6 +470,8 @@ def parse_options( specialized_options = [] ):
             '--second-party', action='store_true', help='Include all second-party submodules')
         select_group.add_argument(
             '--third-party', action='store_true', help='Include all third-party submodules')
+        select_group.add_argument(
+            '--all', action='store_true', help='Include all submodules (1/2/3-party) and top')
 
     ##################
     # Misc. options
@@ -547,13 +549,12 @@ def parse_options( specialized_options = [] ):
         opts.cmake_opts['generator'] = 'Unix Makefiles'
     elif args.generator == 'codeblocks':
         opts.cmake_opts['generator'] = 'CodeBlocks - Unix Makefiles'
-
+    if args.toolset != '':
+        if 'Visual Studio' in opts.cmake_opts['generator']:
+            if args.toolset == 'Intel18':
+                opts.cmake_opts['toolset'] = '-T"Intel C++ Compiler 18.0",host=x64'
     if args.release:
         opts.cmake_opts['build-type'] = 'Release'
-    if args.make_dev:
-        opts.cmake_opts['make-dev'] = 'ON'
-    if args.nomake_dev:
-        opts.cmake_opts['make-dev'] = 'OFF'
     if args.make_tests:
         opts.cmake_opts['make-tests'] = 'ON'
     if args.nomake_tests:
@@ -583,6 +584,13 @@ def parse_options( specialized_options = [] ):
             opts.include_first_party = True
             opts.include_second_party = True
             opts.include_third_party = True
+        if args.all:
+            opts.include_top = True
+            opts.include_first_party = True
+            opts.include_second_party = True
+            opts.include_third_party = True
+        if args.all and args.clean:
+            opts.clean_toolchain = True
         if args.first_party:
             opts.include_first_party = True
         if args.second_party:
@@ -733,8 +741,9 @@ def config( opts, module_dir, specialized_options = [] ):
                     cmake_flags += ' -D' + special_opt.modules_and_var_map[module_dir.name] + ':BOOL=OFF'
 
     print_color( "Configuring module: " + module_dir.name, "blue" )
-    cmd = mod_for_os( opts.cmake_cmd + ' -G"' + opts.cmake_opts['generator'] + '" ' + cmake_arch_flag +  
-                      '-DCMAKE_INSTALL_PREFIX:PATH="' + module_dir.install_dir + '" ' + 
+    cmd = mod_for_os( opts.cmake_cmd + ' -G"' + opts.cmake_opts['generator'] + '" ' + cmake_arch_flag +
+                      opts.cmake_opts['toolset'] + ' --no-warn-unused-cli ' +  
+                      ' -DCMAKE_INSTALL_PREFIX:PATH="' + module_dir.install_dir + '" ' + 
                       cmake_flags + ' "' + module_dir.module_dir + '" ' + log )
 
     if opts.print_cmd:
@@ -761,6 +770,10 @@ def config( opts, module_dir, specialized_options = [] ):
 #####################################################################################
 
 def build( opts, module_dir ):
+
+    # toolchain is config-only
+    if (module_dir.name == "toolchain"):
+        return; 
 
     os.chdir( module_dir.build_dir )
 
@@ -823,7 +836,7 @@ def copy_make(opts, selected_modules_dirs):
 
 #####################################################################################
 
-def Config_BSAMXX_Version_H( mod_dir ):
+def Config_BSAMXX_Version_H( mod_info, shell_executable ):
 
     top_dir = os.getcwd()
 
@@ -831,26 +844,63 @@ def Config_BSAMXX_Version_H( mod_dir ):
         header_str = header_template.read()
    
     # Warn not to modify updated .h file 
-    header_str = header_str.replace( '${OVERWRITE_WARNING}', "DO NOT MODIFY. Automatically configured from bsamxx_version.h.in" )
+    header_str = header_str.replace( '${OVERWRITE_WARNING}', 
+      "DO NOT MODIFY. Automatically configured from bsamxx_version.h.in" )
 
-    # Get top-level version and hash
+    # Get top-level version from CMake
     with (open("CMakeLists.txt")) as cmake:
         cmake_str = cmake.read()
 
     version = re.search('BSAMXX VERSION (.*) LANGUAGES', cmake_str).group(1)
     header_str = header_str.replace('${BSAMXX_VERSION}', version)
 
-    proc = subprocess.Popen( ['git', 'log', "--pretty=format:'%h'", '-1'], 
-                             stdout=subprocess.PIPE, stderr=subprocess.PIPE )
-    bsamxx_hash, _ = proc.communicate()
+    # Get module hashes
+    hash_str = "{\n"
+    for i, mods in enumerate([{mod_info.root_module_name : mod_info.root_module_dir}, 
+      mod_info.first_party_submodules, mod_info.second_party_submodules, mod_info.third_party_submodules]): 
+        for k in mods:  
+            os.chdir( mods[k] )
 
-    bsamxx_hash = bsamxx_hash.decode( 'ascii' ).replace("'","") 
-    header_str = header_str.replace( '${BSAMXX_HASH}', bsamxx_hash )
+            # Popen/check_output doesn't seem to like set -o pipefail; 
+            #cmd = mod_for_os( "git log --pretty=format:'%h' -1" )
+            cmd = "git log --pretty=format:'%h' -1" 
 
-    # FIXME: do module stuff here...
+            mod_hash = subprocess.check_output(cmd.split())
+            mod_hash = mod_hash.decode( 'ascii' ).replace("'","") 
+            hash_str += '      {%i, "%s", "%s"},\n' % (i, k, mod_hash)
+
+    os.chdir( mod_info.root_module_dir )
+    hash_str += "    }"
+    header_str = header_str.replace( '${BSAMXX_MODULE_INFO}', hash_str )
+
+    # Get build (or config) time (assumes using make_helper to build...) 
+    timestamp = datetime.datetime.now()
+    header_str = header_str.replace('${BSAMXX_TIMESTAMP}', timestamp.strftime("%m/%d/%Y %H:%M:%S"))
 
     # Finally write the full string to the header file
     with open(os.path.join(top_dir, "include", "bsamxx_version.h"), 'w') as header_file:
+        header_file.write( header_str )
+
+#####################################################################################
+
+def Config_InputSchema_H( mod_dir ):
+
+    top_dir = os.getcwd()
+
+    with open(os.path.join(top_dir, "include", "parser", "InputSchema.h.in"), 'r') as header_template:
+        header_str = header_template.read()
+   
+    # Warn not to modify updated .h file 
+    header_str = header_str.replace( '${OVERWRITE_WARNING}', "DO NOT MODIFY. Automatically configured from InputSchema.h.in" )
+
+    # Get contents of json schema file
+    with open(os.path.join(top_dir, "include", "parser", "main_schema.json"), 'r') as s_file:
+        schema = s_file.read()
+
+    header_str = header_str.replace('${MAIN_SCHEMA}', schema)
+
+    # Finally write the full string to the header file
+    with open(os.path.join(top_dir, "include", "parser", "InputSchema.h"), 'w') as header_file:
         header_file.write( header_str )
 
 
@@ -925,15 +975,30 @@ def make( specialized_opts, build_order=[] ):
     if opts.clear_cache:
         clear_cache( selected_modules )
 
+    if (opts.clean_toolchain and (os.name == "posix")):
+        # Clean current toolchain dir. If toolchain was used to config before building third party,
+        # this should be a symbolic link to the compiler-specific dir. Otherwise, it is just a dir.
+        toolchain_dir = os.path.join(os.path.expanduser("~"), ".cmake", "packages") 
+        if os.path.exists(toolchain_dir):
+            if os.path.islink(toolchain_dir):
+                link_path = os.readlink(toolchain_dir)
+                os.remove(toolchain_dir)
+                shutil.rmtree(link_path) 
+            else:
+                shutil.rmtree(toolchain_dir)
+
     if opts.clean:
         clean( selected_modules, opts )
 
     if ( opts.root_module_type == ModuleType.TopLevel ) and ( opts.config or opts.build or opts.doc ):
         # First update the bsamxx_version.h header
-        Config_BSAMXX_Version_H( opts.root_build_dir )
+        Config_BSAMXX_Version_H( module_info, opts.shell_executable )
+
+    if ( module_info.root_module_name == "parser" ) and ( opts.config or opts.build or opts.doc ): 
+        # First update the InputSchema.h header from main_schema.json
+        Config_InputSchema_H ( opts.root_build_dir ) 
 
     if opts.config:
-
         for module_dir in selected_modules:
             config( opts, module_dir, specialized_opts )
             if opts.build:

@@ -1,8 +1,11 @@
-# Make sure we have dependencies available
-find_package(SimpleMath CONFIG REQUIRED HINTS "${CMAKE_SOURCE_DIR}/../simple_math/build" "${CMAKE_SOURCE_DIR}/../simple_math/install_dir")
-find_package(Utility CONFIG REQUIRED HINTS "${CMAKE_SOURCE_DIR}/../utility/build" "${CMAKE_SOURCE_DIR}/../utility/install_dir")
+# Make sure we have public dependencies available
+find_package(SimpleMath CONFIG REQUIRED HINTS 
+  "${CMAKE_SOURCE_DIR}/../simple_math/install_dir" "${CMAKE_SOURCE_DIR}/../../simple_math/install_dir" "${CMAKE_SOURCE_DIR}/modules/simple_math/install_dir")
+find_package(Utility CONFIG REQUIRED HINTS 
+  "${CMAKE_SOURCE_DIR}/../utility/install_dir" "${CMAKE_SOURCE_DIR}/../../utility/install_dir" "${CMAKE_SOURCE_DIR}/modules/utility/install_dir")
 if(@FLEXMESH_USE_FEAIO@)
-	find_package(FeaIo CONFIG REQUIRED HINTS "${CMAKE_SOURCE_DIR}/../fea_io/build" "${CMAKE_SOURCE_DIR}/../fea_io/install_dir")
+find_package(FeaIo CONFIG REQUIRED HINTS 
+  "${CMAKE_SOURCE_DIR}/../fea_io/install_dir" "${CMAKE_SOURCE_DIR}/../../fea_io/install_dir" "${CMAKE_SOURCE_DIR}/modules/fea_io/install_dir")
 endif()
 
 if(NOT TARGET FlexMesh::FlexMesh)
@@ -10,7 +13,7 @@ if(NOT TARGET FlexMesh::FlexMesh)
     include("${FLEXMESH_CMAKE_DIR}/FlexMeshTargets.cmake")
 endif()
 
-set(FLEXMESH_LIBRARIES FlexMesh::FlexMesh)
+#set(FLEXMESH_LIBRARIES FlexMesh::FlexMesh)
 
 # For targets that use this project they can call this in order to group the
 # headers by directory in within Visual Studio.

@@ -37,7 +37,7 @@ namespace flex_mesh
 		/// Note: orientations are not allocated by default
 		virtual void initialize(const ElementType type,
 			const std::vector<NodePtr> & connectivity,
-			const LCSAssignment lcs_assignment = LCSAssignment::None) override;
+			const LCSAssignmentType lcs_assignment = LCSAssignmentType::None) override;
 
 		///////////////
 		// Accessors //
@@ -127,7 +127,7 @@ namespace flex_mesh
 	/////////////////
 
 	template<typename BaseType>
-	inline void MeshGenElement<BaseType>::initialize(const ElementType type, const std::vector<NodePtr>& connectivity, const LCSAssignment lcs_assignment)
+	inline void MeshGenElement<BaseType>::initialize(const ElementType type, const std::vector<NodePtr>& connectivity, const LCSAssignmentType lcs_assignment)
 	{
 		Parent::initialize(type, connectivity, lcs_assignment);
 		update_conn_hash_id();

@@ -5,7 +5,7 @@
 #include "flex_mesh/edge/Edge.h"
 #include "flex_mesh/face/Face.h"
 
-#include "LCSContainer.h"
+#include "QuaternionContainer.h"
 #include "ShapeFunctions.h"
 
 #include <set>
@@ -43,7 +43,7 @@ namespace flex_mesh
 		Element(const GlobalIndex global_num,
 			const ElementType type,
 			const std::vector<NodeType *> & connectivity,
-			const LCSAssignment lcs_assignment = LCSAssignment::None) noexcept;
+			const LCSAssignmentType lcs_assignment = LCSAssignmentType::None) noexcept;
 		Element(const Element&) = default;
 		// Move constructor cannot be defaulted for MSVC, TODO implement
 		//Element(const Element&&) noexcept = default;
@@ -51,9 +51,10 @@ namespace flex_mesh
 
 		/// Initializes the element topology object
 		/// Note: lcs are not allocated by default
-		virtual void initialize(const ElementType type,
+		virtual void initialize(
+			const ElementType type,
 			const std::vector<NodeType *> & connectivity,
-			const LCSAssignment lcs_assignment = LCSAssignment::None);
+			const LCSAssignmentType lcs_assignment = LCSAssignmentType::None);
 
 		/////////////////
 		// Get-setters //
@@ -141,7 +142,7 @@ namespace flex_mesh
 		//////////////////
 
 		/// Allocates the local coordinate systems
-		void allocate_lcs(const LCSAssignment lcs_assignment);
+		void allocate_lcs(const LCSAssignmentType lcs_assignment);
 		/// Rotate all lcs in the element by the same amount
 		/// axes are defined in the global coordinate system
 		void rotate_lcs(const Vector3D & axis,
@@ -153,11 +154,11 @@ namespace flex_mesh
 		void reset_lcs();
 		/// Directly get the local coordinate systems
 		/// \attention Be careful.  The lcs may only contain one value per an element
-		LCSContainer<ConnSize>& get_lcs();
+		QuaternionContainer& get_lcs();
 		/// Get the local coordinate system for a specific node
 		Quaternion get_lcs(const ConnSize& i);
 		/// Returns the type of local coordinate system assignment for the element
-		LCSAssignment get_lcs_assignment() const;
+		LCSAssignmentType get_lcs_assignment() const;
 
 		///////////////////
 		// Interpolation //
@@ -198,10 +199,9 @@ namespace flex_mesh
 		ComponentIndex component_id_;
 		ElementType type_;
 		Connectivity<NodeType, ConnSize> connectivity_;
-		LCSContainer<ConnSize> lcs_;
-		LCSAssignment lcs_assignment_;
-		/// It is assumed that only one partition will be responsible for each element.
-		/// A mesh for a partition may have elements belonging to other parititons depending ghost elements.
+		QuaternionContainer lcs_;
+		/// It is assumed that only one partition will be responsible for each element. A mesh for
+		/// a partition may have elements belonging to other parititons depending ghost elements.
 		PartitionIndex parent_partition_;
 	};
 
@@ -211,19 +211,31 @@ namespace flex_mesh
 
 	template<typename NodeType>
 	inline Element<NodeType>::Element()
-		: global_num_(0), local_num_(0), component_id_(0), type_(ElementType::UNKNGEOM), lcs_assignment_(LCSAssignment::None), parent_partition_(0)
+		:
+		global_num_(0),
+		local_num_(0),
+		component_id_(0),
+		type_(ElementType::UNKNGEOM),
+		parent_partition_(0)
 	{
 	}
 
 	template<typename NodeType>
-	inline Element<NodeType>::Element(const GlobalIndex global_num, const ElementType type, const std::vector<NodeType*>& connectivity, const LCSAssignment lcs_assignment) noexcept
+	inline Element<NodeType>::Element(
+		const GlobalIndex global_num, 
+		const ElementType type, 
+		const std::vector<NodeType*>& connectivity, 
+		const LCSAssignmentType lcs_assignment) noexcept
 		: global_num_(global_num), local_num_(global_num), component_id_(0), parent_partition_(0)
 	{
 		initialize(type, connectivity, lcs_assignment);
 	}
 
 	template<typename NodeType>
-	inline void flex_mesh::Element<NodeType>::initialize(const ElementType type, const std::vector<NodeType*>& connectivity, const LCSAssignment lcs_assignment)
+	inline void flex_mesh::Element<NodeType>::initialize(
+		const ElementType type, 
+		const std::vector<NodeType*>& connectivity, 
+		const LCSAssignmentType lcs_assignment)
 	{
 		type_ = type;
 		connectivity_ = connectivity;
@@ -492,23 +504,9 @@ namespace flex_mesh
     }
 
 	template<typename NodeType>
-	inline void Element<NodeType>::allocate_lcs(const LCSAssignment lcs_assignment)
+	inline void Element<NodeType>::allocate_lcs(const LCSAssignmentType lcs_assignment)
 	{
-		lcs_assignment_ = lcs_assignment;
-		if (lcs_assignment == LCSAssignment::None)
-			lcs_.clear();
-		else if (lcs_assignment == LCSAssignment::Node) {
-			lcs_ = std::vector<Quaternion>(connectivity_.size());
-			for (auto& lcs : lcs_)
-				lcs.setIdentity();
-		}
-		// There will only be one lcs per an element for LCSAssignment::Element
-		// and LCSAssignment::Component
-		else {
-			lcs_ = std::vector<Quaternion>(1);
-			for (auto& lcs : lcs_)
-				lcs.setIdentity();
-		}
+		lcs_.initialize(lcs_assignment, connectivity_.size());
 	}
 
 	template<typename NodeType>
@@ -535,7 +533,7 @@ namespace flex_mesh
 	}
 
 	template<typename NodeType>
-	inline LCSContainer<typename Element<NodeType>::ConnSize> & Element<NodeType>::get_lcs()
+	inline QuaternionContainer& Element<NodeType>::get_lcs()
 	{
 		return lcs_;
 	}
@@ -552,9 +550,9 @@ namespace flex_mesh
 	}
 
 	template<typename NodeType>
-	inline LCSAssignment Element<NodeType>::get_lcs_assignment() const
+	inline LCSAssignmentType Element<NodeType>::get_lcs_assignment() const
 	{
-		return lcs_assignment_;
+		return lcs_.base_type();
 	}
 
 	template<typename NodeType>

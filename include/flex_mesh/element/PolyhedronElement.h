@@ -33,7 +33,7 @@ namespace flex_mesh
 		/// Throws an error to prevent use
 		virtual void initialize(const ElementType type,
 			const std::vector<NodeType *> & connectivity,
-			const LCSAssignment lcs_assignment = LCSAssignment::None) override;
+			const LCSAssignmentType lcs_assignment = LCSAssignmentType::None) override;
 
         /// Get the expanded connectivity in terms of the local node numbering for a
         /// partition that can used for output.  For polyhedral elements and any 
@@ -109,7 +109,10 @@ namespace flex_mesh
 	}
 
 	template<typename NodeType>
-	inline void PolyhedronElement<NodeType>::initialize(const ElementType type, const std::vector<NodeType*>& connectivity, const LCSAssignment lcs_assignment)
+	inline void PolyhedronElement<NodeType>::initialize(
+		const ElementType type, 
+		const std::vector<NodeType*>& connectivity, 
+		const LCSAssignmentType lcs_assignment)
 	{
 		throw _UTIL_MSG_EXCEPT("Polyhedral elements require the other initialize method.");
 	}

@@ -39,13 +39,13 @@ int main()
 	assert(distance(mean, { 0.5, 0.5, 0 }) < 1e-16);
 
 	assert(a.get_lcs().size() == 0);
-	a.allocate_lcs(LCSAssignment::None);
+	a.allocate_lcs(LCSAssignmentType::None);
 	assert(a.get_lcs().size() == 0);
-	a.allocate_lcs(LCSAssignment::Element);
+	a.allocate_lcs(LCSAssignmentType::Element);
 	assert(a.get_lcs().size() == 1);
-	a.allocate_lcs(LCSAssignment::Component);
+	a.allocate_lcs(LCSAssignmentType::Component);
 	assert(a.get_lcs().size() == 1);
-	a.allocate_lcs(LCSAssignment::Node);
+	a.allocate_lcs(LCSAssignmentType::Node);
 	assert(a.get_lcs().size() == 4);
 
 	NodeVector S;

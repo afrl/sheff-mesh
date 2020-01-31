@@ -108,8 +108,8 @@ namespace flex_mesh
             MeshType& mesh, const std::vector<PartitionIndex>& partition_ids);
 
     private:
-        static flex_mesh::LCSAssignment convert_lcs_assignment(fea_io::LCSAssignment lcs_assignment);
-        static fea_io::LCSAssignment convert_lcs_assignment(flex_mesh::LCSAssignment lcs_assignment);
+        static flex_mesh::LCSAssignmentType convert_lcs_assignment(fea_io::LCSAssignment lcs_assignment);
+        static fea_io::LCSAssignment convert_lcs_assignment(flex_mesh::LCSAssignmentType lcs_assignment);
         static flex_mesh::ElementType convert_element_type(fea_io::ElementType type);
         static fea_io::ElementType convert_element_type(flex_mesh::ElementType type);
 
@@ -519,7 +519,7 @@ namespace flex_mesh
                 throw _UTIL_MSG_EXCEPT("Local coordinate systems were parameterized with something other than Quaternions. A conversion needs to be added to read_partition.");
             }
 
-            LCSAssignment component_lcs_assignment = convert_lcs_assignment((*find_iter).lcs_assignment);
+            LCSAssignmentType component_lcs_assignment = convert_lcs_assignment((*find_iter).lcs_assignment);
             for (auto local_elem_id : subcomponent.elements_in_subcomponent)
             {
                 mesh.elements()[local_elem_id]->set_component_id(subcomponent.component_id);
@@ -621,30 +621,30 @@ namespace flex_mesh
     }
 
     template<typename MeshType>
-    inline flex_mesh::LCSAssignment FEAIOInterface<MeshType>::convert_lcs_assignment(fea_io::LCSAssignment lcs_assignment)
+    inline flex_mesh::LCSAssignmentType FEAIOInterface<MeshType>::convert_lcs_assignment(fea_io::LCSAssignment lcs_assignment)
     {
         if (lcs_assignment == fea_io::LCSAssignment::Component)
-            return LCSAssignment::Component;
+            return LCSAssignmentType::Component;
         else if (lcs_assignment == fea_io::LCSAssignment::Element)
-            return LCSAssignment::Element;
+            return LCSAssignmentType::Element;
         else if (lcs_assignment == fea_io::LCSAssignment::Node)
-            return LCSAssignment::Node;
+            return LCSAssignmentType::Node;
         else if (lcs_assignment == fea_io::LCSAssignment::None)
-            return LCSAssignment::None;
+            return LCSAssignmentType::None;
         else
             throw _UTIL_MSG_EXCEPT("Cannot convert from fea_io::LCSAssignment.");
     }
 
     template<typename MeshType>
-    inline fea_io::LCSAssignment FEAIOInterface<MeshType>::convert_lcs_assignment(flex_mesh::LCSAssignment lcs_assignment)
+    inline fea_io::LCSAssignment FEAIOInterface<MeshType>::convert_lcs_assignment(flex_mesh::LCSAssignmentType lcs_assignment)
     {
-        if (lcs_assignment == flex_mesh::LCSAssignment::Component)
+        if (lcs_assignment == flex_mesh::LCSAssignmentType::Component)
             return fea_io::LCSAssignment::Component;
-        else if (lcs_assignment == flex_mesh::LCSAssignment::Element)
+        else if (lcs_assignment == flex_mesh::LCSAssignmentType::Element)
             return fea_io::LCSAssignment::Element;
-        else if (lcs_assignment == flex_mesh::LCSAssignment::Node)
+        else if (lcs_assignment == flex_mesh::LCSAssignmentType::Node)
             return fea_io::LCSAssignment::Node;
-        else if (lcs_assignment == flex_mesh::LCSAssignment::None)
+        else if (lcs_assignment == flex_mesh::LCSAssignmentType::None)
             return fea_io::LCSAssignment::None;
         else
             throw _UTIL_MSG_EXCEPT("Cannot convert from fea_io::LCSAssignment.");

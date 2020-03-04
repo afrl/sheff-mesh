@@ -143,6 +143,11 @@ namespace flex_mesh
             refer_to(other);
         }
 
+        QuaternionContainer(QuaternionContainer&& other) noexcept
+            : quaternions_(std::move(other.quaternions_)),
+              n_quaternions_(std::move(other.n_quaternions_)),
+              type_(std::move(other.type_)) {}
+
         /// Initializes the container to a given assignment type and set all quaternions
         /// to be an identity rotation.
         void initialize(

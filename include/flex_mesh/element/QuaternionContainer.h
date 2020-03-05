@@ -8,22 +8,22 @@
 
 namespace flex_mesh
 {
-	/// An enum describing what level the local coordinate system will be
-	/// assigned for a component.  This could be:
-	/// - None: no LCS for the entire component
-	/// - Component: one LCS for the entire component
-	/// - Element: one LCS for each element in the component
-	/// - Node: one LCS for each node in the component
-	enum class LCSAssignmentType : char
-	{
-		None,
-		Component,
-		Element,
-		Node,
-        ComponentRef,
-        ElementRef,
-        NodeRef
-	};
+    /// An enum describing what level the local coordinate system will be
+    /// assigned for a component.  This could be:
+    /// - None: no LCS for the entire component
+    /// - Component: one LCS for the entire component
+    /// - Element: one LCS for each element in the component
+    /// - Node: one LCS for each node in the component
+    enum class LCSAssignmentType : char
+    {
+        None,
+            Component,
+            Element,
+            Node,
+            ComponentRef,
+            ElementRef,
+            NodeRef
+            };
 
     /// Yeilds the equivalent assignment type to the one given that is based on a reference,
     /// regardless of whether the given type is based on a reference or not.
@@ -91,9 +91,9 @@ namespace flex_mesh
     /// there might be one quaternion, one per a node, or just a reference to another
     /// QuaternionContainer's data.  There is expected to be one QuaternionContainer object
     /// per an element (in the mesh object) and one per a field (within the FEA framework).
-	class QuaternionContainer
-	{
-	public:
+    class QuaternionContainer
+    {
+    public:
         /// Default constructor creates an assignment type of None
         QuaternionContainer()
             : quaternions_(nullptr),
@@ -104,10 +104,10 @@ namespace flex_mesh
 
         /// Constructor to copy the quaternions from a container.
         /// Be sure that the type matches the number of quaternions given.
-		template<typename T>
+        template<typename T>
         QuaternionContainer(
-            const LCSAssignmentType& type,
-            const T& quaternions)
+                            const LCSAssignmentType& type,
+                            const T& quaternions)
         {
             switch (type)
             {
@@ -126,9 +126,9 @@ namespace flex_mesh
                 break;
             }
 
-            n_quaterions_ = quaternions.size();
-            quaternions_ = new Quaternion[n_quaternions_];
-            for (auto i : utility::range_from_zero(n_quaterions_))
+            n_quaternions_ = quaternions.size();
+            quaternions_ = new Quaternion[ n_quaternions_ ];
+            for (auto i : utility::range_from_zero( n_quaternions_ ) )
             {
                 quaternions_[i] = quaternions[i];
             }
@@ -151,8 +151,8 @@ namespace flex_mesh
         /// Initializes the container to a given assignment type and set all quaternions
         /// to be an identity rotation.
         void initialize(
-            LCSAssignmentType new_type,
-            ConnIndex n_nodes = 0)
+                        LCSAssignmentType new_type,
+                        ConnIndex n_nodes = 0)
         {
             if (new_type != type_)
             {
@@ -283,5 +283,5 @@ namespace flex_mesh
                 n_quaternions_ = 0;
             }
         }
-	};
-}
+    }; // end class QuaternionContainer
+} // end namespace flex_mesh

@@ -70,7 +70,7 @@ namespace flex_mesh
     }
 
     /// Determines if an assignment type that is based on a reference.
-    static const bool is_ref(const LCSAssignmentType& type)
+    static bool is_ref(const LCSAssignmentType& type)
     {
         switch (type)
         {
@@ -217,13 +217,13 @@ namespace flex_mesh
         ///     // do something with quaternion ...
         /// }
         /// \endcode
-        Quaternion* const begin() const
+        Quaternion* begin() const
         {
             return quaternions_;
         }
 
         /// End iterator, exists to enable range loops, \see QuaternionContainer::begin()
-        Quaternion* const end() const
+        Quaternion* end() const
         {
             return &quaternions_[n_quaternions_];
         }

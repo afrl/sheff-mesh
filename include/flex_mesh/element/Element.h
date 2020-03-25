@@ -91,9 +91,9 @@ namespace flex_mesh
         virtual std::vector<LocalIndex> get_expanded_local_conn() const;
 
 		/// Returns the node pointer at the beginning of the connectivity
-		auto begin() const;
+		NodeType** begin() const;
 		/// Returns the node pointer at the end of the connectivity
-		auto end() const;
+		NodeType** end() const;
 
 		/////////////////
 		// Comparisons //
@@ -324,13 +324,13 @@ namespace flex_mesh
     }
 
 	template<typename NodeType>
-	inline auto Element<NodeType>::begin() const
+	inline NodeType** Element<NodeType>::begin() const
 	{
 		return connectivity_.begin();
 	}
 
 	template<typename NodeType>
-	inline auto Element<NodeType>::end() const
+	inline NodeType** Element<NodeType>::end() const
 	{
 		return connectivity_.end();
 	}

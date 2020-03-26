@@ -43,7 +43,8 @@ include(${CMAKE_SOURCE_DIR}/cmake/CommonInputChecks.cmake)
 # Declare dependencies #
 ########################
 
-
+find_package(SecondPartyMetis CONFIG REQUIRED HINTS 
+  "${CMAKE_SOURCE_DIR}/../second_party/second_party_metis/install_dir" "${CMAKE_SOURCE_DIR}/../second_party_metis/install_dir" "${CMAKE_SOURCE_DIR}/modules/second_party/second_party_metis/install_dir")
 find_package(SimpleMath CONFIG REQUIRED HINTS 
   "${CMAKE_SOURCE_DIR}/../simple_math/install_dir" "${CMAKE_SOURCE_DIR}/../../simple_math/install_dir" "${CMAKE_SOURCE_DIR}/modules/simple_math/install_dir")
 find_package(Utility CONFIG REQUIRED HINTS 
@@ -76,6 +77,7 @@ add_library(FlexMesh::FlexMesh ALIAS flexmesh)
 # library and downstream executables will also need the flag)
 target_compile_features(flexmesh INTERFACE cxx_std_14)
 # Link dependencies
+target_link_libraries(flexmesh INTERFACE SecondPartyMetis::SecondPartyMetis)
 target_link_libraries(flexmesh INTERFACE SimpleMath::SimpleMath)
 
 if(FLEXMESH_USE_FEAIO AND FeaIo_FOUND)
@@ -86,6 +88,7 @@ endif()
 # Assign source groups
 include(${CMAKE_SOURCE_DIR}/cmake/Utilities.cmake)
 assign_source_group("flex_mesh" ${FLEXMESH_HEADER_LIST})
+assign_source_group_SecondPartyMetis()
 assign_source_group_SimpleMath()
 assign_source_group_Utility()
 if(FLEXMESH_USE_FEAIO)

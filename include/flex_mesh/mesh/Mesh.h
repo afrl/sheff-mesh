@@ -91,6 +91,46 @@ namespace flex_mesh
             for (auto it : iter_list)
                 this->remove(it);
         }
+        /// Remove a list of object given the indices.  Preserves ordering.
+        void remove(const std::set<LocalIndex>& indices_to_remove)
+        {
+            mark_as_changed();
+            LocalIndex curr_new_index = 0;
+            auto next_to_remove_iter = indices_to_remove.begin();
+            for (auto i : utility::range_from_zero(objects_.size()))
+            {
+                if (next_to_remove_iter != indices_to_remove.end() &&
+                    i == *next_to_remove_iter)
+                {
+                    next_to_remove_iter++;
+                }
+                else
+                {
+                    objects_[i]->set_local_number(curr_new_index);
+                    objects_[curr_new_index++] = std::move(objects_[i]);
+                }
+            }
+            auto new_size = objects_.size() - indices_to_remove.size();
+            objects_.resize(new_size);
+        }
+        /// Remove all but those appearing in the list of given the indices.  Preserves ordering.
+        void remove_all_except(const std::set<LocalIndex>& indices_to_keep)
+        {
+            mark_as_changed();
+            LocalIndex curr_new_index = 0;
+            auto next_to_keep_iter = indices_to_keep.begin();
+            for (auto i : utility::range_from_zero(objects_.size()))
+            {
+                if (next_to_keep_iter != indices_to_keep.end() &&
+                    i == *next_to_keep_iter)
+                {
+                    objects_[i]->set_local_number(curr_new_index);
+                    objects_[curr_new_index++] = std::move(objects_[i]);
+                    next_to_keep_iter++;
+                }
+            }
+            objects_.resize(indices_to_keep.size());
+        }
         /// Given a set of object pointers, this will remove all of them from the container.
         /// Note: if the container stores elements, it does not update element connectivities,
         /// that must be done in the algorithm that call this.
@@ -107,6 +147,17 @@ namespace flex_mesh
                 }
             }
         };
+
+        /// Sort the nodes or elements by the parent partition
+        void sort_by_partition()
+        {
+            std::sort(
+                objects_.begin(),
+                objects_.end(),
+                [](const std::unique_ptr<T>& obj1, const std::unique_ptr<T>& obj2) -> bool {
+                    return obj1->get_parent_partition() < obj2->get_parent_partition();
+                });
+        }
 
         template<typename Node_, typename Element_>
         friend class Mesh;

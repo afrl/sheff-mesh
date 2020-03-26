@@ -40,6 +40,10 @@ namespace flex_mesh
         GlobalIndex get_n_owned_elements() const;
         GlobalIndex get_n_owned_nodes() const;
 
+        void set_partition_id(const PartitionIndex id) { this_partition_ = id; }
+        void set_n_total_elements(const GlobalIndex n_elements) { n_total_elements_ = n_elements; }
+        void set_n_total_nodes(const GlobalIndex n_nodes) { n_total_nodes_ = n_nodes; }
+
         #ifdef USE_FEAIO
         /// Returns the information need about the mesh to either write the mesh in a distribtued
         /// manner or write data for the mesh.

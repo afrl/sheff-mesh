@@ -169,14 +169,14 @@ namespace flex_mesh
             bool n_total_changed = false;
 
             auto curr_total_nodes = utility::MPIUtils::sum_across_ranks(get_n_owned_nodes());
-            n_total_changed |= curr_total_nodes == n_total_nodes_;
+            n_total_changed |= curr_total_nodes != n_total_nodes_;
             n_total_nodes_ = curr_total_nodes;
 
             auto curr_total_elements = utility::MPIUtils::sum_across_ranks(get_n_owned_elements());
-            n_total_changed |= curr_total_elements == n_total_elements_;
+            n_total_changed |= curr_total_elements != n_total_elements_;
             n_total_elements_ = curr_total_elements;
 
-            throw _UTIL_MSG_EXCEPT_C("TODO finish implementation");
+            //throw _UTIL_MSG_EXCEPT_C("TODO finish implementation");
 
             return n_total_changed;
         }

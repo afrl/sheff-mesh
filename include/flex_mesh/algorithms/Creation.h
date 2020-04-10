@@ -37,6 +37,12 @@ namespace flex_mesh
         const std::vector<double> & z_coordinates,
         const bool & is_quadratic = true);
 
+    template<typename MeshType>
+    static MeshType make_grid(
+        const simple_math::Point& min,
+        const simple_math::Point& max,
+        const std::array<int, 3>& n_elements);
+
     /// Extrude a 2D mesh along z direction
     template<typename MeshType>
     static MeshType extrude_2D_mesh(
@@ -177,6 +183,21 @@ namespace flex_mesh
     {
         auto mesh_2D = make_grid<MeshType>(x_coordinates, y_coordinates, is_quadratic);
         return extrude_2D_mesh(mesh_2D, z_coordinates);
+    }
+
+    template<typename MeshType>
+    MeshType make_grid(const simple_math::Point& min, const simple_math::Point& max, const std::array<int, 3>& n_elements)
+    {
+        std::array<std::vector<double>, 3> coords;
+        for (auto i : utility::range_from_zero(n_elements.size()))
+        {
+            coords[i].resize(n_elements[0] + 1);
+            for (auto j : utility::indices(coords[i]))
+            {
+                coords[i][j] = (max[i] - min[i]) * (double(j) / double(coords[i].size() - 1)) + min[i];
+            }
+        }
+        return make_grid<MeshType>(coords[0], coords[1], coords[2], false);
     }
 
     template<typename MeshType>

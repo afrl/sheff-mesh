@@ -17,8 +17,11 @@ namespace flex_mesh
         utility::VectorSet<VertexIndexType> neighbors;
     };
 
-    template<typename VertexType, typename VertexPtrContainer,
-        typename VertexIndexType, typename MeshType, typename AdjacencySizeType>
+    template<typename VertexType,
+             typename VertexPtrContainer,
+             typename VertexIndexType,
+             typename MeshType,
+             typename AdjacencySizeType>
         class AdjacencyList
     {
     public:
@@ -40,9 +43,12 @@ namespace flex_mesh
     };
 
     template<typename MeshType>
-    class ElementAdjacencyList : public AdjacencyList<typename MeshType::ElementTypename,
-        typename MeshType::ElementContainer, LocalIndex, MeshType,
-        typename MeshType::ElementTypename::ConnSize>
+    class ElementAdjacencyList : public AdjacencyList<
+            typename MeshType::ElementTypename,
+            typename MeshType::ElementContainer,
+            LocalIndex,
+            MeshType,
+            typename MeshType::ElementTypename::ConnSize>
     {
     public:
         virtual void initialize(const MeshType & mesh) override;

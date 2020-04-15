@@ -229,7 +229,7 @@ namespace flex_mesh
         {
             if (id != curr_id)
             {
-                throw _UTIL_MSG_EXCEPT("Partition " + std::string(curr_id) + " is missing from the mesh.");
+                throw _UTIL_MSG_EXCEPT("Partition " + std::to_string(curr_id) + " is missing from the mesh.");
             }
             curr_id++;
         }

@@ -55,30 +55,18 @@ namespace flex_mesh
         using Partition = fea_io::Partition<GlobalIndex, LocalIndex, FloatType>;
         using MeshReader = fea_io::MeshReader<GlobalIndex, LocalIndex, FloatType>;
 
-        /// Writes the mesh, material information as a element group file, and
-        /// the orientation information as the new compact, binary Beta IO Format.
-        /// The files are naturally partitioned and ready for HPC.
-        /// Note: the mesh should be partitioned before this method is called,
-        ///  otherwise, only 1 partition will be created.
-        /// Pass the base file name, and the correct extension will
-        /// be appended (mesh: *.pfecm, group information for materials: *.pfecg,
-        /// orientation: *.pfeco).  It will create a meta file (*.pfecx) with a single
-        /// time step and references null data to allow processing, reading
-        /// into beta, or visualization.
+        /// Writes the mesh with a meta file.
         static void write(MeshType& mesh,
             const std::string & base_directory,
             const std::string & meta_file_name,
             const std::string & mesh_name,
-            const std::map<ComponentIndex, std::string> & component_names = {});
+            const std::map<ComponentIndex, std::string> & component_names = {},
+            const LocalIndex n_ghost_levels = 1);
 
+        /// Writes the mesh without a meta file.
         static void write(MeshType & mesh,
             const std::string mesh_filepath,
-            const std::map<ComponentIndex, std::string> & component_names = {});
-
-        static void write_multipart(MeshType & mesh,
-            const std::string & base_directory,
-            const std::string & meta_file_name,
-            const std::map<ComponentIndex, std::string> & component_names,
+            const std::map<ComponentIndex, std::string> & component_names = {},
             const LocalIndex n_ghost_levels = 1);
 
         /*
@@ -125,9 +113,11 @@ namespace flex_mesh
 
         /// Given a set of nodes and elements, this method will add ghost elements to the set
         /// and add any new nodes that appear in the ghosts to set of nodes.
-        static void add_ghost_layers(const LocalIndex n_ghost_levels,
-            const ElementAdjacencyList<ElementTypename> adjacency_list,
-            std::set<NodeTypename> & nodes, std::set<ElementTypename> & elements);
+        static void add_ghost_layers(
+            const LocalIndex n_ghost_levels,
+            ElementAdjacencyList<MeshType> adjacency_list,
+            std::set<NodeTypename*> & nodes,
+            std::set<ElementTypename*> & elements);
 
         static void write_kernel(MeshType& partition_mesh,
             const PartitionIndex & partition_id,
@@ -139,9 +129,13 @@ namespace flex_mesh
     /////////////////
 
     template<typename MeshType>
-    inline void FEAIOInterface<MeshType>::write(MeshType & mesh, const std::string & base_directory,
-        const std::string & meta_file_name, const std::string & mesh_name,
-        const std::map<ComponentIndex, std::string> & component_names)
+    inline void FEAIOInterface<MeshType>::write(
+        MeshType & mesh,
+        const std::string & base_directory,
+        const std::string & meta_file_name,
+        const std::string & mesh_name,
+        const std::map<ComponentIndex, std::string> & component_names,
+        const LocalIndex n_ghost_levels)
     {
         // Start a new meta file
         fea_io::MetaWriter meta_writer;
@@ -160,16 +154,27 @@ namespace flex_mesh
         meta_writer.get_analysis_meta().input_info.levels_of_detail.push_back(lod);
 
         std::string mesh_filepath = (fs::path(base_directory) / meta_file_name).string();
-        write(mesh, mesh_filepath);
+        write(mesh, mesh_filepath, component_names, n_ghost_levels);
     }
 
     template<typename MeshType>
-    inline void FEAIOInterface<MeshType>::write(MeshType & mesh, const std::string mesh_filepath,
-        const std::map<ComponentIndex, std::string> & component_names)
+    inline void FEAIOInterface<MeshType>::write(
+        MeshType & mesh,
+        const std::string mesh_filepath,
+        const std::map<ComponentIndex, std::string> & component_names,
+        const LocalIndex n_ghost_levels)
     {
         // If the program is not distributed, then we can assume this process will write all of the partitions
         // and is given the entire mesh.
-        if (!utility::MPIUtils::is_distributed())
+        if (utility::MPIUtils::is_distributed() && utility::MPIUtils::get_local_rank() > 0)
+        {
+            throw _UTIL_MSG_EXCEPT("Multiple ranks cannot call FEAIOInterface::write, a parallel, distributed verion must be implemented.");
+        }
+
+        // Get the number of partitions first
+        PartitionIndex n_partitions = get_num_partitions(mesh);
+
+        if (n_partitions == 1)
         {
             // This method treats the mesh as a single partition.
             const PartitionIndex n_partitions = 1;
@@ -197,35 +202,12 @@ namespace flex_mesh
         }
         else
         {
-            throw _UTIL_MSG_EXCEPT("FEAIOInterface::write cannot be called while running in distributed, consider calling FEAIOInterface::write_multipart instead.");
-        }
-    }
-
-    template<typename MeshType>
-    inline void FEAIOInterface<MeshType>::write_multipart(MeshType & mesh, const std::string & base_directory,
-        const std::string & meta_file_name, const std::map<ComponentIndex, std::string> & component_names,
-        const LocalIndex n_ghost_levels)
-    {
-		throw _UTIL_MSG_EXCEPT("This implementation needs to be updated.");
-		/* TODO update interface like write() and test
-        // If the program is not distributed, then we can assume this process will write all of the partitions
-        // and is given the entire mesh.
-        if (!utility::MPIUtils::is_distributed())
-        {
-            // Get the number of partitions first
-            PartitionIndex num_partitions = get_num_partitions(mesh);
-
-            std::vector<PartitionIndex> partition_ids(num_partitions);
+            std::vector<PartitionIndex> partition_ids(n_partitions);
             // Fills vector with 0..num_partitions-1
             std::iota(partition_ids.begin(), partition_ids.end(), 0);
 
-            // Start a new meta file
-            fea_io::MetaWriter meta_writer;
-            meta_writer.open(base_directory, meta_file_name);
-            std::string mesh_filepath = meta_writer.add_mesh_path(0, 0, meta_file_name);
-
             fea_io::MeshWriter<GlobalIndex, LocalIndex, FloatType> mesh_writer;
-            auto mesh_info = get_fea_io_mesh_info(mesh, component_names);
+            auto mesh_info = get_fea_io_mesh_info(mesh, n_partitions, component_names);
             mesh_writer.initialize(mesh_filepath, mesh_info);
 
             // Create an adjacency list to quickly get the neighbors of elements while finding the
@@ -246,7 +228,6 @@ namespace flex_mesh
                 mesh_writer.write_partition(partition);
             }
         }
-        */
     }
 
     /*
@@ -452,7 +433,11 @@ namespace flex_mesh
     */
 
     template<typename MeshType>
-    inline void FEAIOInterface<MeshType>::read_partition(MeshType & mesh, const std::string & meta_filepath, const PartitionIndex partition_id, const int time_step)
+    inline void FEAIOInterface<MeshType>::read_partition(
+        MeshType & mesh, 
+        const std::string & meta_filepath, 
+        const PartitionIndex partition_id, 
+        const int time_step)
     {
         fea_io::MetaReader meta_reader;
         meta_reader.open(meta_filepath);
@@ -531,8 +516,10 @@ namespace flex_mesh
 
     template<typename MeshType>
     inline fea_io::MeshInfo<GlobalIndex, LocalIndex, FloatType> FEAIOInterface<MeshType>::get_fea_io_mesh_info(
-        const MeshType & mesh, const PartitionIndex n_partitions,
-        const std::map<ComponentIndex, std::string> & component_names)
+        const MeshType & mesh, 
+        const PartitionIndex n_partitions,
+        const std::map<ComponentIndex, 
+        std::string> & component_names)
     {
         // Get the component IDs
         auto component_id_set = mesh.get_component_ids();
@@ -579,7 +566,10 @@ namespace flex_mesh
     }
 
     template<typename MeshType>
-    inline std::vector<fea_io::PartitionInfo<GlobalIndex, LocalIndex, FloatType>> FEAIOInterface<MeshType>::get_fea_io_partition_infos(MeshType & mesh, const std::vector<PartitionIndex>& partition_ids)
+    inline std::vector<fea_io::PartitionInfo<GlobalIndex, LocalIndex, FloatType>>
+    FEAIOInterface<MeshType>::get_fea_io_partition_infos(
+        MeshType & mesh, 
+        const std::vector<PartitionIndex>& partition_ids)
     {
         // Create the partition info for the mesh file
         std::vector<fea_io::PartitionInfo<GlobalIndex, LocalIndex, FloatType>> partition_infos;
@@ -837,7 +827,11 @@ namespace flex_mesh
     }
 
     template<typename MeshType>
-    inline void FEAIOInterface<MeshType>::add_ghost_layers(const LocalIndex n_ghost_levels, const ElementAdjacencyList<ElementTypename> adjacency_list, std::set<NodeTypename>& nodes, std::set<ElementTypename>& elements)
+    inline void FEAIOInterface<MeshType>::add_ghost_layers(
+        const LocalIndex n_ghost_levels, 
+        ElementAdjacencyList<MeshType> adjacency_list,
+        std::set<NodeTypename*>& nodes, 
+        std::set<ElementTypename*>& elements)
     {
         std::vector<GlobalIndex> elements_included_in_set;
         for (auto& e_ptr : elements)
@@ -848,7 +842,7 @@ namespace flex_mesh
 
         for (auto level : utility::range_from_zero(n_ghost_levels))
         {
-            std::set<ElementTypename> ghost_layer_elements;
+            std::set<ElementTypename*> ghost_layer_elements;
             for (auto& e_ptr : elements)
             {
                 for (auto& neighbor_ptr : adjacency_list.get_neighbors(e_ptr->get_global_number()))
@@ -857,11 +851,11 @@ namespace flex_mesh
                 }
             }
 
-            for (auto& ghost_element : ghost_layer_elements)
+            for (auto& ghost_element_ptr : ghost_layer_elements)
             {
-                elements_included_in_set.push_back(ghost_element->get_global_number());
-                elements.insert(ghost_element);
-                for (auto& n_ptr : ghost_element)
+                elements_included_in_set.push_back(ghost_element_ptr->get_global_number());
+                elements.insert(ghost_element_ptr);
+                for (auto& n_ptr : *ghost_element_ptr)
                 {
                     nodes.insert(n_ptr);
                 }

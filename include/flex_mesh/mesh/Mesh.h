@@ -276,6 +276,8 @@ namespace flex_mesh
         /// Because in distributed runs, some groups may or may not exist, this method will not throw
         /// if the group does not exist.  But it will output a warning and create an empty group.
         const NodeGroup& get_node_group(const std::string& group_name);
+        /// Only accesses an existing group, otherwise throws.
+        const NodeGroup& get_node_group_c(const std::string& group_name) const;
         /// Returns the node group names
         const std::vector<std::string> get_node_group_names();
         /// Returns the iterator of the full map of groups, which is usually useful for I/O
@@ -557,6 +559,12 @@ namespace flex_mesh
             return node_groups_[group_name];
         }
         return group->second;
+    }
+
+    template<typename Node_, typename Element_>
+    inline const typename Mesh<Node_, Element_>::NodeGroup& Mesh<Node_, Element_>::get_node_group_c(const std::string& group_name) const
+    {
+        return node_groups_.find(group_name)->second;
     }
 
     template<typename Node_, typename Element_>

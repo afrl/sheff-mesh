@@ -22,8 +22,10 @@
 #ifdef USE_FEAIO
 #   include "fea_io/meta/MetaWriter.h"
 #   include "fea_io/mesh/MeshWriter.h"
+#   include "fea_io/group/GroupWriter.h"
 #   include "fea_io/data/DataWriter.h"
 #   include "fea_io/mesh/MeshReader.h"
+#   include "fea_io/group/GroupReader.h"
 #   include "fea_io/meta/MetaReader.h"
 #   include "fea_io/common/Filesystem.h"
 #endif
@@ -65,7 +67,7 @@ namespace flex_mesh
 
         /// Writes the mesh without a meta file.
         static void write(MeshType & mesh,
-            const std::string mesh_filepath,
+            const std::string file_stem,
             const std::map<ComponentIndex, std::string> & component_names = {},
             const LocalIndex n_ghost_levels = 1);
 
@@ -111,6 +113,9 @@ namespace flex_mesh
             const ElementContainer & elements_in_partition,
             const PartitionIndex partition_id);
 
+        static std::vector<fea_io::GroupInfo> get_group_infos_serial(
+            MeshType& mesh);
+
         /// Given a set of nodes and elements, this method will add ghost elements to the set
         /// and add any new nodes that appear in the ghosts to set of nodes.
         static void add_ghost_layers(
@@ -150,17 +155,22 @@ namespace flex_mesh
         fea_io::MeshObject mesh_object;
         mesh_object.type = fea_io::MeshObjectType::Volume;
         mesh_object.mesh_path = mesh_name;
+        if (mesh.get_node_group_names().size() > 0 ||
+            mesh.get_element_group_names().size() > 0)
+        {
+            mesh_object.group_paths.push_back(mesh_name);
+        }
         lod.mesh_objects.push_back(mesh_object);
         meta_writer.get_analysis_meta().input_info.levels_of_detail.push_back(lod);
-
-        std::string mesh_filepath = (fs::path(base_directory) / meta_file_name).string();
-        write(mesh, mesh_filepath, component_names, n_ghost_levels);
+        
+        std::string file_stem = (fs::path(base_directory) / meta_file_name).string();
+        write(mesh, file_stem, component_names, n_ghost_levels);
     }
 
     template<typename MeshType>
     inline void FEAIOInterface<MeshType>::write(
         MeshType & mesh,
-        const std::string mesh_filepath,
+        const std::string file_stem,
         const std::map<ComponentIndex, std::string> & component_names,
         const LocalIndex n_ghost_levels)
     {
@@ -182,7 +192,7 @@ namespace flex_mesh
 
             fea_io::MeshWriter<GlobalIndex, LocalIndex, FloatType> mesh_writer;
             auto mesh_info = get_fea_io_mesh_info(mesh, n_partitions, component_names);
-            mesh_writer.initialize(mesh_filepath, mesh_info);
+            mesh_writer.initialize(file_stem, mesh_info);
 
             // For a serial write, we do not need to queue up all of the partitions for writing, since
             // the file does not have to be preallocated for serial writing.
@@ -199,6 +209,25 @@ namespace flex_mesh
             }
 
             mesh_writer.write_partition(partition);
+
+            auto node_group_infos = get_group_infos_serial(mesh);
+            if (node_group_infos.size() > 0)
+            {
+                fea_io::GroupWriter group_writer;
+                group_writer.initialize(file_stem, node_group_infos);
+                for (auto& node_group_info : node_group_infos)
+                {
+                    auto& nodes_in_group = mesh.get_node_group_c(node_group_info.name);
+                    std::vector<LocalIndex> node_indices;
+                    node_indices.reserve(nodes_in_group.size());
+                    for (auto& n_ptr : nodes_in_group)
+                    {
+                        node_indices.push_back(n_ptr->get_local_number());
+                    }
+                    group_writer.write_list(node_group_info.name, 0, static_cast<LocalIndex>(node_indices.size()), node_indices.data());
+                }
+                group_writer.close();
+            }
         }
         else
         {
@@ -208,12 +237,17 @@ namespace flex_mesh
 
             fea_io::MeshWriter<GlobalIndex, LocalIndex, FloatType> mesh_writer;
             auto mesh_info = get_fea_io_mesh_info(mesh, n_partitions, component_names);
-            mesh_writer.initialize(mesh_filepath, mesh_info);
+            mesh_writer.initialize(file_stem, mesh_info);
 
             // Create an adjacency list to quickly get the neighbors of elements while finding the
             // layer of ghost elements.
             ElementAdjacencyList<MeshType> adjacency_list;
             adjacency_list.initialize(mesh);
+
+            if (mesh.get_node_group_names().size() > 0 || mesh.get_element_group_names().size() > 0)
+            {
+                throw _UTIL_MSG_EXCEPT("TODO implement writing groups in parallel.");
+            }
 
             for (auto& partition_id : partition_ids)
             {
@@ -510,6 +544,32 @@ namespace flex_mesh
                 mesh.elements()[local_elem_id]->set_component_id(subcomponent.component_id);
                 mesh.elements()[local_elem_id]->allocate_lcs(component_lcs_assignment);
                 // TODO assign lcs
+            }
+        }
+
+        for (auto group_relative_path : analysis_meta_info.input_info.levels_of_detail[0].mesh_objects[0].group_paths)
+        {
+            fea_io::GroupReader group_reader((fs::path(meta_filepath).parent_path() / group_relative_path).string());
+
+            auto node_group_names = group_reader.get_node_group_names();
+            for (auto& name : node_group_names)
+            {
+                mesh.create_node_group(name);
+                std::vector<LocalIndex> indices;
+                group_reader.read_list<LocalIndex>(name, partition_id, indices);
+
+                std::set<typename MeshType::NodeTypename*> nodes_in_group;
+                for (auto index : indices)
+                {
+                    nodes_in_group.insert(mesh.nodes()[index]);
+                }
+                mesh.add_nodes_to_group(name, nodes_in_group);
+            }
+
+            auto element_group_names = group_reader.get_element_group_names();
+            if (element_group_names.size() > 0)
+            {
+                throw _UTIL_MSG_EXCEPT("TODO implement how to read element groups");
             }
         }
     }
@@ -827,6 +887,25 @@ namespace flex_mesh
     }
 
     template<typename MeshType>
+    inline std::vector<fea_io::GroupInfo> FEAIOInterface<MeshType>::get_group_infos_serial(
+        MeshType& mesh)
+    {
+        std::vector<fea_io::GroupInfo> infos;
+        for (auto node_group_iter = mesh.node_groups_begin();
+            node_group_iter != mesh.node_groups_end();
+            node_group_iter++)
+        {
+            fea_io::GroupInfo info;
+            info.initialize<LocalIndex>(
+                node_group_iter->first,
+                fea_io::GroupType::Node,
+                {});
+            infos.push_back(info);
+        }
+        return infos;
+    }
+
+    template<typename MeshType>
     inline void FEAIOInterface<MeshType>::add_ghost_layers(
         const LocalIndex n_ghost_levels, 
         ElementAdjacencyList<MeshType> adjacency_list,
@@ -864,7 +943,10 @@ namespace flex_mesh
     }
 
     template<typename MeshType>
-    inline void FEAIOInterface<MeshType>::write_kernel(MeshType & partition_mesh, const PartitionIndex & partition_id, fea_io::MeshWriter<GlobalIndex, LocalIndex, FloatType> mesh_writer)
+    inline void FEAIOInterface<MeshType>::write_kernel(
+        MeshType & partition_mesh, 
+        const PartitionIndex & partition_id, 
+        fea_io::MeshWriter<GlobalIndex, LocalIndex, FloatType> mesh_writer)
     {
         auto partition = get_fea_io_partition(partition_mesh.nodes(), partition_mesh.elements(), partition_id);
         mesh_writer.write_partition(partition);

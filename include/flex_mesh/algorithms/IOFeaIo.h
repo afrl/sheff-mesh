@@ -113,7 +113,7 @@ namespace flex_mesh
             const ElementContainer & elements_in_partition,
             const PartitionIndex partition_id);
 
-        static std::vector<fea_io::GroupInfo> get_group_infos_serial(
+        static std::vector<fea_io::GroupInfo> get_group_infos(
             MeshType& mesh);
 
         /// Given a set of nodes and elements, this method will add ghost elements to the set
@@ -210,21 +210,35 @@ namespace flex_mesh
 
             mesh_writer.write_partition(partition);
 
-            auto node_group_infos = get_group_infos_serial(mesh);
-            if (node_group_infos.size() > 0)
+            auto group_infos = get_group_infos(mesh);
+            if (group_infos.size() > 0)
             {
                 fea_io::GroupWriter group_writer;
-                group_writer.initialize(file_stem, node_group_infos);
-                for (auto& node_group_info : node_group_infos)
+                group_writer.initialize(file_stem, group_infos);
+                for (auto& group_info : group_infos)
                 {
-                    auto& nodes_in_group = mesh.get_node_group_c(node_group_info.name);
-                    std::vector<LocalIndex> node_indices;
-                    node_indices.reserve(nodes_in_group.size());
-                    for (auto& n_ptr : nodes_in_group)
+                    if (group_info.type == fea_io::GroupType::Node)
                     {
-                        node_indices.push_back(n_ptr->get_local_number());
+                        auto& nodes_in_group = mesh.get_node_group_c(group_info.name);
+                        std::vector<LocalIndex> node_indices;
+                        node_indices.reserve(nodes_in_group.size());
+                        for (auto& n_ptr : nodes_in_group)
+                        {
+                            node_indices.push_back(n_ptr->get_local_number());
+                        }
+                        group_writer.write_list(group_info.name, 0, static_cast<LocalIndex>(node_indices.size()), node_indices.data());
                     }
-                    group_writer.write_list(node_group_info.name, 0, static_cast<LocalIndex>(node_indices.size()), node_indices.data());
+                    else if (group_info.type == fea_io::GroupType::Element)
+                    {
+                        auto& elements_in_group = mesh.get_element_group_c(group_info.name);
+                        std::vector<LocalIndex> element_indices;
+                        element_indices.reserve(elements_in_group.size());
+                        for (auto& e_ptr : elements_in_group)
+                        {
+                            element_indices.push_back(e_ptr->get_local_number());
+                        }
+                        group_writer.write_list(group_info.name, 0, static_cast<LocalIndex>(element_indices.size()), element_indices.data());
+                    }
                 }
                 group_writer.close();
             }
@@ -244,7 +258,8 @@ namespace flex_mesh
             ElementAdjacencyList<MeshType> adjacency_list;
             adjacency_list.initialize(mesh);
 
-            if (mesh.get_node_group_names().size() > 0 || mesh.get_element_group_names().size() > 0)
+            auto group_infos = get_group_infos(mesh);
+            if (group_infos.size() > 0)
             {
                 throw _UTIL_MSG_EXCEPT("TODO implement writing groups in parallel.");
             }
@@ -567,9 +582,18 @@ namespace flex_mesh
             }
 
             auto element_group_names = group_reader.get_element_group_names();
-            if (element_group_names.size() > 0)
+            for (auto& name : element_group_names)
             {
-                throw _UTIL_MSG_EXCEPT("TODO implement how to read element groups");
+                mesh.create_element_group(name);
+                std::vector<LocalIndex> indices;
+                group_reader.read_list<LocalIndex>(name, partition_id, indices);
+
+                std::set<typename MeshType::ElementTypename*> elements_in_group;
+                for (auto index : indices)
+                {
+                    elements_in_group.insert(mesh.elements()[index]);
+                }
+                mesh.add_elements_to_group(name, elements_in_group);
             }
         }
     }
@@ -887,7 +911,7 @@ namespace flex_mesh
     }
 
     template<typename MeshType>
-    inline std::vector<fea_io::GroupInfo> FEAIOInterface<MeshType>::get_group_infos_serial(
+    inline std::vector<fea_io::GroupInfo> FEAIOInterface<MeshType>::get_group_infos(
         MeshType& mesh)
     {
         std::vector<fea_io::GroupInfo> infos;
@@ -899,6 +923,17 @@ namespace flex_mesh
             info.initialize<LocalIndex>(
                 node_group_iter->first,
                 fea_io::GroupType::Node,
+                {});
+            infos.push_back(info);
+        }
+        for (auto element_group_iter = mesh.element_groups_begin();
+            element_group_iter != mesh.element_groups_end();
+            element_group_iter++)
+        {
+            fea_io::GroupInfo info;
+            info.initialize<LocalIndex>(
+                element_group_iter->first,
+                fea_io::GroupType::Element,
                 {});
             infos.push_back(info);
         }

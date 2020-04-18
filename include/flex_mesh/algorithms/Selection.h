@@ -182,22 +182,31 @@ namespace flex_mesh
         {
             // Get the intersection of all non-local criteria
             std::set<ElementTypename *> non_local_criteria_intersection;
+            bool first_criteria = true;
             for (auto& criterion : this->non_local_criteria_)
             {
-                std::set<ElementTypename *> criteria_set;
-                criterion(mesh, criteria_set);
+                if (first_criteria)
+                {
+                    criterion(mesh, non_local_criteria_intersection);
+                    first_criteria = false;
+                }
+                else
+                {
+                    std::set<ElementTypename*> criteria_set;
+                    criterion(mesh, criteria_set);
 
-                // Take the intersection of criteria_set and the current intersection of previous
-                // criteria (non_local_criteria_intersection) and put the result in tmp_intersection.
-                std::set<ElementTypename *> tmp_intersection;
-                std::set_intersection(
-                    non_local_criteria_intersection.begin(), non_local_criteria_intersection.end(),
-                    criteria_set.begin(), criteria_set.end(),
-                    std::inserter(tmp_intersection, tmp_intersection.begin()));
+                    // Take the intersection of criteria_set and the current intersection of previous
+                    // criteria (non_local_criteria_intersection) and put the result in tmp_intersection.
+                    std::set<ElementTypename*> tmp_intersection;
+                    std::set_intersection(
+                        non_local_criteria_intersection.begin(), non_local_criteria_intersection.end(),
+                        criteria_set.begin(), criteria_set.end(),
+                        std::inserter(tmp_intersection, tmp_intersection.begin()));
 
-                // We don't need tmp_intersection so just swap with non_local_criteria_intersection
-                // rather than copy
-                non_local_criteria_intersection.swap(tmp_intersection);
+                    // We don't need tmp_intersection so just swap with non_local_criteria_intersection
+                    // rather than copy
+                    non_local_criteria_intersection.swap(tmp_intersection);
+                }
             }
 
             // Now run the local criteria over the intersection of the non-local criteria to get
@@ -249,22 +258,31 @@ namespace flex_mesh
         {
             // Get the intersection of all non-local criteria
             std::set<NodeTypename *> non_local_criteria_intersection;
+            bool first_criteria = true;
             for (auto& criterion : this->non_local_criteria_)
             {
-                std::set<NodeTypename *> criteria_set;
-                criterion(mesh, criteria_set);
+                if (first_criteria)
+                {
+                    criterion(mesh, non_local_criteria_intersection);
+                    first_criteria = false;
+                }
+                else
+                {
+                    std::set<NodeTypename*> criteria_set;
+                    criterion(mesh, criteria_set);
 
-                // Take the intersection of criteria_set and the current intersection of previous
-                // criteria (non_local_criteria_intersection) and put the result in tmp_intersection.
-                std::set<NodeTypename *> tmp_intersection;
-                std::set_intersection(
-                    non_local_criteria_intersection.begin(), non_local_criteria_intersection.end(),
-                    criteria_set.begin(), criteria_set.end(),
-                    std::inserter(tmp_intersection, tmp_intersection.begin()));
+                    // Take the intersection of criteria_set and the current intersection of previous
+                    // criteria (non_local_criteria_intersection) and put the result in tmp_intersection.
+                    std::set<NodeTypename*> tmp_intersection;
+                    std::set_intersection(
+                        non_local_criteria_intersection.begin(), non_local_criteria_intersection.end(),
+                        criteria_set.begin(), criteria_set.end(),
+                        std::inserter(tmp_intersection, tmp_intersection.begin()));
 
-                // We don't need tmp_intersection so just swap with non_local_criteria_intersection
-                // rather than copy
-                non_local_criteria_intersection.swap(tmp_intersection);
+                    // We don't need tmp_intersection so just swap with non_local_criteria_intersection
+                    // rather than copy
+                    non_local_criteria_intersection.swap(tmp_intersection);
+                }
             }
 
             // Now run the local criteria over the intersection of the non-local criteria to get

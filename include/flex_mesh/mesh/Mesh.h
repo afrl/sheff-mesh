@@ -191,7 +191,7 @@ namespace flex_mesh
         using NodeGroup = std::set<Node_ *>;
         using NodeGroupMap = std::map<std::string, NodeGroup>;
         using NodeGroupMapIt = typename NodeGroupMap::iterator;
-        using ElementGroup = std::set<Element_>;
+        using ElementGroup = std::set<Element_ *>;
         using ElementGroupMap = std::map<std::string, ElementGroup>;
         using ElementGroupMapIt = typename std::map<std::string, ElementGroup>::iterator;
 
@@ -303,6 +303,8 @@ namespace flex_mesh
         /// Returns the element by const reference.  It can be looped over and the elements can be modified
         /// but the set itself cannot be modified.
         const ElementGroup& get_element_group(const std::string& group_name);
+        /// Only accesses an existing group, otherwise throws.
+        const ElementGroup& get_element_group_c(const std::string& group_name) const;
         /// Returns the node group names
         const std::vector<std::string> get_element_group_names();
         /// Returns the iterator of the full map of groups, which is usually useful for I/O
@@ -670,6 +672,12 @@ namespace flex_mesh
             return element_groups_[group_name];
         }
         return group->second;
+    }
+
+    template<typename Node_, typename Element_>
+    inline const typename Mesh<Node_, Element_>::ElementGroup& Mesh<Node_, Element_>::get_element_group_c(const std::string& group_name) const
+    {
+        return element_groups_.find(group_name)->second;
     }
 
     template<typename Node_, typename Element_>

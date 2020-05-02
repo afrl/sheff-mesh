@@ -2,6 +2,7 @@
 
 #include "Defines.h"
 
+#include <set>
 #include <vector>
 
 namespace flex_mesh
@@ -41,6 +42,28 @@ namespace flex_mesh
 				return false;
 		}
 	};
+
+	/// Comparator that sorts first by parent partition then by global number
+	template<class T>
+	struct PartitionGlobalNumberComparison {
+		bool operator() (const T* lhs, const T* rhs) const
+		{
+			if (lhs->get_parent_partition() < rhs->get_parent_partition())
+			{
+				return true;
+			}
+			else if (lhs->get_parent_partition() == rhs->get_parent_partition())
+			{
+				return lhs->get_global_number() < rhs->get_global_number();
+			}
+			else
+			{
+				return false;
+			}
+		}
+	};
+	template <typename T>
+	using PartitionOrderedPtrSet = std::set<T*, PartitionGlobalNumberComparison<T>>;
 
 	/// Similar to ObjectComparison, but the sorted connectivity is hashed.  Consequently,
 	/// if used with a set, then it will result in an entry for each object without duplicates

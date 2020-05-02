@@ -121,8 +121,8 @@ namespace flex_mesh
         static void add_ghost_layers(
             const LocalIndex n_ghost_levels,
             ElementAdjacencyList<MeshType> adjacency_list,
-            std::set<NodeTypename*> & nodes,
-            std::set<ElementTypename*> & elements);
+            PartitionOrderedPtrSet<NodeTypename> & nodes,
+            PartitionOrderedPtrSet<ElementTypename> & elements);
 
         static void write_kernel(MeshType& partition_mesh,
             const PartitionIndex & partition_id,
@@ -259,9 +259,10 @@ namespace flex_mesh
             adjacency_list.initialize(mesh);
 
             auto group_infos = get_group_infos(mesh);
+            fea_io::GroupWriter group_writer;
             if (group_infos.size() > 0)
             {
-                throw _UTIL_MSG_EXCEPT("TODO implement writing groups in parallel.");
+                group_writer.initialize(file_stem, group_infos);
             }
 
             for (auto& partition_id : partition_ids)
@@ -275,6 +276,53 @@ namespace flex_mesh
                 // the file does not have to be preallocated for serial writing.
                 auto partition = get_fea_io_partition(nodes_and_elements.first, nodes_and_elements.second, partition_id);
                 mesh_writer.write_partition(partition);
+
+                // Note: this could be done with more memory but less processing if a map was used instead of
+                // set.  If it becomes a wall time bottleneck, reconsider.
+                for (auto& group_info : group_infos)
+                {
+                    if (group_info.type == fea_io::GroupType::Node)
+                    {
+                        auto& nodes_in_group = mesh.get_node_group_c(group_info.name);
+                        std::vector<LocalIndex> node_indices;
+                        node_indices.reserve(nodes_and_elements.first.size());
+                        for (auto& n_ptr : nodes_in_group)
+                        {
+                            if (nodes_and_elements.first.count(n_ptr) > 0)
+                            {
+                                node_indices.push_back(n_ptr->get_local_number());
+                            }
+                        }
+                        group_writer.write_list(
+                            group_info.name, 
+                            partition_id, 
+                            static_cast<LocalIndex>(node_indices.size()), 
+                            node_indices.data());
+                    }
+                    else if (group_info.type == fea_io::GroupType::Element)
+                    {
+                        auto& elements_in_group = mesh.get_element_group_c(group_info.name);
+                        std::vector<LocalIndex> element_indices;
+                        element_indices.reserve(elements_in_group.size());
+                        for (auto& e_ptr : elements_in_group)
+                        {
+                            if (nodes_and_elements.second.count(e_ptr) > 0)
+                            {
+                                element_indices.push_back(e_ptr->get_local_number());
+                            }
+                        }
+                        group_writer.write_list(
+                            group_info.name, 
+                            partition_id, 
+                            static_cast<LocalIndex>(element_indices.size()), 
+                            element_indices.data());
+                    }
+                }
+            }
+
+            if (group_infos.size() > 0)
+            {
+                group_writer.close();
             }
         }
     }
@@ -944,8 +992,8 @@ namespace flex_mesh
     inline void FEAIOInterface<MeshType>::add_ghost_layers(
         const LocalIndex n_ghost_levels, 
         ElementAdjacencyList<MeshType> adjacency_list,
-        std::set<NodeTypename*>& nodes, 
-        std::set<ElementTypename*>& elements)
+        PartitionOrderedPtrSet<NodeTypename>& nodes,
+        PartitionOrderedPtrSet<ElementTypename>& elements)
     {
         std::vector<GlobalIndex> elements_included_in_set;
         for (auto& e_ptr : elements)

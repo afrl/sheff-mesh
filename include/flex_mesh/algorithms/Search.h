@@ -3,6 +3,7 @@
 #include "flex_mesh/common/Common.h"
 #include "flex_mesh/common/Defines.h"
 #include "flex_mesh/common/GeometryTypes.h"
+#include "flex_mesh/common/Utility.h"
 #include "flex_mesh/mesh/Mesh.h"
 #include "flex_mesh/node/Node.h"
 #include "flex_mesh/element/Element.h"
@@ -14,25 +15,25 @@
 
 namespace flex_mesh
 {
-	/// Given a container of element pointers, this method will find all of the
-	/// elements with the given component id.
-	/// Returns a pair of vectors.  The first in the pair is the indices relative to the
-	/// given elements container, and the second in the pair is the pointers.
-	template<typename Element_, typename ElementPtrContainer>
-	static std::pair<std::vector<LocalIndex>, std::vector<Element_ *>>
+    /// Given a container of element pointers, this method will find all of the
+    /// elements with the given component id.
+    /// Returns a pair of vectors.  The first in the pair is the indices relative to the
+    /// given elements container, and the second in the pair is the pointers.
+    template<typename Element_, typename ElementPtrContainer>
+    static std::pair<std::vector<LocalIndex>, std::vector<Element_ *>>
         find_elements_in_component(
-		const ElementPtrContainer& elements,
-		const ComponentIndex component_id);
+        const ElementPtrContainer& elements,
+        const ComponentIndex component_id);
 
-	/// Given a container of node pointers, this method will find all of the
-	/// nodes that appear in an node with the given component id.
-	/// Returns a pair of vectors.  The first in the pair is the indices relative to the
-	/// given nodes container, and the second in the pair is the pointers.
-	template<typename Node_, typename ElementPtrContainer>
-	static std::pair<std::vector<LocalIndex>, std::vector<Node_ *>>
+    /// Given a container of node pointers, this method will find all of the
+    /// nodes that appear in an node with the given component id.
+    /// Returns a pair of vectors.  The first in the pair is the indices relative to the
+    /// given nodes container, and the second in the pair is the pointers.
+    template<typename Node_, typename ElementPtrContainer>
+    static std::pair<std::vector<LocalIndex>, std::vector<Node_ *>>
         find_nodes_in_component(
-		const ElementPtrContainer& elements,
-		const ComponentIndex component_id);
+        const ElementPtrContainer& elements,
+        const ComponentIndex component_id);
 
     /// Returns the set of component ids that are referenced in the elements provided.
     template<typename ElementContainer>
@@ -45,81 +46,83 @@ namespace flex_mesh
         const ElementContainer& elements,
         const ComponentIndex component_id);
 
-	/// Returns the minimum coordinate (minimum x, minimum, y, minimum z) based
-	/// on a collectino of node pointers.
-	template<typename NodeContainer>
-	static std::array<FloatType, 3> min_coord(const NodeContainer& nodes);
+    /// Returns the minimum coordinate (minimum x, minimum, y, minimum z) based
+    /// on a collectino of node pointers.
+    template<typename NodeContainer>
+    static std::array<FloatType, 3> min_coord(const NodeContainer& nodes);
 
-	/// Returns the maximum coordinate (maximum x, maximum, y, maximum z) based
-	/// on a collectino of node pointers.
-	template<typename NodeContainer>
-	static std::array<FloatType, 3> max_coord(const NodeContainer& nodes);
+    /// Returns the maximum coordinate (maximum x, maximum, y, maximum z) based
+    /// on a collectino of node pointers.
+    template<typename NodeContainer>
+    static std::array<FloatType, 3> max_coord(const NodeContainer& nodes);
 
-	/// Returns the nodes and elements respectively for the given partition in the mesh
-	template<typename MeshType>
-	static std::pair<std::set<typename MeshType::NodeTypename *>, std::set<typename MeshType::ElementTypename *>> get_partition_nodes_and_elements(const MeshType& mesh, const PartitionIndex current_partition = 0);
+    /// Returns the nodes and elements respectively for the given partition in the mesh
+    template<typename MeshType>
+    static std::pair<PartitionOrderedPtrSet<typename MeshType::NodeTypename>,
+                     PartitionOrderedPtrSet<typename MeshType::ElementTypename>>
+    get_partition_nodes_and_elements(const MeshType& mesh, const PartitionIndex current_partition = 0);
 
-	/// Returns the number of partitions (assuming they are contiguous 0-based when assigned)
-	template<typename MeshType>
-	PartitionIndex get_num_partitions(const MeshType& mesh);
+    /// Returns the number of partitions (assuming they are contiguous 0-based when assigned)
+    template<typename MeshType>
+    PartitionIndex get_num_partitions(const MeshType& mesh);
 
-	/// Sort the nodes and elements by the parent partition id (ascending)
-	template<typename MeshType>
-	void sort_by_partition(const MeshType& mesh);
+    /// Sort the nodes and elements by the parent partition id (ascending)
+    template<typename MeshType>
+    void sort_by_partition(const MeshType& mesh);
 
     template<typename MeshType>
     static typename MeshType::ElementTypename* find_element_with_point(
         const MeshType& mesh,
         const simple_math::Point x);
 
-	/////////////////
-	// Definitions //
-	/////////////////
+    /////////////////
+    // Definitions //
+    /////////////////
 
-	template<typename Element_, typename ElementPtrContainer>
+    template<typename Element_, typename ElementPtrContainer>
     std::pair<std::vector<LocalIndex>, std::vector<Element_ *>>
         find_elements_in_component(const ElementPtrContainer & elements, const ComponentIndex component_id)
-	{
-		LocalIndex count = 0;
-		std::vector<LocalIndex> relative_indices;
-		std::vector<Element_ *> elements_in_component;
-		for (auto& e_ptr : elements) {
-			if (e_ptr->get_component_id() == component_id) {
-				relative_indices.push_back(count);
-				elements_in_component.push_back(&(*e_ptr));
-			}
-			count++;
-		}
-		return { relative_indices, elements_in_component };
-	}
+    {
+        LocalIndex count = 0;
+        std::vector<LocalIndex> relative_indices;
+        std::vector<Element_ *> elements_in_component;
+        for (auto& e_ptr : elements) {
+            if (e_ptr->get_component_id() == component_id) {
+                relative_indices.push_back(count);
+                elements_in_component.push_back(&(*e_ptr));
+            }
+            count++;
+        }
+        return { relative_indices, elements_in_component };
+    }
 
-	template<typename Node_, typename ElementPtrContainer>
+    template<typename Node_, typename ElementPtrContainer>
     std::pair<std::vector<LocalIndex>, std::vector<Node_ *>>
         find_nodes_in_component(const ElementPtrContainer & elements, const ComponentIndex component_id)
-	{
-		std::unordered_set<Node_ *> nodes_in_component_set;
-		for (auto& e_ptr : elements)
+    {
+        std::unordered_set<Node_ *> nodes_in_component_set;
+        for (auto& e_ptr : elements)
         {
-			if (e_ptr->get_component_id() == component_id)
+            if (e_ptr->get_component_id() == component_id)
             {
-				for (auto& n_ptr : *e_ptr)
+                for (auto& n_ptr : *e_ptr)
                 {
-					nodes_in_component_set.insert(n_ptr);
-				}
-			}
-		}
+                    nodes_in_component_set.insert(n_ptr);
+                }
+            }
+        }
 
-		std::vector<LocalIndex> relative_indices;
+        std::vector<LocalIndex> relative_indices;
         std::vector<Node_ *> nodes_in_component;
         LocalIndex count = 0;
-		for (auto& n_ptr : nodes_in_component_set)
+        for (auto& n_ptr : nodes_in_component_set)
         {
-			relative_indices.push_back(count);
-			nodes_in_component.push_back(n_ptr);
+            relative_indices.push_back(count);
+            nodes_in_component.push_back(n_ptr);
             count++;
-		}
-		return { relative_indices, nodes_in_component };
-	}
+        }
+        return { relative_indices, nodes_in_component };
+    }
 
     template<typename ElementContainer>
     std::set<ComponentIndex> get_component_ids(const ElementContainer & elements)
@@ -136,88 +139,90 @@ namespace flex_mesh
     std::pair<LocalIndex, LocalIndex> get_n_nodes_and_elements_in_component(const ElementContainer & elements, const ComponentIndex component_id)
     {
         std::set<Node_ *> nodes_in_component_set;
-		LocalIndex n_elements_in_component = 0;
-		for (auto& e_ptr : elements) {
-			if (e_ptr->get_component_id() == component_id) {
-				for (auto& n_ptr : *e_ptr) {
-					nodes_in_component_set.insert(n_ptr);
-				}
+        LocalIndex n_elements_in_component = 0;
+        for (auto& e_ptr : elements) {
+            if (e_ptr->get_component_id() == component_id) {
+                for (auto& n_ptr : *e_ptr) {
+                    nodes_in_component_set.insert(n_ptr);
+                }
                 n_elements_in_component++;
-			}
-		}
-		return { static_cast<LocalIndex>(nodes_in_component_set.size()), n_elements_in_component };
+            }
+        }
+        return { static_cast<LocalIndex>(nodes_in_component_set.size()), n_elements_in_component };
     }
 
-	template<typename NodeContainer>
-	std::array<FloatType, 3> min_coord(const NodeContainer & nodes)
-	{
-		if (nodes.size() > 0)
-		{
-			Point min = nodes.front()->get_coord();
-			for (auto& n_ptr : nodes) {
-				for (auto i = 0; i < 3; i++) {
-					if ((*n_ptr)[i] < min[i]) {
-						min[i] = (*n_ptr)[i];
-					}
-				}
-			}
-			return min;
-		}
-		else
-		{
-			return { 0, 0, 0 };
-		}
-	}
-	template<typename NodeContainer>
-	std::array<FloatType, 3> max_coord(const NodeContainer & nodes)
-	{
-		if (nodes.size() > 0)
-		{
-			Point max = nodes.front()->get_coord();
-			for (auto& n_ptr : nodes) {
-				for (auto i = 0; i < 3; i++) {
-					if ((*n_ptr)[i] > max[i]) {
-						max[i] = (*n_ptr)[i];
-					}
-				}
-			}
-			return max;
-		}
-		else
-		{
-			return { 0, 0, 0 };
-		}
-	}
+    template<typename NodeContainer>
+    std::array<FloatType, 3> min_coord(const NodeContainer & nodes)
+    {
+        if (nodes.size() > 0)
+        {
+            Point min = nodes.front()->get_coord();
+            for (auto& n_ptr : nodes) {
+                for (auto i = 0; i < 3; i++) {
+                    if ((*n_ptr)[i] < min[i]) {
+                        min[i] = (*n_ptr)[i];
+                    }
+                }
+            }
+            return min;
+        }
+        else
+        {
+            return { 0, 0, 0 };
+        }
+    }
+    template<typename NodeContainer>
+    std::array<FloatType, 3> max_coord(const NodeContainer & nodes)
+    {
+        if (nodes.size() > 0)
+        {
+            Point max = nodes.front()->get_coord();
+            for (auto& n_ptr : nodes) {
+                for (auto i = 0; i < 3; i++) {
+                    if ((*n_ptr)[i] > max[i]) {
+                        max[i] = (*n_ptr)[i];
+                    }
+                }
+            }
+            return max;
+        }
+        else
+        {
+            return { 0, 0, 0 };
+        }
+    }
 
-	template<typename MeshType>
-	std::pair<std::set<typename MeshType::NodeTypename*>, std::set<typename MeshType::ElementTypename*>> get_partition_nodes_and_elements(const MeshType & mesh, const PartitionIndex current_partition)
-	{
-		std::set<typename MeshType::NodeTypename *> nodes_in_part;
-		std::set<typename MeshType::ElementTypename *> elements_in_part;
-		// Loop over the elements
-		for (auto& e_ptr : mesh.elements()) {
-			// If one of the nodes is owned by this partition,
-			// then all the nodes in the element to the partition need to be in
-			// the partition's mesh file, and the element needs to be in the
-			// partition's mesh file as well (regardless if the element is owned or not).
-			for (auto& n_ptr : *e_ptr) {
-				if (n_ptr->get_parent_partition() == current_partition) {
-					elements_in_part.insert(e_ptr.get());
-					for (auto& n_ptr2 : *e_ptr)
-						nodes_in_part.insert(n_ptr2);
-					break;
-				}
-			}
-		} // End creating sets
+    template<typename MeshType>
+    std::pair<PartitionOrderedPtrSet<typename MeshType::NodeTypename>,
+              PartitionOrderedPtrSet<typename MeshType::ElementTypename>>
+    get_partition_nodes_and_elements(const MeshType & mesh, const PartitionIndex current_partition)
+    {
+        PartitionOrderedPtrSet<typename MeshType::NodeTypename> nodes_in_part;
+        PartitionOrderedPtrSet<typename MeshType::ElementTypename> elements_in_part;
+        // Loop over the elements
+        for (auto& e_ptr : mesh.elements()) {
+            // If one of the nodes is owned by this partition,
+            // then all the nodes in the element to the partition need to be in
+            // the partition's mesh file, and the element needs to be in the
+            // partition's mesh file as well (regardless if the element is owned or not).
+            for (auto& n_ptr : *e_ptr) {
+                if (n_ptr->get_parent_partition() == current_partition) {
+                    elements_in_part.insert(e_ptr.get());
+                    for (auto& n_ptr2 : *e_ptr)
+                        nodes_in_part.insert(n_ptr2);
+                    break;
+                }
+            }
+        } // End creating sets
 
-		return{ nodes_in_part, elements_in_part };
-	}
+        return{ nodes_in_part, elements_in_part };
+    }
 
-	template<typename MeshType>
-	PartitionIndex get_num_partitions(const MeshType & mesh)
-	{
-		// Get the number of partitions first
-		std::set<PartitionIndex> partitions;
+    template<typename MeshType>
+    PartitionIndex get_num_partitions(const MeshType & mesh)
+    {
+        // Get the number of partitions first
+        std::set<PartitionIndex> partitions;
         for (auto& n_ptr : mesh.nodes())
         {
             partitions.insert(n_ptr->get_parent_partition());
@@ -234,25 +239,25 @@ namespace flex_mesh
             curr_id++;
         }
 
-		return static_cast<PartitionIndex>(partitions.size());
-	}
+        return static_cast<PartitionIndex>(partitions.size());
+    }
 
-	template<typename MeshType>
-	void sort_by_partition(const MeshType & mesh)
-	{
-		using NodeUniquePtr = std::unique_ptr<typename MeshType::NodeTypename>;
-		using ElementUniquePtr = std::unique_ptr<typename MeshType::ElementTypename>;
+    template<typename MeshType>
+    void sort_by_partition(const MeshType & mesh)
+    {
+        using NodeUniquePtr = std::unique_ptr<typename MeshType::NodeTypename>;
+        using ElementUniquePtr = std::unique_ptr<typename MeshType::ElementTypename>;
 
-		std::sort(mesh.nodes().begin(), mesh.nodes().end(),
-			[](const NodeUniquePtr& n1, const NodeUniquePtr& n2) -> bool {
-			return n1->get_parent_partition() < n2->get_parent_partition();
-		});
+        std::sort(mesh.nodes().begin(), mesh.nodes().end(),
+            [](const NodeUniquePtr& n1, const NodeUniquePtr& n2) -> bool {
+            return n1->get_parent_partition() < n2->get_parent_partition();
+        });
 
-		std::sort(mesh.nodes().begin(), mesh.nodes().end(),
-			[](const ElementUniquePtr& e1, const ElementUniquePtr& e2) -> bool {
-			return e1->get_parent_partition() < e2->get_parent_partition();
-		});
-	}
+        std::sort(mesh.nodes().begin(), mesh.nodes().end(),
+            [](const ElementUniquePtr& e1, const ElementUniquePtr& e2) -> bool {
+            return e1->get_parent_partition() < e2->get_parent_partition();
+        });
+    }
 
     template<typename MeshType>
     typename MeshType::ElementTypename* find_element_with_point(

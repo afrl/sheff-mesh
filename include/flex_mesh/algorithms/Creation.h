@@ -191,7 +191,7 @@ namespace flex_mesh
         std::array<std::vector<double>, 3> coords;
         for (auto i : utility::range_from_zero(n_elements.size()))
         {
-            coords[i].resize(n_elements[0] + 1);
+            coords[i].resize(n_elements[i] + 1);
             for (auto j : utility::indices(coords[i]))
             {
                 coords[i][j] = (max[i] - min[i]) * (double(j) / double(coords[i].size() - 1)) + min[i];

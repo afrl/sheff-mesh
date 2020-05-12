@@ -122,7 +122,7 @@ namespace flex_mesh
             const LocalIndex n_ghost_levels,
             ElementAdjacencyList<MeshType> adjacency_list,
             PartitionOrderedPtrSet<NodeTypename> & nodes,
-            PartitionOrderedPtrSet<ElementTypename> & elements);
+            OwnedFirstPartitionOrderedPtrSet<ElementTypename> & elements);
 
         static void write_kernel(MeshType& partition_mesh,
             const PartitionIndex & partition_id,
@@ -887,9 +887,15 @@ namespace flex_mesh
     {
         fea_io::Partition<GlobalIndex, LocalIndex, FloatType> partition;
         partition.partition_id = partition_id;
+        const auto n_nodes_in_partition = nodes_in_partition.size();
+        const auto n_elements_in_partition = elements_in_partition.size();
 
         // Populate node information
         LocalIndex local_num = 0;
+        partition.node_global_ids.reserve(n_nodes_in_partition);
+        partition.node_parent_partitions.reserve(n_nodes_in_partition);
+        partition.node_parent_partitions.reserve(n_nodes_in_partition);
+        partition.node_coords.reserve(3 * n_nodes_in_partition);
         for (auto& n_ptr : nodes_in_partition)
         {
             n_ptr->set_local_number(local_num);
@@ -903,12 +909,22 @@ namespace flex_mesh
         }
 
         // Populate element information
+        std::vector<LocalIndex> local_connectivity;
+        local_connectivity.reserve(40);
+        partition.element_global_ids.reserve(n_elements_in_partition);
+        partition.element_parent_partitions.reserve(n_elements_in_partition);
+        partition.element_types.reserve(n_elements_in_partition);
+        partition.element_connectivities.reserve(n_elements_in_partition);
         for (auto& e_ptr : elements_in_partition)
         {
             partition.element_global_ids.push_back(e_ptr->get_global_number());
             partition.element_parent_partitions.push_back(e_ptr->get_parent_partition());
             partition.element_types.push_back(convert_element_type(e_ptr->get_type()));
-            std::vector<LocalIndex> local_connectivity = e_ptr->get_expanded_local_conn();
+            local_connectivity.resize(e_ptr->get_conn().size());
+            for (auto i : utility::range_from_zero(e_ptr->get_conn().size()))
+            {
+                local_connectivity[i] = e_ptr->get_conn()[i]->get_local_number();
+            }
             partition.element_connectivities.push_back(local_connectivity);
         }
 
@@ -931,14 +947,18 @@ namespace flex_mesh
             fea_io::Subcomponent<LocalIndex, FloatType> subcomponent;
             subcomponent.component_id = component_id;
 
+            subcomponent.nodes_in_subcomponent.reserve(nodes_in_subcomponent_pair.first.size());
             for (auto& i : nodes_in_subcomponent_pair.first)
             {
                 subcomponent.nodes_in_subcomponent.push_back(i);
             }
+            subcomponent.elements_in_subcomponent.reserve(elements_in_subcomponent_pair.first.size());
             for (auto& i : elements_in_subcomponent_pair.first)
             {
                 subcomponent.elements_in_subcomponent.push_back(i);
             }
+            // Note: this reserve is an estimate, but may be insufficient.
+            subcomponent.lcs_parameters_in_subcomponent.reserve(4 * elements_in_subcomponent.size());
             for (auto& e_ptr : elements_in_subcomponent)
             {
                 auto& lcs = e_ptr->get_lcs();
@@ -993,7 +1013,7 @@ namespace flex_mesh
         const LocalIndex n_ghost_levels, 
         ElementAdjacencyList<MeshType> adjacency_list,
         PartitionOrderedPtrSet<NodeTypename>& nodes,
-        PartitionOrderedPtrSet<ElementTypename>& elements)
+        OwnedFirstPartitionOrderedPtrSet<ElementTypename>& elements)
     {
         std::vector<GlobalIndex> elements_included_in_set;
         for (auto& e_ptr : elements)

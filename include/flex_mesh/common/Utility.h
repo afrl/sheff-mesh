@@ -2,6 +2,7 @@
 
 #include "Defines.h"
 
+#include <functional>
 #include <set>
 #include <vector>
 
@@ -64,6 +65,35 @@ namespace flex_mesh
 	};
 	template <typename T>
 	using PartitionOrderedPtrSet = std::set<T*, PartitionGlobalNumberComparison<T>>;
+
+	/// Comparator that sorts first by parent partition then by global number
+	template <typename T>
+	using OwnedFirstPartitionOrderedPtrSet = std::set<T*, std::function<bool(const T*, const T*)>>;
+	template <typename T>
+	static std::function<bool(const T*, const T*)> OwnedFirstPartitionOrderedPtrSetComparator(const PartitionIndex p)
+	{
+		return [this_partition_id = p](const T* lhs, const T* rhs) -> bool {
+			int64_t lhs_part_for_comparison = lhs->get_parent_partition();
+			if (this_partition_id == lhs->get_parent_partition())
+			{
+				lhs_part_for_comparison = -1;
+			}
+			int64_t rhs_part_for_comparison = rhs->get_parent_partition();
+			if (this_partition_id == rhs->get_parent_partition())
+			{
+				rhs_part_for_comparison = -1;
+			}
+
+			if (lhs_part_for_comparison == rhs_part_for_comparison)
+			{
+				return lhs->get_global_number() < rhs->get_global_number();
+			}
+			else
+			{
+				return lhs_part_for_comparison < rhs_part_for_comparison;
+			}
+		};
+	}
 
 	/// Similar to ObjectComparison, but the sorted connectivity is hashed.  Consequently,
 	/// if used with a set, then it will result in an entry for each object without duplicates

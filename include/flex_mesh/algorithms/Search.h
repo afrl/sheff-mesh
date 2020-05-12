@@ -59,7 +59,7 @@ namespace flex_mesh
     /// Returns the nodes and elements respectively for the given partition in the mesh
     template<typename MeshType>
     static std::pair<PartitionOrderedPtrSet<typename MeshType::NodeTypename>,
-                     PartitionOrderedPtrSet<typename MeshType::ElementTypename>>
+                     OwnedFirstPartitionOrderedPtrSet<typename MeshType::ElementTypename>>
     get_partition_nodes_and_elements(const MeshType& mesh, const PartitionIndex current_partition = 0);
 
     /// Returns the number of partitions (assuming they are contiguous 0-based when assigned)
@@ -194,11 +194,12 @@ namespace flex_mesh
 
     template<typename MeshType>
     std::pair<PartitionOrderedPtrSet<typename MeshType::NodeTypename>,
-              PartitionOrderedPtrSet<typename MeshType::ElementTypename>>
+              OwnedFirstPartitionOrderedPtrSet<typename MeshType::ElementTypename>>
     get_partition_nodes_and_elements(const MeshType & mesh, const PartitionIndex current_partition)
     {
         PartitionOrderedPtrSet<typename MeshType::NodeTypename> nodes_in_part;
-        PartitionOrderedPtrSet<typename MeshType::ElementTypename> elements_in_part;
+        OwnedFirstPartitionOrderedPtrSet<typename MeshType::ElementTypename> elements_in_part(
+            OwnedFirstPartitionOrderedPtrSetComparator<typename MeshType::ElementTypename>(current_partition));
         // Loop over the elements
         for (auto& e_ptr : mesh.elements()) {
             // If one of the nodes is owned by this partition,

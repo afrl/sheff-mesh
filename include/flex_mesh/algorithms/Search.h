@@ -75,6 +75,19 @@ namespace flex_mesh
         const MeshType& mesh,
         const simple_math::Point x);
 
+    /// A helper struct for find_faces_from_node_set
+    struct ElementFacePair
+    {
+        LocalIndex local_element_index;
+        ConnIndex face_index;
+    };
+
+    /// Find all faces such that all nodes in the face appears in the given node set.
+    template<typename MeshType, typename NodeTypename>
+    static std::vector<ElementFacePair> find_faces_from_node_set(
+        const MeshType& mesh,
+        const std::set<NodeTypename*>& node_set);
+
     /////////////////
     // Definitions //
     /////////////////
@@ -273,5 +286,31 @@ namespace flex_mesh
             }
         }
         return nullptr;
+    }
+
+    template<typename MeshType, typename NodeTypename>
+    std::vector<ElementFacePair> find_faces_from_node_set(
+        const MeshType& mesh,
+        const std::set<NodeTypename*>& node_set)
+    {
+        std::vector<ElementFacePair> faces_in_node_set;
+        for (auto& e_ptr : mesh.elements())
+        {
+            auto& element_conn = e_ptr->get_conn();
+            const std::vector<FaceInfo> face_info = get_face_info(e_ptr->get_type());
+            for (auto face_index : utility::indices(face_info))
+            {
+                auto& face_node_indices = face_info[face_index].connectivity;
+                if (std::all_of(
+                    face_node_indices.begin(), face_node_indices.end(),
+                    [&element_conn, &node_set](const ConnIndex& i) -> bool {
+                        return node_set.count(element_conn[i]) != 0;
+                    }))
+                {
+                    faces_in_node_set.push_back({ e_ptr->get_local_number(), static_cast<ConnIndex>(face_index) });
+                }
+            }
+        }
+        return faces_in_node_set;
     }
 }

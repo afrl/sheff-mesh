@@ -118,6 +118,7 @@ namespace flex_mesh
         virtual void run_selection(const MeshTypename& mesh) override;
     };
 
+
     /////////////////
     // Definitions //
     /////////////////

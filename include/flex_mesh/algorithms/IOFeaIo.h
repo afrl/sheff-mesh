@@ -920,11 +920,9 @@ namespace flex_mesh
             partition.element_global_ids.push_back(e_ptr->get_global_number());
             partition.element_parent_partitions.push_back(e_ptr->get_parent_partition());
             partition.element_types.push_back(convert_element_type(e_ptr->get_type()));
-            local_connectivity.resize(e_ptr->get_conn().size());
-            for (auto i : utility::range_from_zero(e_ptr->get_conn().size()))
-            {
-                local_connectivity[i] = e_ptr->get_conn()[i]->get_local_number();
-            }
+            // This method returns the local node numbers for most elements, but returns
+            // a face stream for polyhedra.
+            local_connectivity = e_ptr->get_expanded_local_conn();
             partition.element_connectivities.push_back(local_connectivity);
         }
 

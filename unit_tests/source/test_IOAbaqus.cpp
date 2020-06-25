@@ -6,7 +6,7 @@
 #include "flex_mesh/common/Common.h"
 #include "flex_mesh/node/Node.h"
 #include "flex_mesh/element/Element.h"
-#include "flex_mesh/mesh/Mesh.h"
+#include "flex_mesh/mesh/MeshPartition.h"
 #include "flex_mesh/algorithms/IO.h"
 #include "flex_mesh/algorithms/IOFeaIo.h"
 
@@ -22,7 +22,7 @@ int main(int argc, char** argv)
 
 	using NodeTyped = Node;
 	using ElementTyped = Element<NodeTyped>;
-	using MeshType = Mesh<NodeTyped, ElementTyped>;
+	using MeshType = MeshPartition<NodeTyped, ElementTyped>;
 	
 	MeshType mesh;
 	AbaqusInterface<MeshType>::read(mesh, get_test_data_filepath("BarWithHole.inp"));

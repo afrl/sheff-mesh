@@ -13,6 +13,7 @@
 #include "flex_mesh/element/Element.h"
 #include "flex_mesh/maps/AdjacencyLists.h"
 
+#include "flex_mesh/algorithms/Partitioning.h"
 #include "flex_mesh/algorithms/Search.h"
 
 #ifdef SWIG
@@ -22,6 +23,7 @@
 #ifdef USE_FEAIO
 #   include "fea_io/meta/MetaWriter.h"
 #   include "fea_io/mesh/MeshWriter.h"
+#   include "fea_io/mesh/MeshParWriter.h"
 #   include "fea_io/group/GroupWriter.h"
 #   include "fea_io/data/DataWriter.h"
 #   include "fea_io/mesh/MeshReader.h"
@@ -71,6 +73,11 @@ namespace flex_mesh
             const std::map<ComponentIndex, std::string> & component_names = {},
             const LocalIndex n_ghost_levels = 1);
 
+        /// Writes a distributed mesh in parallel without a meta file.
+        static void write_parallel(MeshType& mesh,
+            const std::string file_stem,
+            const std::map<ComponentIndex, std::string>& component_names = {});
+
         /*
         static void write(
             MeshType& mesh,
@@ -92,10 +99,6 @@ namespace flex_mesh
         static fea_io::MeshInfo<GlobalIndex, LocalIndex, FloatType> get_fea_io_mesh_info(
             const MeshType& mesh, const PartitionIndex n_partitions,
             const std::map<ComponentIndex, std::string>& component_names);
-        /// Computes the partition information needed for writing in parallel with fea_io
-        /// Note: currently, this interface just writes in serial.
-        static std::vector<fea_io::PartitionInfo<GlobalIndex, LocalIndex, FloatType>> get_fea_io_partition_infos(
-            MeshType& mesh, const std::vector<PartitionIndex>& partition_ids);
 
     private:
         static flex_mesh::LCSAssignmentType convert_lcs_assignment(fea_io::LCSAssignment lcs_assignment);
@@ -103,30 +106,35 @@ namespace flex_mesh
         static flex_mesh::ElementType convert_element_type(fea_io::ElementType type);
         static fea_io::ElementType convert_element_type(flex_mesh::ElementType type);
 
+        /// Helper for write_parallel()
+        /// Computes the partition information needed for writing in parallel with fea_io
+        static fea_io::PartitionInfo<GlobalIndex, LocalIndex, FloatType> get_fea_io_partition_info(
+            MeshType& mesh);
+
         /// Gets the fea_io::Partition object that contains all of the data needed to write the
         /// mesh for this parititon.
         /// \attention nodes_in_partition is non-const because their local numbering will be updated.
         /// Note: The compiler should be able to deduce NodeContainer and ElementContainer.
-        template<typename NodeContainer, typename ElementContainer>
         static Partition get_fea_io_partition(
-            NodeContainer & nodes_in_partition,
-            const ElementContainer & elements_in_partition,
-            const PartitionIndex partition_id);
+            const MeshType& mesh,
+            const PartitionIndex partition_id,
+            const std::vector<flex_mesh::LocalIndex>& nodes_in_partition,
+            const std::vector<flex_mesh::LocalIndex>& elements_in_partition);
 
         static std::vector<fea_io::GroupInfo> get_group_infos(
             MeshType& mesh);
 
-        /// Given a set of nodes and elements, this method will add ghost elements to the set
-        /// and add any new nodes that appear in the ghosts to set of nodes.
-        static void add_ghost_layers(
-            const LocalIndex n_ghost_levels,
-            ElementAdjacencyList<MeshType> adjacency_list,
-            PartitionOrderedPtrSet<NodeTypename> & nodes,
-            OwnedFirstPartitionOrderedPtrSet<ElementTypename> & elements);
+        /// Helper for write()
+        static void write_serial_single_partition(MeshType& mesh,
+            const std::string file_stem,
+            const std::map<ComponentIndex, std::string>& component_names = {},
+            const LocalIndex n_ghost_levels = 1);
 
-        static void write_kernel(MeshType& partition_mesh,
-            const PartitionIndex & partition_id,
-            fea_io::MeshWriter<GlobalIndex, LocalIndex, FloatType> mesh_writer);
+        /// Helper for write()
+        static void write_serial_multi_partition(MeshType& mesh,
+            const std::string file_stem,
+            const std::map<ComponentIndex, std::string>& component_names = {},
+            const LocalIndex n_ghost_levels = 1);
     };
 
     /////////////////
@@ -181,150 +189,56 @@ namespace flex_mesh
             throw _UTIL_MSG_EXCEPT("Multiple ranks cannot call FEAIOInterface::write, a parallel, distributed verion must be implemented.");
         }
 
-        // Get the number of partitions first
-        PartitionIndex n_partitions = get_num_partitions(mesh);
-
-        if (n_partitions == 1)
+        if (get_num_partitions(mesh) == 1)
         {
-            // This method treats the mesh as a single partition.
-            const PartitionIndex n_partitions = 1;
-            const PartitionIndex partition_id = 0;
-
-            fea_io::MeshWriter<GlobalIndex, LocalIndex, FloatType> mesh_writer;
-            auto mesh_info = get_fea_io_mesh_info(mesh, n_partitions, component_names);
-            mesh_writer.initialize(file_stem, mesh_info);
-
-            // For a serial write, we do not need to queue up all of the partitions for writing, since
-            // the file does not have to be preallocated for serial writing.
-            auto partition = get_fea_io_partition(mesh.nodes(), mesh.elements(), partition_id);
-
-            // Overwrite the parent partitions
-            for (auto& n_part : partition.node_parent_partitions)
-            {
-                n_part = 0;
-            }
-            for (auto& e_part : partition.element_parent_partitions)
-            {
-                e_part = 0;
-            }
-
-            mesh_writer.write_partition(partition);
-
-            auto group_infos = get_group_infos(mesh);
-            if (group_infos.size() > 0)
-            {
-                fea_io::GroupWriter group_writer;
-                group_writer.initialize(file_stem, group_infos);
-                for (auto& group_info : group_infos)
-                {
-                    if (group_info.type == fea_io::GroupType::Node)
-                    {
-                        auto& nodes_in_group = mesh.get_node_group_c(group_info.name);
-                        std::vector<LocalIndex> node_indices;
-                        node_indices.reserve(nodes_in_group.size());
-                        for (auto& n_ptr : nodes_in_group)
-                        {
-                            node_indices.push_back(n_ptr->get_local_number());
-                        }
-                        group_writer.write_list(group_info.name, 0, static_cast<LocalIndex>(node_indices.size()), node_indices.data());
-                    }
-                    else if (group_info.type == fea_io::GroupType::Element)
-                    {
-                        auto& elements_in_group = mesh.get_element_group_c(group_info.name);
-                        std::vector<LocalIndex> element_indices;
-                        element_indices.reserve(elements_in_group.size());
-                        for (auto& e_ptr : elements_in_group)
-                        {
-                            element_indices.push_back(e_ptr->get_local_number());
-                        }
-                        group_writer.write_list(group_info.name, 0, static_cast<LocalIndex>(element_indices.size()), element_indices.data());
-                    }
-                }
-                group_writer.close();
-            }
+            write_serial_single_partition(mesh, file_stem, component_names, n_ghost_levels);
         }
         else
         {
-            std::vector<PartitionIndex> partition_ids(n_partitions);
-            // Fills vector with 0..num_partitions-1
-            std::iota(partition_ids.begin(), partition_ids.end(), 0);
-
-            fea_io::MeshWriter<GlobalIndex, LocalIndex, FloatType> mesh_writer;
-            auto mesh_info = get_fea_io_mesh_info(mesh, n_partitions, component_names);
-            mesh_writer.initialize(file_stem, mesh_info);
-
-            // Create an adjacency list to quickly get the neighbors of elements while finding the
-            // layer of ghost elements.
-            ElementAdjacencyList<MeshType> adjacency_list;
-            adjacency_list.initialize(mesh);
-
-            auto group_infos = get_group_infos(mesh);
-            fea_io::GroupWriter group_writer;
-            if (group_infos.size() > 0)
-            {
-                group_writer.initialize(file_stem, group_infos);
-            }
-
-            for (auto& partition_id : partition_ids)
-            {
-                // Get the nodes and elements that should appear in the partition corresponding to
-                // partition_id, including ghost elements.
-                auto nodes_and_elements = get_partition_nodes_and_elements(mesh, partition_id);
-                add_ghost_layers(1, adjacency_list, nodes_and_elements.first, nodes_and_elements.second);
-
-                // For a serial write, we do not need to queue up all of the partitions for writing, since
-                // the file does not have to be preallocated for serial writing.
-                auto partition = get_fea_io_partition(nodes_and_elements.first, nodes_and_elements.second, partition_id);
-                mesh_writer.write_partition(partition);
-
-                // Note: this could be done with more memory but less processing if a map was used instead of
-                // set.  If it becomes a wall time bottleneck, reconsider.
-                for (auto& group_info : group_infos)
-                {
-                    if (group_info.type == fea_io::GroupType::Node)
-                    {
-                        auto& nodes_in_group = mesh.get_node_group_c(group_info.name);
-                        std::vector<LocalIndex> node_indices;
-                        node_indices.reserve(nodes_and_elements.first.size());
-                        for (auto& n_ptr : nodes_in_group)
-                        {
-                            if (nodes_and_elements.first.count(n_ptr) > 0)
-                            {
-                                node_indices.push_back(n_ptr->get_local_number());
-                            }
-                        }
-                        group_writer.write_list(
-                            group_info.name, 
-                            partition_id, 
-                            static_cast<LocalIndex>(node_indices.size()), 
-                            node_indices.data());
-                    }
-                    else if (group_info.type == fea_io::GroupType::Element)
-                    {
-                        auto& elements_in_group = mesh.get_element_group_c(group_info.name);
-                        std::vector<LocalIndex> element_indices;
-                        element_indices.reserve(elements_in_group.size());
-                        for (auto& e_ptr : elements_in_group)
-                        {
-                            if (nodes_and_elements.second.count(e_ptr) > 0)
-                            {
-                                element_indices.push_back(e_ptr->get_local_number());
-                            }
-                        }
-                        group_writer.write_list(
-                            group_info.name, 
-                            partition_id, 
-                            static_cast<LocalIndex>(element_indices.size()), 
-                            element_indices.data());
-                    }
-                }
-            }
-
-            if (group_infos.size() > 0)
-            {
-                group_writer.close();
-            }
+            write_serial_multi_partition(mesh, file_stem, component_names, n_ghost_levels);
         }
+    }
+
+    template<typename MeshType>
+    inline void FEAIOInterface<MeshType>::write_parallel(
+        MeshType& mesh, 
+        const std::string file_stem, 
+        const std::map<ComponentIndex, 
+        std::string>& component_names)
+    {
+        // This method treats the mesh as a single partition.
+        const PartitionIndex n_partitions = utility::MPIUtils::get_num_local_ranks();
+        const PartitionIndex partition_id = utility::MPIUtils::get_local_rank();
+
+        fea_io::MeshParWriter<GlobalIndex, LocalIndex, FloatType> mesh_writer;
+        auto mesh_info = get_fea_io_mesh_info(mesh, n_partitions, component_names);
+        mesh_writer.initialize(file_stem, mesh_info);
+
+        auto partition_info = get_fea_io_partition_info(mesh);
+        mesh_writer.queue_partition_for_write(partition_info);
+
+        mesh_writer.start_parallel_write_phase();
+
+        // Get the nodes and elements that should appear in the partition corresponding to
+        // partition_id, which is all of them.
+        std::vector<LocalIndex> node_indices(mesh.nodes().size());
+        std::iota(node_indices.begin(), node_indices.end(), 0);
+        std::vector<LocalIndex> element_indices(mesh.nodes().size());
+        std::iota(element_indices.begin(), element_indices.end(), 0);
+
+        // For a serial write, we do not need to queue up all of the partitions for writing, since
+        // the file does not have to be preallocated for serial writing.
+        auto partition = get_fea_io_partition(mesh, partition_id, node_indices, element_indices);
+
+        mesh_writer.write_partition(partition);
+
+        auto group_infos = get_group_infos(mesh);
+        if (group_infos.size() > 0)
+        {
+            throw _UTIL_MSG_EXCEPT("Writing groups in parallel is not implemented yet.");
+        }
+
+        mesh_writer.close();
     }
 
     /*
@@ -659,8 +573,8 @@ namespace flex_mesh
 
         // Create the meta info the mesh file
         fea_io::MeshInfo<GlobalIndex, LocalIndex, FloatType> mesh_info;
-        mesh_info.total_num_nodes = static_cast<GlobalIndex>(mesh.nodes().size());
-        mesh_info.total_num_elements = static_cast<GlobalIndex>(mesh.elements().size());
+        mesh_info.total_num_nodes = mesh.get_n_total_nodes();
+        mesh_info.total_num_elements = mesh.get_n_total_elements();
         mesh_info.dimensionality = 3;
         mesh_info.extent = fea_io::Extent<FloatType>(min_coord(mesh.nodes()), max_coord(mesh.nodes()));
         mesh_info.connectivity_scheme = fea_io::ConnectivityScheme::FlexMesh;
@@ -698,48 +612,42 @@ namespace flex_mesh
     }
 
     template<typename MeshType>
-    inline std::vector<fea_io::PartitionInfo<GlobalIndex, LocalIndex, FloatType>>
-    FEAIOInterface<MeshType>::get_fea_io_partition_infos(
-        MeshType & mesh, 
-        const std::vector<PartitionIndex>& partition_ids)
+    inline fea_io::PartitionInfo<GlobalIndex, LocalIndex, FloatType>
+    FEAIOInterface<MeshType>::get_fea_io_partition_info(
+        MeshType & mesh)
     {
         // Create the partition info for the mesh file
-        std::vector<fea_io::PartitionInfo<GlobalIndex, LocalIndex, FloatType>> partition_infos;
-        for (auto& partition_id : partition_ids) {
-            // Update local indices
-            auto numbering_result = mesh.update_local_numbering(partition_id);
-            std::set<NodePtr>& nodes_in_partition = numbering_result.first;
-            std::set<ElementPtr>& elements_in_partition = numbering_result.second;
+        fea_io::PartitionInfo<GlobalIndex, LocalIndex, FloatType> partition_info;
 
-            // Figure out what each subcomponent contains in this partition
-            std::vector<fea_io::SubcomponentInfo<LocalIndex>> subcomponent_infos;
-            for (auto& component_id : mesh.get_component_ids()) {
-                auto nodes_in_component = find_nodes_in_component<NodePtr>(elements_in_partition, component_id);
-                auto elements_in_component = find_elements_in_component(elements_in_partition, component_id);
+        // Figure out what each subcomponent contains in this partition
+        std::vector<fea_io::SubcomponentInfo<LocalIndex>> subcomponent_infos;
+        for (auto& component_id : mesh.get_component_ids())
+        {
+            auto node_element_indices = find_in_component(mesh, component_id);
+            auto& nodes_in_comp = node_element_indices.first;
+            auto& elements_in_comp = node_element_indices.second;
 
-                subcomponent_infos.push_back({
-                    component_id,
-                    static_cast<LocalIndex>(nodes_in_component.size()),
-                    static_cast<LocalIndex>(elements_in_component.size()),
-                    0 });
-            }
-
-            LocalIndex total_num_connectivity_entries = 0;
-            for (auto& e_ptr : elements_in_partition)
-            {
-                total_num_connectivity_entries += e_ptr->get_local_conn().size();
-            }
-
-            fea_io::PartitionInfo<GlobalIndex, LocalIndex, FloatType> partition_info;
-            partition_info.partition_id = partition_id;
-            partition_info.num_nodes = static_cast<LocalIndex>(nodes_in_partition.size());
-            partition_info.num_elements = static_cast<LocalIndex>(elements_in_partition.size());
-            partition_info.total_num_connectivity_entries = total_num_connectivity_entries;
-            partition_info.extent = fea_io::Extent<FloatType>(min_coord(nodes_in_partition), max_coord(nodes_in_partition));
-            partition_info.num_subcomponents = static_cast<LocalIndex>(subcomponent_infos.size());
-            partition_info.subcomponents = subcomponent_infos;
+            subcomponent_infos.push_back({
+                static_cast<LocalIndex>(component_id),
+                static_cast<LocalIndex>(nodes_in_comp.size()),
+                static_cast<LocalIndex>(elements_in_comp.size()) });
         }
-        return partition_infos;
+
+        LocalIndex total_num_connectivity_entries = 0;
+        for (auto& e_ptr : mesh.elements())
+        {
+            total_num_connectivity_entries += e_ptr->get_local_conn().size();
+        }
+
+        partition_info.partition_id = utility::MPIUtils::get_local_rank();
+        partition_info.num_nodes = static_cast<LocalIndex>(mesh.nodes().size());
+        partition_info.num_elements = static_cast<LocalIndex>(mesh.elements().size());
+        partition_info.total_num_connectivity_entries = total_num_connectivity_entries;
+        partition_info.extent = fea_io::Extent<FloatType>(min_coord(mesh.nodes()), max_coord(mesh.nodes()));
+        partition_info.num_subcomponents = static_cast<LocalIndex>(subcomponent_infos.size());
+        partition_info.subcomponents = subcomponent_infos;
+        
+        return partition_info;
     }
 
     template<typename MeshType>
@@ -881,14 +789,26 @@ namespace flex_mesh
     }
 
     template<typename MeshType>
-    template<typename NodeContainer, typename ElementContainer>
-    inline typename flex_mesh::FEAIOInterface<MeshType>::Partition flex_mesh::FEAIOInterface<MeshType>::get_fea_io_partition(
-        NodeContainer & nodes_in_partition, const ElementContainer & elements_in_partition, const PartitionIndex partition_id)
+    inline typename flex_mesh::FEAIOInterface<MeshType>::Partition
+    flex_mesh::FEAIOInterface<MeshType>::get_fea_io_partition(
+        const MeshType& mesh,
+        const PartitionIndex partition_id,
+        const std::vector<flex_mesh::LocalIndex>& nodes_in_partition,
+        const std::vector<flex_mesh::LocalIndex>& elements_in_partition)
     {
         fea_io::Partition<GlobalIndex, LocalIndex, FloatType> partition;
         partition.partition_id = partition_id;
         const auto n_nodes_in_partition = nodes_in_partition.size();
         const auto n_elements_in_partition = elements_in_partition.size();
+
+        // Note: nodes that are not in the partition get the max limit
+        std::vector<LocalIndex> mesh_to_partition_node_map(
+            mesh.nodes().size(),
+            std::numeric_limits<LocalIndex>::max());
+        for (auto i : utility::indices(nodes_in_partition))
+        {
+            mesh_to_partition_node_map[nodes_in_partition[i]] = i;
+        }
 
         // Populate node information
         LocalIndex local_num = 0;
@@ -896,9 +816,10 @@ namespace flex_mesh
         partition.node_parent_partitions.reserve(n_nodes_in_partition);
         partition.node_parent_partitions.reserve(n_nodes_in_partition);
         partition.node_coords.reserve(3 * n_nodes_in_partition);
-        for (auto& n_ptr : nodes_in_partition)
+        for (auto& n_local_id : nodes_in_partition)
         {
-            n_ptr->set_local_number(local_num);
+            auto n_ptr = mesh.nodes()[n_local_id];
+
             partition.node_global_ids.push_back(n_ptr->get_global_number());
             partition.node_parent_partitions.push_back(n_ptr->get_parent_partition());
             for (auto i = 0; i < 3; i++)
@@ -915,21 +836,35 @@ namespace flex_mesh
         partition.element_parent_partitions.reserve(n_elements_in_partition);
         partition.element_types.reserve(n_elements_in_partition);
         partition.element_connectivities.reserve(n_elements_in_partition);
-        for (auto& e_ptr : elements_in_partition)
+        for (auto& e_local_id : elements_in_partition)
         {
+            auto e_ptr = mesh.elements()[e_local_id];
+
             partition.element_global_ids.push_back(e_ptr->get_global_number());
             partition.element_parent_partitions.push_back(e_ptr->get_parent_partition());
             partition.element_types.push_back(convert_element_type(e_ptr->get_type()));
             // This method returns the local node numbers for most elements, but returns
             // a face stream for polyhedra.
             local_connectivity = e_ptr->get_expanded_local_conn();
+            // Transform the connectivity to the partition numbering
+            for (auto& v : local_connectivity)
+            {
+                assert(mesh_to_partition_node_map[v] != std::numeric_limits<LocalIndex>::max());
+                v = mesh_to_partition_node_map[v];
+            }
+            assert(std::all_of(local_connectivity.begin(), local_connectivity.end(),
+                [node_size = local_num](const LocalIndex& i) -> bool {
+                    return i < node_size;
+                }));
+
             partition.element_connectivities.push_back(local_connectivity);
         }
 
         // Find what components are in this partition
         std::set<ComponentIndex> component_ids_in_partition;
-        for (auto& e_ptr : elements_in_partition)
+        for (auto& e_local_id : elements_in_partition)
         {
+            auto e_ptr = mesh.elements()[e_local_id];
             component_ids_in_partition.insert(e_ptr->get_component_id());
         }
 
@@ -937,28 +872,28 @@ namespace flex_mesh
         std::vector<fea_io::Subcomponent<LocalIndex, FloatType>> subcomponents;
         for (auto& component_id : component_ids_in_partition)
         {
-            auto nodes_in_subcomponent_pair = find_nodes_in_component<NodeTypename>(elements_in_partition, component_id);
-            auto elements_in_subcomponent_pair = find_elements_in_component<ElementTypename>(elements_in_partition, component_id);
-            std::vector<NodePtr>& nodes_in_subcomponent = nodes_in_subcomponent_pair.second;
-            std::vector<ElementPtr>& elements_in_subcomponent = elements_in_subcomponent_pair.second;
+            auto nodes_and_elements_in_subcomponent = find_in_component(mesh, nodes_in_partition, elements_in_partition, component_id);
+            auto& nodes_in_subcomponent = nodes_and_elements_in_subcomponent.first;
+            auto& elements_in_subcomponent = nodes_and_elements_in_subcomponent.second;
 
             fea_io::Subcomponent<LocalIndex, FloatType> subcomponent;
             subcomponent.component_id = component_id;
 
-            subcomponent.nodes_in_subcomponent.reserve(nodes_in_subcomponent_pair.first.size());
-            for (auto& i : nodes_in_subcomponent_pair.first)
+            subcomponent.nodes_in_subcomponent.reserve(nodes_in_subcomponent.size());
+            for (auto& i : nodes_in_subcomponent)
             {
                 subcomponent.nodes_in_subcomponent.push_back(i);
             }
-            subcomponent.elements_in_subcomponent.reserve(elements_in_subcomponent_pair.first.size());
-            for (auto& i : elements_in_subcomponent_pair.first)
+            subcomponent.elements_in_subcomponent.reserve(elements_in_subcomponent.size());
+            for (auto& i : elements_in_subcomponent)
             {
                 subcomponent.elements_in_subcomponent.push_back(i);
             }
             // Note: this reserve is an estimate, but may be insufficient.
             subcomponent.lcs_parameters_in_subcomponent.reserve(4 * elements_in_subcomponent.size());
-            for (auto& e_ptr : elements_in_subcomponent)
+            for (auto& e_id : elements_in_subcomponent)
             {
+                auto e_ptr = mesh.elements()[elements_in_partition[e_id]];
                 auto& lcs = e_ptr->get_lcs();
                 for (auto i = 0; i < lcs.size(); i++)
                 {
@@ -1007,51 +942,187 @@ namespace flex_mesh
     }
 
     template<typename MeshType>
-    inline void FEAIOInterface<MeshType>::add_ghost_layers(
-        const LocalIndex n_ghost_levels, 
-        ElementAdjacencyList<MeshType> adjacency_list,
-        PartitionOrderedPtrSet<NodeTypename>& nodes,
-        OwnedFirstPartitionOrderedPtrSet<ElementTypename>& elements)
+    inline void FEAIOInterface<MeshType>::write_serial_single_partition(
+        MeshType& mesh, 
+        const std::string file_stem, 
+        const std::map<ComponentIndex, 
+        std::string>& component_names, 
+        const LocalIndex n_ghost_levels)
     {
-        std::vector<GlobalIndex> elements_included_in_set;
-        for (auto& e_ptr : elements)
+        // This method treats the mesh as a single partition.
+        const PartitionIndex n_partitions = 1;
+        const PartitionIndex partition_id = 0;
+
+        fea_io::MeshWriter<GlobalIndex, LocalIndex, FloatType> mesh_writer;
+        auto mesh_info = get_fea_io_mesh_info(mesh, n_partitions, component_names);
+        mesh_writer.initialize(file_stem, mesh_info);
+
+        // Get the nodes and elements that should appear in the partition corresponding to
+        // partition_id, which is all of them.
+        std::vector<LocalIndex> node_indices(mesh.nodes().size());
+        std::iota(node_indices.begin(), node_indices.end(), 0);
+        std::vector<LocalIndex> element_indices(mesh.elements().size());
+        std::iota(element_indices.begin(), element_indices.end(), 0);
+
+        // For a serial write, we do not need to queue up all of the partitions for writing, since
+        // the file does not have to be preallocated for serial writing.
+        auto partition = get_fea_io_partition(mesh, partition_id, node_indices, element_indices);
+
+        // Overwrite the parent partitions
+        for (auto& n_part : partition.node_parent_partitions)
         {
-            elements_included_in_set.push_back(e_ptr->get_global_number());
+            n_part = 0;
         }
-        adjacency_list.skip_in_neighbor_search(elements_included_in_set);
-
-        for (auto level : utility::range_from_zero(n_ghost_levels))
+        for (auto& e_part : partition.element_parent_partitions)
         {
-            std::set<ElementTypename*> ghost_layer_elements;
-            for (auto& e_ptr : elements)
-            {
-                for (auto& neighbor_ptr : adjacency_list.get_neighbors(e_ptr->get_global_number()))
-                {
-                    ghost_layer_elements.insert(neighbor_ptr);
-                }
-            }
+            e_part = 0;
+        }
 
-            for (auto& ghost_element_ptr : ghost_layer_elements)
+        mesh_writer.write_partition(partition);
+
+        auto group_infos = get_group_infos(mesh);
+        if (group_infos.size() > 0)
+        {
+            fea_io::GroupWriter group_writer;
+            group_writer.initialize(file_stem, group_infos);
+            for (auto& group_info : group_infos)
             {
-                elements_included_in_set.push_back(ghost_element_ptr->get_global_number());
-                elements.insert(ghost_element_ptr);
-                for (auto& n_ptr : *ghost_element_ptr)
+                if (group_info.type == fea_io::GroupType::Node)
                 {
-                    nodes.insert(n_ptr);
+                    auto& nodes_in_group = mesh.get_node_group_c(group_info.name);
+                    std::vector<LocalIndex> node_indices;
+                    node_indices.reserve(nodes_in_group.size());
+                    for (auto& n_ptr : nodes_in_group)
+                    {
+                        node_indices.push_back(n_ptr->get_local_number());
+                    }
+                    group_writer.write_list(group_info.name, 0, static_cast<LocalIndex>(node_indices.size()), node_indices.data());
+                }
+                else if (group_info.type == fea_io::GroupType::Element)
+                {
+                    auto& elements_in_group = mesh.get_element_group_c(group_info.name);
+                    std::vector<LocalIndex> element_indices;
+                    element_indices.reserve(elements_in_group.size());
+                    for (auto& e_ptr : elements_in_group)
+                    {
+                        element_indices.push_back(e_ptr->get_local_number());
+                    }
+                    group_writer.write_list(group_info.name, 0, static_cast<LocalIndex>(element_indices.size()), element_indices.data());
                 }
             }
+            group_writer.close();
         }
     }
 
     template<typename MeshType>
-    inline void FEAIOInterface<MeshType>::write_kernel(
-        MeshType & partition_mesh, 
-        const PartitionIndex & partition_id, 
-        fea_io::MeshWriter<GlobalIndex, LocalIndex, FloatType> mesh_writer)
+    inline void FEAIOInterface<MeshType>::write_serial_multi_partition(
+        MeshType& mesh, 
+        const std::string file_stem, 
+        const std::map<ComponentIndex, 
+        std::string>& component_names, 
+        const LocalIndex n_ghost_levels)
     {
-        auto partition = get_fea_io_partition(partition_mesh.nodes(), partition_mesh.elements(), partition_id);
-        mesh_writer.write_partition(partition);
+        // Get the number of partitions first
+        PartitionIndex n_partitions = get_num_partitions(mesh);
+
+        std::vector<PartitionIndex> partition_ids(n_partitions);
+        // Fills vector with 0..num_partitions-1
+        std::iota(partition_ids.begin(), partition_ids.end(), 0);
+
+        fea_io::MeshWriter<GlobalIndex, LocalIndex, FloatType> mesh_writer;
+        auto mesh_info = get_fea_io_mesh_info(mesh, n_partitions, component_names);
+        mesh_writer.initialize(file_stem, mesh_info);
+
+        // Create an adjacency list to quickly get the neighbors of elements while finding the
+        // layer of ghost elements.
+        ElementAdjacencyList<MeshType> adjacency_list;
+        adjacency_list.initialize(mesh);
+
+        auto group_infos = get_group_infos(mesh);
+        fea_io::GroupWriter group_writer;
+        if (group_infos.size() > 0)
+        {
+            group_writer.initialize(file_stem, group_infos);
+        }
+
+        for (auto& partition_id : partition_ids)
+        {
+            // Get the nodes and elements that should appear in the partition corresponding to
+            // partition_id, including ghost elements.
+            auto node_and_element_indices = extract_partition_indices(mesh, partition_id, adjacency_list);
+            auto& node_indices = node_and_element_indices.first;
+            auto& element_indices = node_and_element_indices.second;
+
+            // For a serial write, we do not need to queue up all of the partitions for writing, since
+            // the file does not have to be preallocated for serial writing.
+            auto partition = get_fea_io_partition(mesh, partition_id, node_indices, element_indices);
+            mesh_writer.write_partition(partition);
+
+            // Note: this could be done with more memory but less processing if a map was used instead of
+            // set.  If it becomes a wall time bottleneck, reconsider.
+            for (auto& group_info : group_infos)
+            {
+                // Note: nodes that are not in the partition get the max limit
+                std::vector<LocalIndex> mesh_to_partition_node_map(
+                    mesh.nodes().size(),
+                    std::numeric_limits<LocalIndex>::max());
+                for (auto i : utility::indices(node_indices))
+                {
+                    mesh_to_partition_node_map[node_indices[i]] = i;
+                }
+                std::vector<LocalIndex> mesh_to_partition_element_map(
+                    mesh.elements().size(),
+                    std::numeric_limits<LocalIndex>::max());
+                for (auto i : utility::indices(element_indices))
+                {
+                    mesh_to_partition_element_map[element_indices[i]] = i;
+                }
+
+                if (group_info.type == fea_io::GroupType::Node)
+                {
+                    auto& nodes_in_group = mesh.get_node_group_c(group_info.name);
+                    std::vector<LocalIndex> node_indices;
+                    node_indices.reserve(node_indices.size());
+                    for (auto& n_ptr : nodes_in_group)
+                    {
+                        if (mesh_to_partition_node_map[n_ptr->get_local_number()] != std::numeric_limits<LocalIndex>::max())
+                        {
+                            node_indices.push_back(mesh_to_partition_node_map[n_ptr->get_local_number()]);
+                        }
+                    }
+                    group_writer.write_list(
+                        group_info.name,
+                        partition_id,
+                        static_cast<LocalIndex>(node_indices.size()),
+                        node_indices.data());
+                }
+                else if (group_info.type == fea_io::GroupType::Element)
+                {
+                    auto& elements_in_group = mesh.get_element_group_c(group_info.name);
+                    std::vector<LocalIndex> element_indices;
+                    element_indices.reserve(elements_in_group.size());
+                    for (auto& e_ptr : elements_in_group)
+                    {
+                        if (mesh_to_partition_element_map[e_ptr->get_local_number()] != std::numeric_limits<LocalIndex>::max())
+                        {
+                            element_indices.push_back(mesh_to_partition_element_map[e_ptr->get_local_number()]);
+                        }
+                    }
+                    group_writer.write_list(
+                        group_info.name,
+                        partition_id,
+                        static_cast<LocalIndex>(element_indices.size()),
+                        element_indices.data());
+                }
+            }
+        }
+
+        if (group_infos.size() > 0)
+        {
+            group_writer.close();
+        }
     }
+
 }
 
 #endif

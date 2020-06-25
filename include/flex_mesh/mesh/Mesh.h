@@ -157,6 +157,42 @@ namespace flex_mesh
                 [](const std::unique_ptr<T>& obj1, const std::unique_ptr<T>& obj2) -> bool {
                     return obj1->get_parent_partition() < obj2->get_parent_partition();
                 });
+
+            for (auto i : utility::indices(objects_))
+            {
+                objects_[i]->set_local_number(i);
+            }
+        }
+
+        void sort_by_partition_owned_first(const PartitionIndex this_part_id)
+        {
+            std::sort(
+                objects_.begin(),
+                objects_.end(),
+                [&this_part_id](const std::unique_ptr<T>& obj1, const std::unique_ptr<T>& obj2) -> bool
+                {
+                    if (obj1->get_parent_partition() == obj2->get_parent_partition())
+                    {
+                        return obj1->get_global_number() < obj2->get_global_number();
+                    }
+                    else if (obj1->get_parent_partition() == this_part_id)
+                    {
+                        return true;
+                    }
+                    else if (obj2->get_parent_partition() == this_part_id)
+                    {
+                        return false;
+                    }
+                    else
+                    {
+                        return obj1->get_parent_partition() < obj2->get_parent_partition();
+                    }
+                });
+
+            for (auto i : utility::indices(objects_))
+            {
+                objects_[i]->set_local_number(i);
+            }
         }
 
         template<typename Node_, typename Element_>

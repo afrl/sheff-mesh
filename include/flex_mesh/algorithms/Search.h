@@ -15,24 +15,20 @@
 
 namespace flex_mesh
 {
-    /// Given a container of element pointers, this method will find all of the
-    /// elements with the given component id.
-    /// Returns a pair of vectors.  The first in the pair is the indices relative to the
-    /// given elements container, and the second in the pair is the pointers.
-    template<typename Element_, typename ElementPtrContainer>
-    static std::pair<std::vector<LocalIndex>, std::vector<Element_ *>>
-        find_elements_in_component(
-        const ElementPtrContainer& elements,
+    /// Finds the list of nodes and elements that are part of a given component in the given
+    /// mesh.  Returns a pair of vectors.  The first is the local numbers of the nodes, and
+    /// the second is the local numbers of the elements.
+    template<typename MeshType>
+    static std::pair<std::vector<LocalIndex>, std::vector<LocalIndex>> find_in_component(
+        const MeshType& mesh,
         const ComponentIndex component_id);
 
-    /// Given a container of node pointers, this method will find all of the
-    /// nodes that appear in an node with the given component id.
-    /// Returns a pair of vectors.  The first in the pair is the indices relative to the
-    /// given nodes container, and the second in the pair is the pointers.
-    template<typename Node_, typename ElementPtrContainer>
-    static std::pair<std::vector<LocalIndex>, std::vector<Node_ *>>
-        find_nodes_in_component(
-        const ElementPtrContainer& elements,
+    /// Similar to the definition above but searches a subset of elements.
+    template<typename MeshType>
+    static std::pair<std::vector<LocalIndex>, std::vector<LocalIndex>> find_in_component(
+        const MeshType& mesh,
+        const std::vector<LocalIndex>& subset_nodes_to_search,
+        const std::vector<LocalIndex>& subset_elements_to_search,
         const ComponentIndex component_id);
 
     /// Returns the set of component ids that are referenced in the elements provided.
@@ -55,12 +51,6 @@ namespace flex_mesh
     /// on a collectino of node pointers.
     template<typename NodeContainer>
     static std::array<FloatType, 3> max_coord(const NodeContainer& nodes);
-
-    /// Returns the nodes and elements respectively for the given partition in the mesh
-    template<typename MeshType>
-    static std::pair<PartitionOrderedPtrSet<typename MeshType::NodeTypename>,
-                     OwnedFirstPartitionOrderedPtrSet<typename MeshType::ElementTypename>>
-    get_partition_nodes_and_elements(const MeshType& mesh, const PartitionIndex current_partition = 0);
 
     /// Returns the number of partitions (assuming they are contiguous 0-based when assigned)
     template<typename MeshType>
@@ -92,49 +82,65 @@ namespace flex_mesh
     // Definitions //
     /////////////////
 
-    template<typename Element_, typename ElementPtrContainer>
-    std::pair<std::vector<LocalIndex>, std::vector<Element_ *>>
-        find_elements_in_component(const ElementPtrContainer & elements, const ComponentIndex component_id)
+    template<typename MeshType>
+    std::pair<std::vector<LocalIndex>, std::vector<LocalIndex>> find_in_component(
+        const MeshType& mesh,
+        const ComponentIndex component_id)
     {
-        LocalIndex count = 0;
-        std::vector<LocalIndex> relative_indices;
-        std::vector<Element_ *> elements_in_component;
-        for (auto& e_ptr : elements) {
-            if (e_ptr->get_component_id() == component_id) {
-                relative_indices.push_back(count);
-                elements_in_component.push_back(&(*e_ptr));
-            }
-            count++;
-        }
-        return { relative_indices, elements_in_component };
-    }
-
-    template<typename Node_, typename ElementPtrContainer>
-    std::pair<std::vector<LocalIndex>, std::vector<Node_ *>>
-        find_nodes_in_component(const ElementPtrContainer & elements, const ComponentIndex component_id)
-    {
-        std::unordered_set<Node_ *> nodes_in_component_set;
-        for (auto& e_ptr : elements)
+        std::unordered_set<LocalIndex> nodes_in_component_set;
+        std::vector<LocalIndex> elements_in_component;
+        for (auto& e_ptr : mesh.elements())
         {
             if (e_ptr->get_component_id() == component_id)
             {
                 for (auto& n_ptr : *e_ptr)
                 {
-                    nodes_in_component_set.insert(n_ptr);
+                    nodes_in_component_set.insert(n_ptr->get_local_number());
                 }
+                elements_in_component.push_back(e_ptr->get_local_number());
             }
         }
 
-        std::vector<LocalIndex> relative_indices;
-        std::vector<Node_ *> nodes_in_component;
-        LocalIndex count = 0;
-        for (auto& n_ptr : nodes_in_component_set)
+        return {
+            std::vector<LocalIndex>(nodes_in_component_set.begin(), nodes_in_component_set.end()),
+            elements_in_component
+        };
+    }
+
+    template<typename MeshType>
+    std::pair<std::vector<LocalIndex>, std::vector<LocalIndex>> find_in_component(
+        const MeshType& mesh,
+        const std::vector<LocalIndex>& subset_nodes_to_search,
+        const std::vector<LocalIndex>& subset_elements_to_search,
+        const ComponentIndex component_id)
+    {
+        std::map<LocalIndex, LocalIndex> mesh_to_local_numbering_map;
+        for (auto i : utility::indices(subset_nodes_to_search))
         {
-            relative_indices.push_back(count);
-            nodes_in_component.push_back(n_ptr);
-            count++;
+            mesh_to_local_numbering_map[subset_nodes_to_search[i]] = i;
+        }   
+
+        std::unordered_set<LocalIndex> nodes_in_component_set;
+        std::vector<LocalIndex> elements_in_component;
+        for (auto i : utility::indices(subset_elements_to_search))
+        {
+            auto& e_local_id = subset_elements_to_search[i];
+            auto e_ptr = mesh.elements()[e_local_id];
+
+            if (e_ptr->get_component_id() == component_id)
+            {
+                for (auto& n_ptr : *e_ptr)
+                {
+                    nodes_in_component_set.insert(mesh_to_local_numbering_map[n_ptr->get_local_number()]);
+                }
+                elements_in_component.push_back(i);
+            }
         }
-        return { relative_indices, nodes_in_component };
+
+        return {
+            std::vector<LocalIndex>(nodes_in_component_set.begin(), nodes_in_component_set.end()),
+            elements_in_component
+        };
     }
 
     template<typename ElementContainer>
@@ -203,33 +209,6 @@ namespace flex_mesh
         {
             return { 0, 0, 0 };
         }
-    }
-
-    template<typename MeshType>
-    std::pair<PartitionOrderedPtrSet<typename MeshType::NodeTypename>,
-              OwnedFirstPartitionOrderedPtrSet<typename MeshType::ElementTypename>>
-    get_partition_nodes_and_elements(const MeshType & mesh, const PartitionIndex current_partition)
-    {
-        PartitionOrderedPtrSet<typename MeshType::NodeTypename> nodes_in_part;
-        OwnedFirstPartitionOrderedPtrSet<typename MeshType::ElementTypename> elements_in_part(
-            OwnedFirstPartitionOrderedPtrSetComparator<typename MeshType::ElementTypename>(current_partition));
-        // Loop over the elements
-        for (auto& e_ptr : mesh.elements()) {
-            // If one of the nodes is owned by this partition,
-            // then all the nodes in the element to the partition need to be in
-            // the partition's mesh file, and the element needs to be in the
-            // partition's mesh file as well (regardless if the element is owned or not).
-            for (auto& n_ptr : *e_ptr) {
-                if (n_ptr->get_parent_partition() == current_partition) {
-                    elements_in_part.insert(e_ptr.get());
-                    for (auto& n_ptr2 : *e_ptr)
-                        nodes_in_part.insert(n_ptr2);
-                    break;
-                }
-            }
-        } // End creating sets
-
-        return{ nodes_in_part, elements_in_part };
     }
 
     template<typename MeshType>

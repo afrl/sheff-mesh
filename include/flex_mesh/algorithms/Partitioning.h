@@ -42,6 +42,18 @@ namespace flex_mesh
         MeshType& mesh,
         const PartitionIndex partition);
 
+    /// Returns the local indices of the nodes and elements respectively for the given partition.
+    /// The lists of elements includes owned elements and a layer of ghost elements (if
+    /// included_ghost is true).  The list of nodes includes all owned nodes and some nodes that
+    /// are not owned but appear in the connectivity of owned (or ghost if included) elements.
+    template<typename MeshType>
+    static std::pair<std::vector<flex_mesh::LocalIndex>, std::vector<flex_mesh::LocalIndex>>
+    extract_partition_indices(
+        const MeshType& mesh,
+        const PartitionIndex partition,
+        const ElementAdjacencyList<MeshType>& adjacency_list,
+        const bool include_ghost = true);
+
     //////////////////////////
     // Template definitions //
     //////////////////////////
@@ -102,7 +114,8 @@ namespace flex_mesh
 
             mesh.nodes().sort_by_partition();
             mesh.elements().sort_by_partition();
-            mesh.update_global_numbering(true);
+
+            // Note: we should not change the global numbers of the nodes or elements
         }
         else
         {
@@ -114,7 +127,6 @@ namespace flex_mesh
             {
                 e_ptr->set_parent_partition(0);
             }
-            mesh.update_global_numbering(true);
         }
     }
 
@@ -161,6 +173,61 @@ namespace flex_mesh
         part_mesh.nodes().remove_all_except(nodes_to_keep);
         part_mesh.elements().remove_all_except(elements_to_keep);
 
+        part_mesh.nodes().sort_by_partition();
+        part_mesh.elements().sort_by_partition_owned_first(partition);
+
         return part_mesh;
+    }
+
+    template<typename MeshType>
+    std::pair<std::vector<flex_mesh::LocalIndex>, std::vector<flex_mesh::LocalIndex>>
+    extract_partition_indices(
+        const MeshType& mesh,
+        const PartitionIndex partition,
+        ElementAdjacencyList<MeshType>& adjacency_list,
+        const bool include_ghost = true)
+    {
+        // Loop over the elements
+        std::set<flex_mesh::LocalIndex> nodes_to_include_set;
+        std::vector<flex_mesh::LocalIndex> elements_to_include;
+        for (auto& e_ptr : mesh.elements())
+        {
+            if (e_ptr->get_parent_partition() == partition)
+            {
+                elements_to_include.push_back(e_ptr->get_local_number());
+                for (auto& n_ptr : *e_ptr)
+                {
+                    nodes_to_include_set.insert(n_ptr->get_local_number());
+                }
+            }
+        }
+
+        if (include_ghost)
+        {
+            adjacency_list.skip_in_neighbor_search(elements_to_include);
+
+            std::set<flex_mesh::LocalIndex> ghost_layer_elements;
+            for (auto& e_local_id : elements_to_include)
+            {
+                for (auto& neighbor_ptr : adjacency_list.get_neighbors(e_local_id))
+                {
+                    ghost_layer_elements.insert(neighbor_ptr->get_local_number());
+                }
+            }
+
+            for (auto& e_local_id : ghost_layer_elements)
+            {
+                elements_to_include.push_back(e_local_id);
+                for (auto& n_ptr : *mesh.elements()[e_local_id])
+                {
+                    nodes_to_include_set.insert(n_ptr->get_local_number());
+                }
+            }
+        }
+
+        return {
+            std::vector<flex_mesh::LocalIndex>(nodes_to_include_set.begin(), nodes_to_include_set.end()),
+            elements_to_include
+        };
     }
 }

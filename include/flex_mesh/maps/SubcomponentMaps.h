@@ -8,12 +8,12 @@
 
 namespace flex_mesh
 {
-    class SubcomponentMap
+    class SubcomponentNodeNumberingMap
     {
     public:
 
         /// Note: update_maps to create the maps from partition to subcomponent numbering
-        SubcomponentMap(const ComponentIndex component_id,
+        SubcomponentNodeNumberingMap(const ComponentIndex component_id,
             const ComponentIndex subcomponent_index);
 
         const ComponentIndex get_component_id() const { return component_id_; }
@@ -22,9 +22,8 @@ namespace flex_mesh
         const LocalIndex get_subcomponent_index(const LocalIndex node_local_index) const;
         const std::map<LocalIndex, LocalIndex> & get_map() const { return local_to_subcomponent_node_map_; }
 
-        /// Update the index map given a the nodes and elements of the partition
-        template<typename Node_, typename ElementContainer>
-        void update_maps(const ElementContainer & elements);
+        /// Update the index map
+        void update_maps(const std::vector<LocalIndex>& node_indices_in_component);
 
     private:
         /// The component id of this subcomponent
@@ -50,8 +49,9 @@ namespace flex_mesh
         /// Update the index map given a the nodes and elements of the partition
         template<typename MeshTypename>
         void update_maps(const MeshTypename & mesh);
+
     private:
-        std::vector<SubcomponentMap> subcomponent_maps_;
+        std::vector<SubcomponentNodeNumberingMap> subcomponent_maps_;
         std::map<ComponentIndex, ComponentIndex> component_id_to_subcomponent_index_;
     };
 
@@ -59,25 +59,22 @@ namespace flex_mesh
     // Definitions //
     /////////////////
 
-    inline SubcomponentMap::SubcomponentMap(const ComponentIndex component_id, const ComponentIndex subcomponent_index)
+    inline SubcomponentNodeNumberingMap::SubcomponentNodeNumberingMap(const ComponentIndex component_id, const ComponentIndex subcomponent_index)
         : component_id_(component_id), subcomponent_index_(subcomponent_index)
     {
     }
 
-    inline const LocalIndex SubcomponentMap::get_subcomponent_index(const LocalIndex node_local_index) const
+    inline const LocalIndex SubcomponentNodeNumberingMap::get_subcomponent_index(const LocalIndex node_local_index) const
     {
         return local_to_subcomponent_node_map_.find(node_local_index)->second;
     }
 
-    template<typename Node_, typename ElementContainer>
-    inline void SubcomponentMap::update_maps(const ElementContainer & elements)
+    inline void SubcomponentNodeNumberingMap::update_maps(const std::vector<LocalIndex>& node_indices_in_component)
     {
         local_to_subcomponent_node_map_.clear();
-        auto nodes_in_subcomponent_pair = find_nodes_in_component<Node_>(elements, component_id_);
-        for (auto i : utility::indices(nodes_in_subcomponent_pair.first))
+        for (auto i : utility::indices(node_indices_in_component))
         {
-            local_to_subcomponent_node_map_[nodes_in_subcomponent_pair.first[i]] =
-                nodes_in_subcomponent_pair.second[i]->get_local_number();
+            local_to_subcomponent_node_map_[node_indices_in_component[i]] = i;
         }
     }
 
@@ -120,9 +117,9 @@ namespace flex_mesh
         for (auto& component_id : component_ids_in_partition)
         {
             component_id_to_subcomponent_index_[component_id] = subcomponent_index;
-            subcomponent_maps_.push_back(SubcomponentMap(component_id, subcomponent_index));
-            auto elements_in_subcomponent_pair = find_elements_in_component<typename MeshTypename::ElementTypename>(mesh.elements(), component_id);
-            subcomponent_maps_.back().update_maps<typename MeshTypename::NodeTypename>(elements_in_subcomponent_pair.second);
+            subcomponent_maps_.push_back(SubcomponentNodeNumberingMap(component_id, subcomponent_index));
+            auto nodes_and_elements = find_in_component(mesh, component_id);
+            subcomponent_maps_.back().update_maps(nodes_and_elements.first);
         }
     }
 }

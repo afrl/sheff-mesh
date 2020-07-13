@@ -150,6 +150,8 @@ namespace flex_mesh
     static std::vector<ConnIndex> get_linearized_permutation(const ElementType& geom_type) { return std::vector<ConnIndex>(); }
 	/// Returns a bool indicating if the geometry type is linear or not
 	static bool is_type_linear(const ElementType& geom_type);
+    /// Returns the element order (1 - linear, 2 - quadratic, etc.)
+    static int get_order(const ElementType& geom_type);
 
 	/// Returns the corresponding quadratic type for a given linear type
 	ElementType get_quadratic_type(const ElementType& geom_type);
@@ -1074,4 +1076,34 @@ namespace flex_mesh
 		// No match
 		return false;
 	}
+
+    int get_order(const ElementType& geom_type)
+    {
+        switch (geom_type)
+        {
+        case ElementType::L1D2N:
+        case ElementType::T2D3N:
+        case ElementType::Q2D4N:
+        case ElementType::T3D4N:
+        case ElementType::P3D5N:
+        case ElementType::W3D6N:
+        case ElementType::H3D8N:
+        case ElementType::Q3D4N:
+        case ElementType::C3D8N:
+            return 1;
+        case ElementType::L1D3N:
+        case ElementType::T2D6N:
+        case ElementType::Q2D8N:
+        case ElementType::C2D6N:
+        case ElementType::T3D10N:
+        case ElementType::P3D13N:
+        case ElementType::W3D15N:
+        case ElementType::H3D20N:
+        case ElementType::Q3D8N:
+        case ElementType::C3D16N:
+            return 2;
+        default:
+            throw _UTIL_MSG_EXCEPT("Order of element type has not been added to switch or is undefined.");
+        }
+    }
 };

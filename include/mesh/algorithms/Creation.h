@@ -1,0 +1,26 @@
+#pragma once
+
+#include "mesh/Mesh.h"
+
+namespace mesh
+{
+/// Generate a 2D uniform grid composed of linear quadrilateral elements.
+/// @param x_coordinates - coordinates of the corners of the elements along x-axis
+/// @param y_coordinates - coordinates of the corners of the elements along y-axis
+Mesh make_linear_grid(const std::vector<double>& x_coordinates,
+                      const std::vector<double>& y_coordinates);
+
+/// Generate a 3D uniform grid composed of linear quadrilateral elements.
+/// @param x_coordinates - coordinates of the corners of the elements along x-axis
+/// @param y_coordinates - coordinates of the corners of the elements along y-axis
+/// @param z_coordinates - coordinates of the corners of the elements along z-axis
+Mesh make_linear_grid(const std::vector<double>& x_coordinates,
+                      const std::vector<double>& y_coordinates,
+                      const std::vector<double>& z_coordinates);
+
+/// Generate a 2D rectangular mesh with a uniform grid
+/// @param x_coordinates - coordinates of the corners of the grid cells along x-axis
+/// @param y_coordinates - coordinates of the corners of the grid cells along y-axis
+Mesh make_quadratic_grid(const std::vector<double>& x_coordinates,
+                         const std::vector<double>& y_coordinates);
+}

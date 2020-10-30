@@ -2,13 +2,9 @@
 
 #include <string>
 
-#ifdef HAVE_FILESYSTEM
-#include <experimental/filesystem>
-#else
-#include "fea_io/common/Filesystem.h"
-#endif
+#include "utility/Filesystem.h"
 
-namespace flex_mesh
+namespace mesh
 {
     /// Given the file name for a test data file, this returns the full filepath
 	static const std::string get_test_data_filepath(

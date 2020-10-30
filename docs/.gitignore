@@ -1,0 +1,5 @@
+doxygen_html
+html_dir
+rst_dir
+xml_dir
+*_tagfile

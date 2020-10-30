@@ -8,39 +8,72 @@
 file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/unit_tests/Output)
 set(TEST_WORKDIR ${CMAKE_BINARY_DIR}/unit_tests/Output)
 
-file(GLOB_RECURSE _unit_tests "${CMAKE_CURRENT_SOURCE_DIR}" "*.cpp")
 set(test_list, "")
 
-foreach(_test ${_unit_tests}) 
+###############################################################################################
+# Helpful functions
+
+# Defines a function that adds a serial test to this module
+function(add_serial_test test_cpp_file)
   # Get input file name
-  get_filename_component(_name ${_test} NAME)
-  # Get subdirectory name
-  get_filename_component(_dir ${_test} DIRECTORY)
-  get_filename_component(_category ${_dir} NAME)
+  get_filename_component(_name ${test_cpp_file} NAME)
+  string(REPLACE ".cpp" "" _name ${_name})   # test name prefixed with category
+  set(_test_output_dir "${TEST_WORKDIR}/${_name}")
+  file(MAKE_DIRECTORY "${_test_output_dir}")
 
   # Create executable
-  STRING(REPLACE ".cpp" "" _name ${_category}_${_name})   # test name prefixed with category
-  add_executable(${_name} ${_test})
+  add_executable(${_name} ${test_cpp_file})
   set_property(TARGET ${_name} PROPERTY FOLDER unit_tests)
-  target_link_libraries(${_name} PRIVATE FlexMesh::FlexMesh)
+  set_property(TARGET ${_name} PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${_test_output_dir}")
+  target_link_libraries(${_name} PRIVATE Mesh::Mesh)
   
   include(${CMAKE_SOURCE_DIR}/cmake/Utilities.cmake)
-  assign_source_group("flex_mesh" ${FLEXMESH_HEADER_LIST})
-  if(FLEXMESH_USE_FEAIO)
-    assign_source_group_feaio()
-  endif()
+  assign_source_group("mesh" ${PARSER_HEADER_LIST})
 
   # Create test
-  add_test(NAME "Unit_FlexMesh_${_name}"   # test name prefixed with Unit and project
-    COMMAND ${_name}                              # test executable
-    WORKING_DIRECTORY ${TEST_WORKDIR}             # directory to call program from and write output to
-    )
+  add_test(NAME "Unit_Mesh_${_name}"    # test name prefixed with Unit and project
+    COMMAND ${_name}                          # test executable
+    WORKING_DIRECTORY "${_test_output_dir}")  # directory to call program from and write output to
+  set_tests_properties("Unit_Mesh_${_name}" PROPERTIES LABELS "unit;serial")
   list(APPEND test_list "${_name}")
-endforeach()
+endfunction(add_serial_test)
 
-file(GLOB_RECURSE _data_files "${CMAKE_CURRENT_SOURCE_DIR}" "*.inp")
-file(COPY ${_data_files} DESTINATION ${TEST_WORKDIR})
-message(STATUS ${_data_files})
+# Defines a function that adds an MPI test to this module
+function(add_mpi_test test_cpp_file n_mpi_ranks)
+  # Get input file name
+  get_filename_component(_name ${test_cpp_file} NAME)
+  string(REPLACE ".cpp" "" _name mpi_${n_mpi_ranks}_${_name})   # test name prefixed with category and # of ranks
+  set(_test_output_dir "${TEST_WORKDIR}/${_name}")
+  file(MAKE_DIRECTORY "${_test_output_dir}")
+
+  # Create executable
+  add_executable(${_name} ${test_cpp_file})
+  set_property(TARGET ${_name} PROPERTY FOLDER unit_tests)
+  set_property(TARGET ${_name} PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${_test_output_dir}")
+  target_link_libraries(${_name} PRIVATE Mesh::Mesh)
+  
+  include(${CMAKE_SOURCE_DIR}/cmake/Utilities.cmake)
+  assign_source_group("mesh" ${PARSER_HEADER_LIST})
+
+  # Create test
+  
+  set(_test_args ${MPIEXEC_NUMPROC_FLAG} ${n_mpi_ranks} $<TARGET_FILE:${_name}>)
+  add_test(NAME "Unit_Mesh_${_name}"        # test name prefixed with Unit and project
+    COMMAND ${MPIEXEC} ${_test_args}              # test executable
+    WORKING_DIRECTORY "${TEST_WORKDIR}/${_name}"  # directory to call program from and write output to
+    )
+  set_tests_properties("Unit_Mesh_${_name}" PROPERTIES LABELS "unit;mpi")
+  list(APPEND test_list "${_name}")
+endfunction(add_mpi_test)
+
+###############################################################################################
+# Add tests
+
+# Add all test as serial tests
+file(GLOB_RECURSE _unit_tests "${CMAKE_CURRENT_SOURCE_DIR}/source/*.cpp")
+foreach(_test ${_unit_tests})
+  add_serial_test(${_test})
+endforeach()
 
 # This target will compile and run all the unit tests. 
 # See: https://stackoverflow.com/questions/733475/cmake-ctest-make-test-doesnt-build-tests

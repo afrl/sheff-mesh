@@ -26,6 +26,20 @@ class ElementAccessorBase
     {
     }
 
+    /// Copy constructor takes another accessor type, allowing:
+    /// 1) ElementAccessor to be created from another ElementAccessor
+    /// 2) ElementConstAccessor to be created from another ElementAccessor
+    /// 3) ElementConstAccessor to be created from another ElementConstAccessor
+    /// Note: if you try to create a ElementAccessor from a ElementConstAccessor, then a compiler
+    /// error will occur about qualifiers and const-ness
+    template<typename ElementAccessorType>
+    ElementAccessorBase(const ElementAccessorType& other)
+      : nodes_(other.nodes_)
+      , elements_(other.elements_)
+      , curr_index_(other.curr_index_)
+    {
+    }
+
     /// Returns the index of the current element within the ElementContainer that contains it.
     inline const LocalIndex& local_index() const
     {

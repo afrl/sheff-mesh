@@ -39,5 +39,10 @@ struct ElementTopologyComponent
       , index(0)
     {
     }
+    ElementTopologyComponent(const TopologyType t, const ConnIndex i)
+      : type(t)
+      , index(i)
+    {
+    }
 };
 }

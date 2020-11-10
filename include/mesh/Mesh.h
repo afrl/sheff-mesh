@@ -1,8 +1,6 @@
 #pragma once
 
-#include "mesh/element/ElementAccessor.h"
-#include "mesh/element/ElementContainer.h"
-#include "mesh/element/ElementIterator.h"
+#include "mesh/element/Element.h"
 #include "mesh/node/NodeAccessor.h"
 #include "mesh/node/NodeContainer.h"
 #include "mesh/node/NodeIterator.h"
@@ -51,11 +49,21 @@ class Mesh
     /// be created.
     void copy(const Mesh& other, const std::set<LocalIndex> element_indices_to_copy);
 
+    /// Copies all elements and nodes from another mesh and adds them to the end of this container
+    /// and also copies any nodes that appear in the element connectivies being copied.
+    /// @important No checks are performed to see if a node already exists, so duplicate nodes could
+    /// be created.
+    void copy(const Mesh& other);
+
     /// Sorts nodes by global number and sorts elements to arrange the owned elements first,
     /// followed by ghost elements sorted by partition.
     /// @param this_partition - determines which partitions elements gets put at the front.
     ///        If you want to simply sort elements by partition, this should be 0.
     void sort(const PartitionIndex this_partition);
+
+    void clear();
+
+    Mesh& operator=(const Mesh& other);
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Serailization methods

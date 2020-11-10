@@ -162,7 +162,7 @@ void ElementContainer::add(ElementType type,
     lcs_.push_back(QuaternionContainer());
 }
 
-ElementAccessor ElementContainer::add_copy(ElementConstAccessor& other_element)
+ElementAccessor ElementContainer::add_copy(const ElementConstAccessor& other_element)
 {
     global_indices_.push_back(other_element.global_index());
     types_.push_back(other_element.type());
@@ -214,7 +214,8 @@ void ElementContainer::permute(const std::vector<LocalIndex>& backward_permutati
 
     if (groups_.size() > 0)
     {
-        throw _UTIL_MSG_EXCEPT_C("TODO implement permutation of element indices within element groups.");
+        throw _UTIL_MSG_EXCEPT_C(
+          "TODO implement permutation of element indices within element groups.");
     }
 
     if (!lcs_.empty())
@@ -230,5 +231,16 @@ void ElementContainer::permute_connectivity(
     {
         c = node_forward_permutation_indices[c];
     }
+}
+
+void ElementContainer::clear()
+{
+    global_indices_.clear();
+    types_.clear();
+    connectivities_.clear();
+    connectivity_offsets_.clear();
+    parent_partitions_.clear();
+    groups_.clear();
+    lcs_.clear();
 }
 }

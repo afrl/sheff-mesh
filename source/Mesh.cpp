@@ -58,6 +58,28 @@ void Mesh::copy(const Mesh& other, const std::set<LocalIndex> element_indices_to
     }
 }
 
+void Mesh::copy(const Mesh& other)
+{
+    LocalIndex node_offset = nodes_.size();
+    for (auto& other_node : other.nodes())
+    {
+        nodes_.add(other_node.point(),
+                   node_offset + other_node.global_index(),
+                   other_node.parent_partition());
+    }
+
+    for (auto& other_element : other.elements())
+    {
+        auto new_element = elements_.add_copy(other_element);
+
+        // Remap connectivity to the indices used in this mesh
+        for (auto& c : new_element.connectivity())
+        {
+            c = c + node_offset;
+        }
+    }
+}
+
 void Mesh::sort(const PartitionIndex this_partition)
 {
     // Local variables to bind in lambdas
@@ -104,6 +126,18 @@ void Mesh::sort(const PartitionIndex this_partition)
                   }
               });
     elements.permute(backward_element_permutation);
+}
+
+void Mesh::clear() {
+    nodes_.clear();
+    elements_.clear();
+}
+
+Mesh& Mesh::operator=(const Mesh& other)
+{
+    clear();
+    copy(other);
+    return *this;
 }
 
 }

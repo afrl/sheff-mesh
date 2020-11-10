@@ -903,15 +903,15 @@ def open_vs( opts, module_dir ):
 
     cmd = '"' + os.path.join(module_dir.build_dir,
                              module_dir.name.replace('_', '') + '.sln"')
-    subprocess.call(cmd, shell = True, executable=opts.shell_executable)
+    subprocess.Popen(cmd, shell = True, executable=opts.shell_executable)
 
 #####################################################################################
 
 def open_vscode( opts, module_dir ):
     """Opens the root directory of the given module in VS Code."""
 
-    subprocess.call('code "' + module_dir.module_dir + '"',
-                    shell = True, executable=opts.shell_executable)
+    subprocess.Popen('code "' + module_dir.module_dir + '"',
+                     shell = True, executable=opts.shell_executable)
 
 #####################################################################################
 

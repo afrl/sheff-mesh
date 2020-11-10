@@ -112,6 +112,12 @@ class ElementAccessorBase
         return elements_.lcs_[curr_index_];
     }
 
+    /// Returns a reference to the underlying NodeContainer that this accessor refers to.
+    inline auto& node_container() const
+    {
+        return nodes_;
+    }
+
     /// Templated to allow comparison between const and non-const types
     template<typename OtherAccessorType>
     inline bool operator==(const OtherAccessorType& other) const

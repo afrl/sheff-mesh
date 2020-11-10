@@ -92,7 +92,7 @@ class ElementContainer
              PartitionIndex parent_partition);
 
     /// Adds an element that is a copy of another element.
-    ElementAccessor add_copy(ElementConstAccessor& other_element);
+    ElementAccessor add_copy(const ElementConstAccessor& other_element);
 
     /// Swaps all data with the other container, but does not change the reference to the
     /// NodeContainer, so be sure to swap the nodes as well to keep the mesh in a valid state.
@@ -108,6 +108,9 @@ class ElementContainer
     ///        index of the reordering of nodes.  Note: this is the inverse of the map passed to
     ///        NodeContainer::permute.
     void permute_connectivity(const std::vector<LocalIndex>& node_forward_permutation_indices);
+
+    /// @brief Deletes all elements from the container.
+    void clear();
     ///@}
 
 

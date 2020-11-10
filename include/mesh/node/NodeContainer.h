@@ -88,6 +88,9 @@ class NodeContainer
     /// @param backward_permutation_indices - a map that goes from the new index to the old index of
     ///        the reordering.
     void permute(const std::vector<LocalIndex>& backward_permutation_indices);
+
+    /// @brief Deletes all nodes from the container.
+    void clear();
     ///@}
 
     template<typename SerializerType>

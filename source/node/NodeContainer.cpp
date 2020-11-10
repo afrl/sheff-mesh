@@ -153,4 +153,12 @@ void NodeContainer::permute(const std::vector<LocalIndex>& backward_permutation_
         throw _UTIL_MSG_EXCEPT_C("TODO implement permutation of node indices within node groups.");
     }
 }
+
+void NodeContainer::clear()
+{
+    global_indices_.clear();
+    points_.clear();
+    parent_partitions_.clear();
+    groups_.clear();
+}
 }

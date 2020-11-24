@@ -1,6 +1,8 @@
 # Make sure we have public dependencies available
 find_package(RapidJSON 1.1.0 CONFIG REQUIRED HINTS 
   "${CMAKE_SOURCE_DIR}/../third_party/rapidjson_install_dir" "${CMAKE_SOURCE_DIR}/../../third_party/rapidjson_install_dir" "${CMAKE_SOURCE_DIR}/modules/third_party/rapidjson_install_dir")
+find_package(SecondPartyMesh CONFIG REQUIRED HINTS 
+  "${CMAKE_SOURCE_DIR}/../second_party/second_party_mesh/install_dir" "${CMAKE_SOURCE_DIR}/../second_party_mesh/install_dir" "${CMAKE_SOURCE_DIR}/modules/second_party/second_party_mesh/install_dir")
 find_package(SecondPartyMetis CONFIG REQUIRED HINTS 
   "${CMAKE_SOURCE_DIR}/../second_party/second_party_metis/install_dir" "${CMAKE_SOURCE_DIR}/../second_party_metis/install_dir" "${CMAKE_SOURCE_DIR}/modules/second_party/second_party_metis/install_dir")
 find_package(SimpleMath CONFIG REQUIRED HINTS 

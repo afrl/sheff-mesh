@@ -101,6 +101,13 @@ class ElementSubrangeIteratorBase
         return accessor_;
     }
 
+    /// @brief Returns the index of where the iterator is within the list of elements
+    /// to visit (given to the constructor).
+    LocalIndex subrange_index() const
+    {
+        return curr_subrange_index_;
+    }
+
   protected:
     ElementAccessorType accessor_;
     /// Includes a 0 at the end so that operator++ does not cause seg fault without need for an

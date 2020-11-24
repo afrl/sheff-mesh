@@ -49,15 +49,9 @@ class ElementAdjacencyList
 
     /// @brief Clears any flags set to skip elements in neighbor searchers from a previous call to
     /// ElementAdjacencyList::skip_in_neighbor_search.
-    inline void clear_skip_flags()
-    {
-        for (auto& v : adjacency_list_)
-        {
-            v.skip_neighbor_flag = false;
-        }
-    }
+    inline void clear_skip_flags();
 
-  protected:
+  private:
     /// @brief A helper struct (nested in ElementAdjacencyList) for storing the adjacency list
     struct AdjacencyVertex
     {
@@ -77,6 +71,7 @@ class ElementAdjacencyList
     std::vector<AdjacencyVertex> adjacency_list_;
 
     /// A non-owning pointer that is null until update is called
+    /// Needed for get_elements() to return the element accessors
     const Mesh* mesh_ptr_;
 };
 }

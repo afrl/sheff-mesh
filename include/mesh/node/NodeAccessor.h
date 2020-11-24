@@ -58,6 +58,12 @@ class NodeAccessorBase
         return nodes_.points_[curr_index_];
     }
 
+    /// Returns a component of the point by reference
+    inline auto& point(int8_t coordinate_axis) const
+    {
+        return nodes_.points_[curr_index_][coordinate_axis];
+    }
+
     /// Returns a map of the coordinates to a 3D Eigen vector. It can be used as a normal Eigen
     /// vector.
     inline Eigen::Map<const Eigen::Vector3d> coord() const

@@ -12,7 +12,6 @@ namespace mesh
 class NodeToElementMap
 {
   public:
-
     NodeToElementMap();
 
     /// @brief Update the map given a mesh
@@ -24,8 +23,13 @@ class NodeToElementMap
     /// @brief Returns a range that iterates over the elements that include the given node.
     IteratorRange<ElementSubrangeConstIterator> get_elements(const LocalIndex node_index) const;
 
-  private:
+    /// @brief Performs a cheap update to account for combining two nodes, avoiding a complete
+    /// rebuild of the maps.  It moves the parents from the node_to_replace over to the node_to_keep
+    /// leaving the parent list for the node_to_replace empty.
+    void adjust_for_node_combination(const LocalIndex node_to_keep,
+                                     const LocalIndex node_to_replace);
 
+  private:
     /// Outer vector has the size of the nodes in the mesh, and the inner vector stores the parent
     /// element indices for the respective node.
     std::vector<std::vector<LocalIndex>> parent_element_indices_;

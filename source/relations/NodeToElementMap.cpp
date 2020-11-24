@@ -49,4 +49,24 @@ IteratorRange<ElementSubrangeConstIterator> mesh::NodeToElementMap::get_elements
                                      static_cast<LocalIndex>(parent_elements.size())) // end
     };
 }
+void NodeToElementMap::adjust_for_node_combination(const LocalIndex node_to_keep,
+                                                   const LocalIndex node_to_replace)
+{
+    std::set<LocalIndex> combined_parents;
+    for (auto& p : get_element_indices(node_to_keep))
+    {
+        combined_parents.insert(p);
+    }
+    for (auto& p : get_element_indices(node_to_replace))
+    {
+        combined_parents.insert(p);
+    }
+    parent_element_indices_[node_to_replace].clear();
+    parent_element_indices_[node_to_keep].clear();
+    parent_element_indices_[node_to_keep].reserve(combined_parents.size());
+    for (auto& p : combined_parents)
+    {
+        parent_element_indices_[node_to_keep].push_back(p);
+    }
+}
 }

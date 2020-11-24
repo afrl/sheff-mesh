@@ -54,6 +54,8 @@ find_package(RapidJSON 1.1.0 CONFIG REQUIRED HINTS
   "${CMAKE_SOURCE_DIR}/../third_party/rapidjson_install_dir" "${CMAKE_SOURCE_DIR}/../../third_party/rapidjson_install_dir" "${CMAKE_SOURCE_DIR}/modules/third_party/rapidjson_install_dir")
 find_package(SecondPartyMetis CONFIG REQUIRED HINTS 
   "${CMAKE_SOURCE_DIR}/../second_party/second_party_metis/install_dir" "${CMAKE_SOURCE_DIR}/../second_party_metis/install_dir" "${CMAKE_SOURCE_DIR}/modules/second_party/second_party_metis/install_dir")
+  find_package(SecondPartyMesh CONFIG REQUIRED HINTS 
+  "${CMAKE_SOURCE_DIR}/../second_party/second_party_mesh/install_dir" "${CMAKE_SOURCE_DIR}/../second_party_mesh/install_dir" "${CMAKE_SOURCE_DIR}/modules/second_party/second_party_mesh/install_dir")
 find_package(SimpleMath CONFIG REQUIRED HINTS 
   "${CMAKE_SOURCE_DIR}/../simple_math/install_dir" "${CMAKE_SOURCE_DIR}/../../simple_math/install_dir" "${CMAKE_SOURCE_DIR}/modules/simple_math/install_dir")
 find_package(Utility CONFIG REQUIRED HINTS 
@@ -94,6 +96,7 @@ target_compile_features(mesh PUBLIC cxx_std_14)
 
 # Link dependencies
 target_include_directories(mesh PUBLIC ${RapidJSON_INCLUDE_DIR})
+target_link_libraries(mesh PUBLIC SecondPartyMesh::SecondPartyMesh)
 target_link_libraries(mesh PUBLIC SecondPartyMetis::SecondPartyMetis)
 target_link_libraries(mesh PUBLIC SimpleMath::SimpleMath)
 
@@ -106,6 +109,7 @@ endif()
 include(${CMAKE_SOURCE_DIR}/cmake/Utilities.cmake)
 assign_source_group("mesh" ${MESH_HEADER_LIST})
 assign_source_group("mesh" ${MESH_SOURCE_LIST})
+assign_source_group_SecondPartyMesh()
 assign_source_group_SecondPartyMetis()
 assign_source_group_SimpleMath()
 assign_source_group_Utility()

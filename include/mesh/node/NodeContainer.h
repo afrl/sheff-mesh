@@ -7,6 +7,7 @@
 
 #include <array>
 #include <assert.h>
+#include <set>
 #include <vector>
 
 namespace mesh
@@ -70,16 +71,10 @@ class NodeContainer
 
     /// Removes a node by its index from the container without preserving ordering (and therefore
     /// local indices).
-    void remove_node(LocalIndex i);
+    void remove(LocalIndex i);
     /// Removes a node by its index from the container while preserving ordering (and therefore
     /// local indices).
-    void remove_node_stable(LocalIndex i);
-    /// Removes a list of nodes by their index from the container without preserving ordering (and
-    /// therefore local indices).
-    void remove_nodes(std::vector<LocalIndex>& v);
-    /// Removes a list of nodes by their index from the container while preserving ordering (and
-    /// therefore local indices).
-    void remove_nodes_stable(std::vector<LocalIndex>& v);
+    void remove_stable(LocalIndex i);
 
     /// Swaps all data with the other container.
     void swap(NodeContainer& other);

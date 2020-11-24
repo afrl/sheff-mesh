@@ -94,6 +94,17 @@ class ElementContainer
     /// Adds an element that is a copy of another element.
     ElementAccessor add_copy(const ElementConstAccessor& other_element);
 
+    /// Replaces a given element's connectivity with the given one.
+    void replace_connectivity(const LocalIndex& element_index,
+                              const utility::Slice<LocalIndex>& connectivity);
+
+    /// Removes an element by its index from the container while preserving ordering (and therefore
+    /// local indices).
+    void remove_stable(LocalIndex i);
+    /// Removes a list of element by their index from the container while preserving ordering (and
+    /// therefore local indices).
+    void remove_stable(std::vector<LocalIndex>& v);
+
     /// Swaps all data with the other container, but does not change the reference to the
     /// NodeContainer, so be sure to swap the nodes as well to keep the mesh in a valid state.
     void swap(ElementContainer& other);

@@ -19,7 +19,7 @@ FaceContainer::FaceContainer(ElementConstAccessor element)
         {
             connectivities_.push_back(i);
         }
-        connectivity_offsets_.push_back(connectivities_.size());
+        connectivity_offsets_.push_back(static_cast<ConnIndex>(connectivities_.size()));
     }
 }
 

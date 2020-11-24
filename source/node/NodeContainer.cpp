@@ -102,7 +102,7 @@ void NodeContainer::add(const Point& p, GlobalIndex i, PartitionIndex parent_par
     parent_partitions_.push_back(parent_partition);
 }
 
-void NodeContainer::remove_node(LocalIndex i)
+void NodeContainer::remove(LocalIndex i)
 {
     global_indices_[i] = global_indices_.back();
     global_indices_.pop_back();
@@ -112,27 +112,11 @@ void NodeContainer::remove_node(LocalIndex i)
     parent_partitions_.pop_back();
 }
 
-void NodeContainer::remove_node_stable(LocalIndex i)
+void NodeContainer::remove_stable(LocalIndex i)
 {
     global_indices_.erase(global_indices_.begin() + i);
     points_.erase(points_.begin() + i);
     parent_partitions_.erase(parent_partitions_.begin() + i);
-}
-
-void NodeContainer::remove_nodes(std::vector<LocalIndex>& v)
-{
-    for (auto& i : v)
-    {
-        remove_node(i);
-    }
-}
-
-void NodeContainer::remove_nodes_stable(std::vector<LocalIndex>& v)
-{
-    for (auto& i : v)
-    {
-        remove_node_stable(i);
-    }
 }
 
 void NodeContainer::swap(NodeContainer& other)

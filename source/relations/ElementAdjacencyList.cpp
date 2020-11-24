@@ -67,4 +67,12 @@ IteratorRange<ElementSubrangeConstIterator> ElementAdjacencyList::get_elements(
                                      static_cast<LocalIndex>(adjacent_elements.size())) // end
     };
 }
+
+inline void ElementAdjacencyList::clear_skip_flags()
+{
+    for (auto& v : adjacency_list_)
+    {
+        v.skip_neighbor_flag = false;
+    }
+}
 }

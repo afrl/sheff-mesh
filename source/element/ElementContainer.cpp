@@ -177,6 +177,72 @@ ElementAccessor ElementContainer::add_copy(const ElementConstAccessor& other_ele
     return back();
 }
 
+void ElementContainer::replace_connectivity(const LocalIndex& element_index,
+                                            const utility::Slice<LocalIndex>& connectivity)
+{
+    auto conn_start         = connectivity_offsets_[element_index];
+    auto existing_conn_size = connectivity_offsets_[element_index + 1] - conn_start;
+    auto n_to_copy          = std::min(connectivity.size(), existing_conn_size);
+
+    // Copy over the common size
+    for (auto i : utility::range(n_to_copy))
+    {
+        connectivities_[conn_start + i] = connectivity[i];
+    }
+    if (connectivity.size() > existing_conn_size)
+    {
+        connectivities_.insert(connectivities_.begin() + conn_start + n_to_copy,
+                               connectivity.begin() + n_to_copy,
+                               connectivity.end());
+
+        auto diff = connectivity.size() - n_to_copy;
+        for (auto i = element_index + 1; i < connectivity_offsets_.size(); i++)
+        {
+            connectivity_offsets_[i] += diff;
+        }
+    }
+    else if (existing_conn_size > connectivity.size())
+    {
+        auto diff = existing_conn_size - n_to_copy;
+        connectivities_.erase(connectivities_.begin() + conn_start + n_to_copy,
+                              connectivities_.begin() + conn_start + n_to_copy + diff);
+
+        for (auto i = element_index + 1; i < connectivity_offsets_.size(); i++)
+        {
+            connectivity_offsets_[i] -= diff;
+        }
+    }
+}
+
+void ElementContainer::remove_stable(LocalIndex i)
+{
+    _UTIL_ASSERT_C(groups_.size() == 0, "TODO: implement removal of element from groups.");
+
+    global_indices_.erase(global_indices_.begin() + i);
+    types_.erase(types_.begin() + i);
+    parent_partitions_.erase(parent_partitions_.begin() + i);
+    lcs_.erase(lcs_.begin() + i);
+
+    auto offset_start = connectivity_offsets_[i];
+    auto offset_end   = connectivity_offsets_[i + 1];
+    auto conn_size    = offset_end - offset_start;
+    connectivities_.erase(connectivities_.begin() + offset_start,
+                          connectivities_.begin() + offset_end);
+    connectivity_offsets_.erase(connectivity_offsets_.begin() + i);
+    for (auto j = i; j < connectivity_offsets_.size(); j++)
+    {
+        connectivity_offsets_[j] -= conn_size;
+    }
+}
+
+void ElementContainer::remove_stable(std::vector<LocalIndex>& v)
+{
+    for (auto& i : v)
+    {
+        remove_stable(i);
+    }
+}
+
 void ElementContainer::swap(ElementContainer& other)
 {
     global_indices_.swap(other.global_indices_);

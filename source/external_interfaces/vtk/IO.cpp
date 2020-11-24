@@ -29,7 +29,7 @@ void write_vtk(Mesh& mesh,
     }
 
     int total_num_cell_conn_entries = 0;
-    for (auto element : mesh.elements())
+    for (auto& element : mesh.elements())
     {
         total_num_cell_conn_entries++;
         total_num_cell_conn_entries += static_cast<int>(element.connectivity().size());
@@ -37,7 +37,7 @@ void write_vtk(Mesh& mesh,
 
     fout << "CELLS " << mesh.elements().size() << " " << total_num_cell_conn_entries << std::endl;
 
-    for (auto element : mesh.elements())
+    for (auto& element : mesh.elements())
     {
         auto connectivity = element.connectivity();
         auto vtk_permutation =
@@ -63,7 +63,7 @@ void write_vtk(Mesh& mesh,
 
     fout << "CELL_TYPES " << mesh.elements().size() << std::endl;
 
-    for (auto element : mesh.elements())
+    for (auto& element : mesh.elements())
     {
         fout << get_vtk_element_type(element.type()) << std::endl;
     }
@@ -87,7 +87,7 @@ void write_vtk(Mesh& mesh,
     if (write_lcs)
     {
         fout << "VECTORS LocalMaterialX float\n";
-        for (auto element : mesh.elements())
+        for (auto& element : mesh.elements())
         {
             auto axis_in_global = element.local_coord_sys()[0]._transformVector(Vector3D::Unit(0));
             for (auto i = 0; i < axis_in_global.size(); i++)
@@ -95,7 +95,7 @@ void write_vtk(Mesh& mesh,
             fout << std::endl;
         }
         fout << "VECTORS LocalMaterialY float\n";
-        for (auto element : mesh.elements())
+        for (auto& element : mesh.elements())
         {
             auto axis_in_global = element.local_coord_sys()[0]._transformVector(Vector3D::Unit(1));
             for (auto i = 0; i < axis_in_global.size(); i++)
@@ -103,7 +103,7 @@ void write_vtk(Mesh& mesh,
             fout << std::endl;
         }
         fout << "VECTORS LocalMaterialZ float\n";
-        for (auto element : mesh.elements())
+        for (auto& element : mesh.elements())
         {
             auto axis_in_global = element.local_coord_sys()[0]._transformVector(Vector3D::Unit(2));
             for (auto i = 0; i < axis_in_global.size(); i++)
@@ -114,14 +114,14 @@ void write_vtk(Mesh& mesh,
 
     fout << "SCALARS GlobalIDs int 1\n";
     fout << "LOOKUP_TABLE default\n";
-    for (auto element : mesh.elements())
+    for (auto& element : mesh.elements())
     {
         fout << element.global_index() << std::endl;
     }
 
     fout << "SCALARS PartitionIDs int 1\n";
     fout << "LOOKUP_TABLE default\n";
-    for (auto element : mesh.elements())
+    for (auto& element : mesh.elements())
     {
         fout << element.parent_partition() << std::endl;
     }

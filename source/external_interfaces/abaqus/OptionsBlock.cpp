@@ -2,6 +2,8 @@
 
 #include "utility/ASCIIStreamHelpers.h"
 
+#include <cctype>
+
 namespace mesh
 {
 OptionBlock::OptionBlock(std::istream& file, std::string line)

@@ -789,7 +789,7 @@ VTMSTowMesh read_vtms_ctw(const std::string& file_path)
     }
 
     // It will start pointing outward, but we will switch this during algorithms
-    tow_surface.surface_normal_direction = VTMSTowMesh::NormalDirection::OUT;
+    tow_surface.surface_normal_direction = VTMSTowMesh::NormalDirection::OUTWARD;
 
     // Skip to the medials data
     line = utility::skip_to_line_that_contains("*Medials:", fin, line);

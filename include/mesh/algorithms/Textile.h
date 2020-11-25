@@ -16,8 +16,8 @@ struct VTMSTowMesh
 
     enum class NormalDirection
     {
-        IN,
-        OUT
+        INWARD,
+        OUTWARD
     };
 
     enum class SurfaceElementType

@@ -37,6 +37,31 @@ int8_t find_axis_closest_aligned_along_tow(const VTMSTowMesh& tow_mesh)
     }
 }
 
+std::vector<std::pair<ConnIndex, ConnIndex>> polygon_segments(const ElementConstAccessor& element)
+{
+    std::vector<std::pair<ConnIndex, ConnIndex>> segments;
+    auto& conn = element.connectivity();
+    for (auto i = 0; i < conn.size() - 1; i++)
+    {
+        segments.push_back({ i, i + 1 });
+    }
+    segments.push_back({ static_cast<ConnIndex>(conn.size() - 1), 0 });
+    return segments;
+}
+
+// Implements Newell's method to calculate a polygons normal vector
+simple_math::Vector3D calculate_polygon_unit_normal(const ElementConstAccessor& polygon_element)
+{
+    simple_math::Vector3D normal = simple_math::Vector3D::Zero();
+    for (auto segment : polygon_segments(polygon_element))
+    {
+        auto p0 = polygon_element.node(segment.first).coord();
+        auto p1 = polygon_element.node(segment.second).coord();
+        normal += p0.cross(p1);
+    }
+    return normal.normalized();
+}
+
 void snap_boundary_points(VTMSTowMesh& tow_surface)
 {
     _UTIL_ASSERT(tow_surface.surface_element_types.size() == tow_surface.mesh.elements().size(),
@@ -52,11 +77,7 @@ void snap_boundary_points(VTMSTowMesh& tow_surface)
         if (type == VTMSTowMesh::SurfaceElementType::BOUNDARY)
         {
             // Find which plane we are moving this to
-            auto& conn = element.node(1).point();
-            auto v1    = element.node(1).point() - element.node(0).point();
-            auto v2    = calc_mean_coordinate(element) - element.node(0).point();
-            auto normal =
-              simple_math::point_as_vector(v1).cross(simple_math::point_as_vector(v2)).normalized();
+            auto normal     = calculate_polygon_unit_normal(element);
             int normal_axis = -1;
             for (auto i = 0; i < normal.size(); i++)
             {
@@ -94,17 +115,7 @@ void snap_boundary_points(VTMSTowMesh& tow_surface)
     }
 }
 
-std::vector<std::pair<ConnIndex, ConnIndex>> polygon_segments(const ElementConstAccessor& element)
-{
-    std::vector<std::pair<ConnIndex, ConnIndex>> segments;
-    auto& conn = element.connectivity();
-    for (auto i = 0; i < conn.size() - 1; i++)
-    {
-        segments.push_back({ i, i + 1 });
-    }
-    segments.push_back({ static_cast<ConnIndex>(conn.size() - 1), 0 });
-    return segments;
-}
+
 
 struct SegmentStats
 {
@@ -201,30 +212,76 @@ void remove_short_segments(VTMSTowMesh& tow_surface, const double factor)
                     {
                         // Which ever node lies on the fewest clipped planes will be removed and
                         // replace with the other
-                        int n_boundary_elements_connected_to_1 = 0;
+                        std::vector<Vector3D> boundary_normals_for_1;
                         for (auto element_index :
                              node_to_element.get_element_indices(conn[segment.first]))
                         {
                             if (tow_surface.surface_element_types[element_index] ==
                                 VTMSTowMesh::SurfaceElementType::BOUNDARY)
                             {
-                                n_boundary_elements_connected_to_1++;
+                                auto normal = calculate_polygon_unit_normal(
+                                  tow_surface.mesh.elements()[element_index]);
+                                bool close_to_existing_normal = false;
+                                for (auto& n : boundary_normals_for_1)
+                                {
+                                    if ((n - normal).isMuchSmallerThan(1.0, 1e-6))
+                                    {
+                                        close_to_existing_normal = true;
+                                        break;
+                                    }
+                                }
+                                if (!close_to_existing_normal)
+                                {
+                                    boundary_normals_for_1.push_back(normal);
+                                }
                             }
                         }
-                        int n_boundary_elements_connected_to_2 = 0;
+                        std::vector<Vector3D> boundary_normals_for_2;
                         for (auto element_index :
                              node_to_element.get_element_indices(conn[segment.second]))
                         {
                             if (tow_surface.surface_element_types[element_index] ==
                                 VTMSTowMesh::SurfaceElementType::BOUNDARY)
                             {
-                                n_boundary_elements_connected_to_2++;
+                                auto normal = calculate_polygon_unit_normal(
+                                  tow_surface.mesh.elements()[element_index]);
+                                bool close_to_existing_normal = false;
+                                for (auto& n : boundary_normals_for_2)
+                                {
+                                    if ((n - normal).isMuchSmallerThan(1.0, 1e-6))
+                                    {
+                                        close_to_existing_normal = true;
+                                        break;
+                                    }
+                                }
+                                if (!close_to_existing_normal)
+                                {
+                                    boundary_normals_for_2.push_back(normal);
+                                }
                             }
+                        }
+
+                        // If the size of the boundary normals are the same, then the algorithm has
+                        // encountered a segment straddling two boundaries, such as segment 'a'
+                        // connecting 1-3.  Skip this segment and let 1->2 and 3->2 later to
+                        // collapse the element.
+                        //
+                        // (boundary)
+                        // 1    2
+                        // o----o
+                        //  \   |
+                        //   \  | (boundary)
+                        //   a\ |
+                        //     \|
+                        //      o 3
+                        if (boundary_normals_for_2.size() == boundary_normals_for_1.size())
+                        {
+                            continue;
                         }
 
                         LocalIndex node_to_remove;
                         LocalIndex node_to_keep;
-                        if (n_boundary_elements_connected_to_2 > n_boundary_elements_connected_to_1)
+                        if (boundary_normals_for_2.size() > boundary_normals_for_1.size())
                         {
 
                             node_to_keep   = conn[segment.second];
@@ -296,6 +353,7 @@ void remove_short_segments(VTMSTowMesh& tow_surface, const double factor)
                         // Break out of the loop over segments to get back into the while loop
                         // This will recreate the segments, which will be checked again.
                         need_to_check_edges = true;
+
                         break;
 
                     } // End if length < min length
@@ -601,19 +659,6 @@ triangulateio triangle_kernel(
     return output;
 }
 
-// Implements Newell's method to calculate a polygons normal vector
-simple_math::Vector3D calculate_polygon_unit_normal(const ElementConstAccessor& polygon_element)
-{
-    simple_math::Vector3D normal = simple_math::Vector3D::Zero();
-    for (auto segment : polygon_segments(polygon_element))
-    {
-        auto p0 = polygon_element.node(segment.first).coord();
-        auto p1 = polygon_element.node(segment.second).coord();
-        normal += p0.cross(p1);
-    }
-    return normal.normalized();
-}
-
 void triangulate_polygon(VTMSTowMesh& tow_surface,
                          const ElementConstAccessor& polygon_element,
                          const double max_area)
@@ -621,12 +666,12 @@ void triangulate_polygon(VTMSTowMesh& tow_surface,
     auto n_nodes = polygon_element.connectivity().size();
 
     // Define a coordinate system
-    auto mean_point  = calc_mean_coordinate(polygon_element);
-    auto p1          = polygon_element.node(0).point();
-    auto p2          = polygon_element.node(1).point();
-    auto axis_1      = simple_math::point_as_vector(p1 - mean_point).normalized();
-    auto axis_3      = calculate_polygon_unit_normal(polygon_element);
-    auto axis_2      = axis_3.cross(axis_1);
+    auto mean_point = calc_mean_coordinate(polygon_element);
+    auto p1         = polygon_element.node(0).point();
+    auto p2         = polygon_element.node(1).point();
+    auto axis_1     = simple_math::point_as_vector(p1 - mean_point).normalized();
+    auto axis_3     = calculate_polygon_unit_normal(polygon_element);
+    auto axis_2     = axis_3.cross(axis_1);
 
     // Transform coordinates to this normalized coordinate system
     simple_math::Matrix3D transformation;

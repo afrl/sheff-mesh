@@ -12,5 +12,5 @@ namespace mesh
 std::pair<Point, Point> find_extent(const Mesh& mesh);
 
 /// @brief Returns the extent of multiple extents.
-std::pair<Point, Point> find_extent(const std::initializer_list<std::pair<Point, Point>>& extents);
+std::pair<Point, Point> find_extent(const std::vector<std::pair<Point, Point>>& extents);
 }

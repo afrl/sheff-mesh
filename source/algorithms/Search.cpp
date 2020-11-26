@@ -25,7 +25,7 @@ std::pair<Point, Point> find_extent(const Mesh& mesh)
     }
     return { neg_point, pos_point };
 }
-std::pair<Point, Point> find_extent(const std::initializer_list<std::pair<Point, Point>>& extents)
+std::pair<Point, Point> find_extent(const std::vector<std::pair<Point, Point>>& extents)
 {
     Point neg_point = { INFINITY, INFINITY, INFINITY };
     Point pos_point = { -INFINITY, -INFINITY, -INFINITY };

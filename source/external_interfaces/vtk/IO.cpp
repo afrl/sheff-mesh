@@ -9,7 +9,10 @@ namespace mesh
 void write_vtk(Mesh& mesh,
                const std::string& file_path,
                const bool write_lcs,
-               const std::vector<double>& point_data)
+               const std::vector<double>& point_data,
+               const std::vector<double>& element_data,
+               const std::vector<unsigned long long>& point_attributes,
+               const std::vector<unsigned long long>& element_attributes)
 {
     std::ofstream fout(file_path.c_str());
     if (!fout)
@@ -126,6 +129,38 @@ void write_vtk(Mesh& mesh,
         fout << element.parent_partition() << std::endl;
     }
 
+    if (!element_data.empty())
+    {
+        if (element_data.size() != mesh.elements().size())
+        {
+            throw _UTIL_MSG_EXCEPT(
+              "The size of the given cell data did not match the number of elements.");
+        }
+
+        fout << "SCALARS Data float 1\n";
+        fout << "LOOKUP_TABLE default\n";
+        for (auto& value : element_data)
+        {
+            fout << value << std::endl;
+        }
+    }
+
+    if (!element_attributes.empty())
+    {
+        if (element_attributes.size() != mesh.elements().size())
+        {
+            throw _UTIL_MSG_EXCEPT(
+              "The size of the given cell attributes did not match the number of elmeents.");
+        }
+
+        fout << "SCALARS Attributes unsigned_long 1\n";
+        fout << "LOOKUP_TABLE default\n";
+        for (auto& value : element_attributes)
+        {
+            fout << value << std::endl;
+        }
+    }
+
     if (!wrote_point_data_header)
     {
         fout << "POINT_DATA " << mesh.nodes().size() << std::endl;
@@ -158,9 +193,30 @@ void write_vtk(Mesh& mesh,
             fout << "POINT_DATA " << mesh.nodes().size() << std::endl;
             wrote_point_data_header = true;
         }
-        fout << "SCALARS ExtraData float 1\n";
+        fout << "SCALARS Data float 1\n";
         fout << "LOOKUP_TABLE default\n";
         for (auto& value : point_data)
+        {
+            fout << value << std::endl;
+        }
+    }
+
+    if (!point_attributes.empty())
+    {
+        if (point_attributes.size() != mesh.nodes().size())
+        {
+            throw _UTIL_MSG_EXCEPT(
+              "The size of the given point attributes did not match the number of nodes.");
+        }
+
+        if (!wrote_point_data_header)
+        {
+            fout << "POINT_DATA " << mesh.nodes().size() << std::endl;
+            wrote_point_data_header = true;
+        }
+        fout << "SCALARS Attributes unsigned_long 1\n";
+        fout << "LOOKUP_TABLE default\n";
+        for (auto& value : point_attributes)
         {
             fout << value << std::endl;
         }

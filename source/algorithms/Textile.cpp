@@ -9,6 +9,7 @@
 #include "utility/Hash.h"
 
 #include <fstream>
+#include <iomanip>
 #include <type_traits>
 
 using namespace simple_math::point_operators;
@@ -948,7 +949,9 @@ void write_to_ply(const Mesh& triangular_surface, const std::string& file_path)
     // Write vertex list
     for (auto& node : triangular_surface.nodes())
     {
-        fout << node.x() << " " << node.y() << " " << node.z() << std::endl;
+        fout << std::setprecision(std::numeric_limits<double>::digits10 + 1) << node.x() << " "
+             << node.y() << " " << node.z()
+             << std::endl;
     }
 
     // Write face list

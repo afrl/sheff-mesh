@@ -1,6 +1,7 @@
 #pragma once
 
 #include "mesh/Mesh.h"
+#include "mesh/surface/Surface.h"
 
 #include <utility>
 
@@ -13,4 +14,9 @@ std::pair<Point, Point> find_extent(const Mesh& mesh);
 
 /// @brief Returns the extent of multiple extents.
 std::pair<Point, Point> find_extent(const std::vector<std::pair<Point, Point>>& extents);
+
+/// @brief TODO write doc string
+/// @param mesh 
+/// @param elements_to_search 
+SurfaceMesh extract_boundary(Mesh& mesh, const std::vector<LocalIndex>& elements_to_search);
 }

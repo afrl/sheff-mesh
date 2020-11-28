@@ -11,8 +11,8 @@ void write_vtk(Mesh& mesh,
                const bool write_lcs,
                const std::vector<double>& point_data,
                const std::vector<double>& element_data,
-               const std::vector<unsigned long long>& point_attributes,
-               const std::vector<unsigned long long>& element_attributes)
+               const std::vector<unsigned int>& point_attributes,
+               const std::vector<unsigned int>& element_attributes)
 {
     std::ofstream fout(file_path.c_str());
     if (!fout)
@@ -153,7 +153,7 @@ void write_vtk(Mesh& mesh,
               "The size of the given cell attributes did not match the number of elmeents.");
         }
 
-        fout << "SCALARS Attributes unsigned_long 1\n";
+        fout << "SCALARS Attributes unsigned_int 1\n";
         fout << "LOOKUP_TABLE default\n";
         for (auto& value : element_attributes)
         {
@@ -214,7 +214,7 @@ void write_vtk(Mesh& mesh,
             fout << "POINT_DATA " << mesh.nodes().size() << std::endl;
             wrote_point_data_header = true;
         }
-        fout << "SCALARS Attributes unsigned_long 1\n";
+        fout << "SCALARS Attributes unsigned_int 1\n";
         fout << "LOOKUP_TABLE default\n";
         for (auto& value : point_attributes)
         {

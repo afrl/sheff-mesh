@@ -55,14 +55,14 @@ static bool is_ref(const LCSAssignmentType& type)
 //////////////////////////////////////////////////////////////////////////////////////////////
 // QuaternionContainer methods
 
-mesh::QuaternionContainer::QuaternionContainer()
+QuaternionContainer::QuaternionContainer()
   : quaternions_(nullptr)
   , n_quaternions_(0)
   , type_(LCSAssignmentType::None)
 {
 }
 
-mesh::QuaternionContainer::QuaternionContainer(const QuaternionContainer& other)
+QuaternionContainer::QuaternionContainer(const QuaternionContainer& other)
   : quaternions_(nullptr)
   , n_quaternions_(0)
   , type_(LCSAssignmentType::None)
@@ -70,7 +70,7 @@ mesh::QuaternionContainer::QuaternionContainer(const QuaternionContainer& other)
     refer_to(other);
 }
 
-mesh::QuaternionContainer::QuaternionContainer(QuaternionContainer&& other) noexcept
+QuaternionContainer::QuaternionContainer(QuaternionContainer&& other) noexcept
   : quaternions_(std::move(other.quaternions_))
   , n_quaternions_(std::move(other.n_quaternions_))
   , type_(std::move(other.type_))
@@ -79,9 +79,9 @@ mesh::QuaternionContainer::QuaternionContainer(QuaternionContainer&& other) noex
 
 void QuaternionContainer::operator=(QuaternionContainer&& other) noexcept
 {
-    quaternions_ = std::move(other.quaternions_);
+    quaternions_   = std::move(other.quaternions_);
     n_quaternions_ = std::move(other.n_quaternions_);
-    type_ = std::move(other.type_);
+    type_          = std::move(other.type_);
 }
 
 bool QuaternionContainer::operator==(const QuaternionContainer& other) const
@@ -140,9 +140,12 @@ void mesh::QuaternionContainer::refer_to(const QuaternionContainer& other)
 void QuaternionContainer::copy(const QuaternionContainer& other)
 {
     cleanup_if_needed();
-    type_          = get_ref_equivalent(other.type_);
-    quaternions_   = other.quaternions_;
-    n_quaternions_ = other.n_quaternions_;
+    type_ = get_non_ref_equivalent(other.type_);
+    initialize(type_, other.size());
+    for (auto i : utility::range(n_quaternions_))
+    {
+        quaternions_[i] = other.quaternions_[i];
+    }
 }
 
 Quaternion* mesh::QuaternionContainer::begin() const
@@ -173,6 +176,27 @@ Quaternion mesh::QuaternionContainer::operator[](const ConnIndex i) const
         case LCSAssignmentType::NodeRef:
             assert(i >= 0 && i < n_quaternions_);
             return quaternions_[i];
+        default: throw _UTIL_MSG_EXCEPT("The type is not recognized.");
+    }
+}
+
+void QuaternionContainer::set(const ConnIndex i, const Quaternion& q)
+{
+    switch (type_)
+    {
+        case LCSAssignmentType::None: return;
+        case LCSAssignmentType::Component:
+        case LCSAssignmentType::ComponentRef:
+        case LCSAssignmentType::Element:
+        case LCSAssignmentType::ElementRef:
+            assert(n_quaternions_ == 1);
+            quaternions_[0] = q;
+            return;
+        case LCSAssignmentType::Node:
+        case LCSAssignmentType::NodeRef:
+            assert(i >= 0 && i < n_quaternions_);
+            quaternions_[i] = q;
+            return;
         default: throw _UTIL_MSG_EXCEPT("The type is not recognized.");
     }
 }

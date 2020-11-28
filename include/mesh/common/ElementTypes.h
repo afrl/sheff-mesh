@@ -83,7 +83,7 @@ static bool is_type_linear(const ElementType& geom_type);
 static int get_order(const ElementType& geom_type);
 
 /// Returns the corresponding quadratic type for a given linear type
-ElementType get_quadratic_type(const ElementType& geom_type);
+static ElementType get_quadratic_type(const ElementType& geom_type);
 /// For a given type of linear element, this will return the connectivity index
 /// map from linear to quadratic for the nodes that already exist (corner nodes)
 /// Example for T2D3N, the vector will be:
@@ -92,13 +92,14 @@ ElementType get_quadratic_type(const ElementType& geom_type);
 /// [2]: 4
 /// which means that the first node in the linear connectivity belongs at index 0
 /// in the quadratic connectivity, etc.
-std::vector<ConnIndex> get_quadratic_indices_of_linear_nodes(const ElementType& geom_type);
+static std::vector<ConnIndex> get_quadratic_indices_of_linear_nodes(const ElementType& geom_type);
 /// Given an element geometry type, this function will fill the vectors:
-/// - quadraticIndices: the indicides of hte midside nodes in the quadratic connectivity vector
-/// - linearNodePairIndices: the corresponding pair the midside node lies on in terms of the linear
+/// - quadratic_indices: the indicides of hte midside nodes in the quadratic connectivity vector
+/// - linear_node_pair_indices: the corresponding pair the midside node lies on in terms of the
+/// linear
 ///   connectivity vector.
 /// \attention Will overwrite anything in the vectors!
-void get_quadratic_indices_of_midside_nodes(
+static void get_quadratic_indices_of_midside_nodes(
   const ElementType& geom_type,
   std::vector<ConnIndex>& quadratic_indices,
   std::vector<std::pair<ConnIndex, ConnIndex>>& linear_node_pair_indices);
@@ -113,6 +114,9 @@ static const std::vector<FaceInfo> get_face_info(const ElementType& geom_type);
 static const std::vector<FacetInfo> get_facet_info(const ElementType& geom_type);
 /// Returns the parametric coordinates of each of the nodes in the element
 static const std::vector<Point> get_node_parametric_coordinates(const ElementType& geom_type);
+/// Returns the element type that is equivalent to the given face type.  Throws if the face cannot
+/// be converted.
+static ElementType element_equivalent_for_face(const FaceType& face_type);
 
 /////////////
 // Helpers //
@@ -462,6 +466,20 @@ const std::vector<Point> get_node_parametric_coordinates(const ElementType& geom
     }
 }
 
+ElementType element_equivalent_for_face(const FaceType& face_type)
+{
+    switch (face_type)
+    {
+        case FaceType::L2D2N: return ElementType::L1D2N;
+        case FaceType::L2D3N: return ElementType::L1D3N;
+        case FaceType::T3D3N: return ElementType::T2D3N;
+        case FaceType::Q3D4N: return ElementType::Q2D4N;
+        case FaceType::T3D6N: return ElementType::T2D6N;
+        case FaceType::Q3D8N: return ElementType::Q2D8N;
+    }
+    throw _UTIL_MSG_EXCEPT("There is no element equivalent for the given face type.");
+}
+
 std::vector<std::vector<ConnIndex>> connectivity_helper(const ConnIndex num_faces,
                                                         const ConnIndex* nodes_per_face,
                                                         const ConnIndex* face_nodes)
@@ -702,6 +720,115 @@ int get_order(const ElementType& geom_type)
         default:
             throw _UTIL_MSG_EXCEPT(
               "Order of element type has not been added to switch or is undefined.");
+    }
+}
+
+ElementType get_quadratic_type(const ElementType& geom_type)
+{
+    // 2D cases
+    if (geom_type == ElementType::T2D3N)
+        return ElementType::T2D6N;
+    else if (geom_type == ElementType::Q2D4N)
+        return ElementType::Q2D8N;
+    else if (geom_type == ElementType::C2D4N)
+        return ElementType::C2D6N;
+    // 3D cases
+    else if (geom_type == ElementType::T3D4N)
+        return ElementType::T3D10N;
+    else if (geom_type == ElementType::P3D5N)
+        return ElementType::P3D13N;
+    else if (geom_type == ElementType::W3D6N)
+        return ElementType::W3D15N;
+    else if (geom_type == ElementType::H3D8N)
+        return ElementType::H3D20N;
+    else if (geom_type == ElementType::C3D8N)
+        return ElementType::C3D16N;
+    else
+        throw _UTIL_MSG_EXCEPT("Quadratic mapping not implemented for type " +
+                               to_string(geom_type));
+}
+
+std::vector<ConnIndex> get_quadratic_indices_of_linear_nodes(const ElementType& geom_type)
+{
+    // 2D cases
+    if (geom_type == ElementType::T2D3N)
+        return { 0, 2, 4 };
+    else if (geom_type == ElementType::Q2D4N)
+        return { 0, 2, 4, 6 };
+    else if (geom_type == ElementType::C2D4N)
+        return { 0, 2, 3, 5 };
+    // 3D cases
+    else if (geom_type == ElementType::T3D4N)
+        return { 0, 1, 2, 3 };
+    else if (geom_type == ElementType::P3D5N)
+        return { 0, 1, 2, 3, 4 };
+    else if (geom_type == ElementType::W3D6N)
+        return { 0, 2, 4, 9, 11, 13 };
+    else if (geom_type == ElementType::H3D8N)
+        return { 0, 2, 4, 6, 12, 14, 16, 18 };
+    else if (geom_type == ElementType::C3D8N)
+        return { 0, 2, 4, 6, 8, 10, 12, 14 };
+    else
+        throw _UTIL_MSG_EXCEPT("Quadratic mapping not implemented for type " +
+                               to_string(geom_type));
+}
+
+void get_quadratic_indices_of_midside_nodes(
+  const ElementType& geom_type,
+  std::vector<ConnIndex>& quadratic_indices,
+  std::vector<std::pair<ConnIndex, ConnIndex>>& linear_node_pair_indices)
+{
+    // 2D cases
+    if (geom_type == ElementType::T2D3N)
+    {
+        quadratic_indices        = { 1, 3, 5 };
+        linear_node_pair_indices = { { 0, 2 }, { 2, 4 }, { 4, 0 } };
+    }
+    else if (geom_type == ElementType::Q2D4N)
+    {
+        quadratic_indices        = { 1, 3, 5, 7 };
+        linear_node_pair_indices = { { 0, 2 }, { 2, 4 }, { 4, 6 }, { 6, 0 } };
+    }
+    else if (geom_type == ElementType::C2D4N)
+    {
+        quadratic_indices        = { 1, 4 };
+        linear_node_pair_indices = { { 0, 2 }, { 3, 5 } };
+    }
+    // 3D cases
+    else if (geom_type == ElementType::T3D4N)
+    {
+        quadratic_indices        = { 4, 5, 6, 7, 8, 9 };
+        linear_node_pair_indices = { { 0, 1 }, { 1, 2 }, { 2, 0 }, { 0, 3 }, { 1, 3 }, { 2, 3 } };
+    }
+    else if (geom_type == ElementType::P3D5N)
+    {
+        quadratic_indices        = { 5, 6, 7, 8, 9, 10, 11, 12 };
+        linear_node_pair_indices = { { 0, 1 }, { 1, 2 }, { 2, 3 }, { 3, 0 },
+                                     { 0, 4 }, { 1, 4 }, { 2, 4 }, { 3, 4 } };
+    }
+    else if (geom_type == ElementType::W3D6N)
+    {
+        quadratic_indices        = { 1, 3, 5, 6, 7, 8, 10, 12, 14 };
+        linear_node_pair_indices = { { 0, 2 },  { 2, 4 },  { 0, 4 },   { 0, 9 }, { 2, 11 },
+                                     { 4, 13 }, { 9, 11 }, { 11, 13 }, { 9, 13 } };
+    }
+    else if (geom_type == ElementType::H3D8N)
+    {
+        quadratic_indices        = { 1, 3, 5, 7, 8, 9, 10, 11, 13, 15, 17, 19 };
+        linear_node_pair_indices = { { 0, 2 },   { 2, 4 },   { 4, 6 },   { 6, 0 },
+                                     { 0, 12 },  { 2, 14 },  { 4, 16 },  { 6, 18 },
+                                     { 12, 14 }, { 14, 16 }, { 16, 18 }, { 18, 12 } };
+    }
+    else if (geom_type == ElementType::C3D8N)
+    {
+        quadratic_indices        = { 1, 3, 5, 7, 9, 11, 13, 15 };
+        linear_node_pair_indices = { { 0, 2 },  { 2, 4 },   { 4, 6 },   { 6, 0 },
+                                     { 8, 10 }, { 10, 12 }, { 12, 14 }, { 14, 8 } };
+    }
+    else
+    {
+        throw _UTIL_MSG_EXCEPT("Quadratic mapping not implemented for type " +
+                               to_string(geom_type));
     }
 }
 };

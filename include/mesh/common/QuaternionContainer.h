@@ -100,6 +100,9 @@ class QuaternionContainer
     ///
     /// Note: this does not return the quaternion by reference.
     Quaternion operator[](const ConnIndex i) const;
+    
+    /// Set the given index of the qua
+    void set(const ConnIndex i, const Quaternion& q);
 
     /// Yeilds the assignment type (dropping any reference specialization).
     /// For example, a NodeRef will return Node.

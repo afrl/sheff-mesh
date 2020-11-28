@@ -97,7 +97,7 @@ std::pair<bool, ComponentIndex> ElementToComponentMap::get_subcomponent_index(
     _UTIL_ASSERT_C(mesh_ptr_ == nullptr, "initialize() must be called first.");
 
     for (auto subcomponent_index :
-         utility::range<ComponentIndex>(subcomponent_to_component_map_.size()))
+         utility::range_as<ComponentIndex>(subcomponent_to_component_map_.size()))
     {
         if (subcomponent_to_component_map_[subcomponent_index] == component)
         {
@@ -198,7 +198,7 @@ void ElementToComponentMap::build_maps_from_component_assignments()
         connectivity_element_offsets_.resize(element_to_subcomponent_map_.size() + 1, 0);
         n_nodes_per_subcomponent_.resize(subcomponent_to_component_map_.size());
         for (auto subcomponent_index :
-             utility::range<ComponentIndex>(subcomponent_to_component_map_.size()))
+             utility::range_as<ComponentIndex>(subcomponent_to_component_map_.size()))
         {
             // Create a map from the local index to the subcomponent index
             LocalIndex count = 0;
@@ -211,7 +211,7 @@ void ElementToComponentMap::build_maps_from_component_assignments()
 
             // Add the remapped connectivites for the elements in the subcomponent
             for (auto element_index :
-                 utility::range<LocalIndex>(element_to_subcomponent_map_.size()))
+                 utility::range_as<LocalIndex>(element_to_subcomponent_map_.size()))
             {
                 if (element_to_subcomponent_map_[element_index] == subcomponent_index)
                 {
@@ -254,7 +254,7 @@ std::set<LocalIndex> ElementToComponentMap::extract_nodes_in_subcomponent(
   const ComponentIndex& subcomponent_index) const
 {
     std::set<LocalIndex> nodes_in_subcomponent;
-    for (auto element_index : utility::range<LocalIndex>(element_to_subcomponent_map_.size()))
+    for (auto element_index : utility::range_as<LocalIndex>(element_to_subcomponent_map_.size()))
     {
         if (element_to_subcomponent_map_[element_index] == subcomponent_index)
         {

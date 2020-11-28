@@ -70,7 +70,8 @@ void snap_boundary_points(VTMSTowMesh& tow_surface)
 
     auto extent = find_extent(tow_surface.mesh);
 
-    for (auto element_index : utility::range<LocalIndex>(tow_surface.surface_element_types.size()))
+    for (auto element_index :
+         utility::range_as<LocalIndex>(tow_surface.surface_element_types.size()))
     {
         auto& element = tow_surface.mesh.elements()[element_index];
         auto& type    = tow_surface.surface_element_types[element_index];
@@ -413,12 +414,8 @@ void remove_short_segments(VTMSTowMesh& tow_surface, const double factor)
 /// Refines the segments that define the polygon, for segments larger
 /// than the mean segment length plus numStdDevTol times the standard
 /// deviation of the segment lengths.
-void refine_polygon_segments(VTMSTowMesh& tow_surface, unsigned int n_std_devs)
+void refine_polygon_segments(VTMSTowMesh& tow_surface, double length_max)
 {
-    // Find the mean and standard deviation
-    auto seg_stats    = calculate_segment_length_stats(tow_surface);
-    double length_max = seg_stats.mean + n_std_devs * seg_stats.std_dev;
-
     // Loop over the polygons and refine the segments
     std::map<std::size_t, std::vector<LocalIndex>> refined_segments;
     std::map<std::size_t, LocalIndex> refinement_start_node;
@@ -426,7 +423,9 @@ void refine_polygon_segments(VTMSTowMesh& tow_surface, unsigned int n_std_devs)
     {
         // Loop over the edges and check if one is too long, which would need to be refined
         auto segments = polygon_segments(element);
-        for (auto segment_index : utility::range(segments.size()))
+        auto n_segments = segments.size();
+        auto segment_index = 0;
+        while (segment_index < n_segments)
         {
             auto& conn    = element.connectivity();
             auto& segment = segments[segment_index];
@@ -460,6 +459,7 @@ void refine_polygon_segments(VTMSTowMesh& tow_surface, unsigned int n_std_devs)
                         // Update the segments since new points were inserted
                         segments = polygon_segments(element);
                         segment_index += find_iter->second.size() + 1;
+                        n_segments = segments.size();
                     }
                     // Otherwise we need to reverse the order
                     else
@@ -479,13 +479,14 @@ void refine_polygon_segments(VTMSTowMesh& tow_surface, unsigned int n_std_devs)
                         // Update the segments since new points were inserted
                         segments = polygon_segments(element);
                         segment_index += reversed_nodes.size() + 1;
+                        n_segments = segments.size();
                     }
                 }
                 // If it hasn't been refined yet, then add nodes
                 else
                 {
                     int num_sub_segments =
-                      static_cast<int>((segment_length + 0.5 * seg_stats.mean) / seg_stats.mean);
+                      static_cast<int>((segment_length + 0.5 * length_max) / length_max);
                     std::vector<Point> linspace_points =
                       simple_math::linspace(p1, p2, num_sub_segments);
                     std::vector<Point> new_points(linspace_points.begin() + 1,
@@ -497,6 +498,11 @@ void refine_polygon_segments(VTMSTowMesh& tow_surface, unsigned int n_std_devs)
                         tow_surface.mesh.nodes().add(new_point);
                         new_nodes.push_back(tow_surface.mesh.nodes().size() - 1);
                     }
+
+                    // Save the info for future segments
+                    refined_segments[hash]      = new_nodes;
+                    refinement_start_node[hash] = conn[segment.first];
+
                     // Add the new nodes to the element connectivity
                     std::vector<LocalIndex> new_conn(conn.begin(), conn.end());
                     new_conn.insert(
@@ -509,12 +515,13 @@ void refine_polygon_segments(VTMSTowMesh& tow_surface, unsigned int n_std_devs)
                     // Update the segments since new points were inserted
                     segments = polygon_segments(element);
                     segment_index += num_sub_segments;
-
-                    // Save the info for future segments
-                    refined_segments[hash]      = new_nodes;
-                    refinement_start_node[hash] = conn[segment.first];
+                    n_segments = segments.size();
                 }
             } // End if length > max length
+            else
+            {
+                segment_index++;
+            }
         }     // End loop over edges
     }         // End loop over elements
 } // End refine_polygon_segments
@@ -759,6 +766,38 @@ void triangulate_polygon(VTMSTowMesh& tow_surface,
     free(output.edgemarkerlist);
 }
 
+void submesh_polygons(VTMSTowMesh& tow_surface, double max_tri_area)
+{
+    // Loop over elements in surface mesh and submesh polygons with more than 4 nodes
+    LocalIndex n_elements_removed = 0;
+    for (auto polygon_element_index : utility::range(tow_surface.mesh.elements().size()))
+    {
+        auto& element = tow_surface.mesh.elements()[polygon_element_index - n_elements_removed];
+        if (element.connectivity().size() > 3)
+        {
+            std::vector<std::vector<LocalIndex>> boundary_segments;
+            auto& conn = element.connectivity();
+            for (auto segment : polygon_segments(element))
+            {
+                boundary_segments.push_back({ conn[segment.first], conn[segment.second] });
+            }
+            triangulate_polygon(tow_surface, element, max_tri_area);
+
+            // Remove the original polygon element
+            tow_surface.mesh.elements().remove_stable(polygon_element_index - n_elements_removed++);
+        }
+        else if (element.connectivity().size() == 3)
+        {
+            // Convert polygons to trianlges
+            element.type() = ElementType::T2D3N;
+        }
+        else
+        {
+            throw _UTIL_MSG_EXCEPT("Bad element in surface.");
+        }
+    }
+}
+
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // Definitions from header
 
@@ -876,7 +915,7 @@ VTMSTowMesh read_vtms_ctw(const std::string& file_path)
     return tow_surface;
 }
 
-void triangulate_tow_surface(VTMSTowMesh& tow_surface)
+double triangulate_tow_surface(VTMSTowMesh& tow_surface)
 {
     _UTIL_ASSERT(tow_surface.type == VTMSTowMesh::MeshType::POLY,
                  "The tow surface must be polygonal.");
@@ -889,41 +928,20 @@ void triangulate_tow_surface(VTMSTowMesh& tow_surface)
 
     // write_vtk(tow_surface.mesh, "surface_post_remove_short_segments.vtk");
 
+    // Find the mean and standard deviation
+    auto n_std_devs   = 4;
+    auto seg_stats    = calculate_segment_length_stats(tow_surface);
+    double length_max = seg_stats.mean + n_std_devs * seg_stats.std_dev;
+
     // Refine to ensure segments are within two std devs of the mean
-    refine_polygon_segments(tow_surface, 4);
+    refine_polygon_segments(tow_surface, length_max);
 
     // write_vtk(tow_surface.mesh, "surface_post_refine_polygon_segments.vtk");
 
-    auto seg_stats = calculate_segment_length_stats(tow_surface);
+    seg_stats = calculate_segment_length_stats(tow_surface);
+    submesh_polygons(tow_surface, seg_stats.mean * seg_stats.mean);
 
-    // Loop over elements in surface mesh and submesh polygons with more than 4 nodes
-    LocalIndex n_elements_removed = 0;
-    for (auto polygon_element_index : utility::range(tow_surface.mesh.elements().size()))
-    {
-        auto& element = tow_surface.mesh.elements()[polygon_element_index - n_elements_removed];
-        if (element.connectivity().size() > 3)
-        {
-            std::vector<std::vector<LocalIndex>> boundary_segments;
-            auto& conn = element.connectivity();
-            for (auto segment : polygon_segments(element))
-            {
-                boundary_segments.push_back({ conn[segment.first], conn[segment.second] });
-            }
-            triangulate_polygon(tow_surface, element, seg_stats.mean * seg_stats.mean);
-
-            // Remove the original polygon element
-            tow_surface.mesh.elements().remove_stable(polygon_element_index - n_elements_removed++);
-        }
-        else if (element.connectivity().size() == 3)
-        {
-            // Convert polygons to trianlges
-            element.type() = ElementType::T2D3N;
-        }
-        else
-        {
-            throw _UTIL_MSG_EXCEPT("Bad element in surface.");
-        }
-    }
+    return seg_stats.mean;
 }
 
 void write_to_ply(const Mesh& triangular_surface, const std::string& file_path)
@@ -950,8 +968,7 @@ void write_to_ply(const Mesh& triangular_surface, const std::string& file_path)
     for (auto& node : triangular_surface.nodes())
     {
         fout << std::setprecision(std::numeric_limits<double>::digits10 + 1) << node.x() << " "
-             << node.y() << " " << node.z()
-             << std::endl;
+             << node.y() << " " << node.z() << std::endl;
     }
 
     // Write face list
@@ -970,7 +987,9 @@ void write_to_ply(const Mesh& triangular_surface, const std::string& file_path)
     fout.close();
 }
 
-Mesh create_triangular_matrix_box(const Point& n, const Point& p)
+Mesh create_triangular_matrix_box(const Point& n,
+                                  const Point& p,
+                                  const double& target_segment_length)
 {
     //     ^z
     //
@@ -994,19 +1013,49 @@ Mesh create_triangular_matrix_box(const Point& n, const Point& p)
     box.nodes().add(p);
     box.nodes().add({ n[0], p[1], p[2] });
 
-    box.elements().add(ElementType::T2D3N, { 2, 1, 0 }); // Bottom
-    box.elements().add(ElementType::T2D3N, { 2, 0, 3 });
-    box.elements().add(ElementType::T2D3N, { 6, 5, 1 }); // Front
-    box.elements().add(ElementType::T2D3N, { 6, 1, 2 });
-    box.elements().add(ElementType::T2D3N, { 0, 4, 7 }); // Back
-    box.elements().add(ElementType::T2D3N, { 0, 7, 3 });
-    box.elements().add(ElementType::T2D3N, { 1, 5, 0 }); // Left side
-    box.elements().add(ElementType::T2D3N, { 0, 5, 4 });
-    box.elements().add(ElementType::T2D3N, { 3, 7, 6 }); // Right side
-    box.elements().add(ElementType::T2D3N, { 3, 6, 2 });
-    box.elements().add(ElementType::T2D3N, { 6, 7, 4 }); // Top
-    box.elements().add(ElementType::T2D3N, { 6, 4, 5 });
+    if (target_segment_length > 0.0)
+    {
+        box.elements().add(ElementType::POLYGON, { 0, 3, 2, 1 }); // Bottom
+        box.elements().add(ElementType::POLYGON, { 1, 2, 6, 5 }); // Front
+        box.elements().add(ElementType::POLYGON, { 0, 4, 7, 3 }); // Back
+        box.elements().add(ElementType::POLYGON, { 1, 5, 4, 0 }); // Left side
+        box.elements().add(ElementType::POLYGON, { 3, 7, 6, 2 }); // Right side
+        box.elements().add(ElementType::POLYGON, { 6, 7, 4, 5 }); // Top
 
-    return box;
+        VTMSTowMesh tmp_vtms_obj;
+        tmp_vtms_obj.mesh = std::move(box);
+        for (auto& element : tmp_vtms_obj.mesh.elements())
+        {
+            tmp_vtms_obj.surface_element_types.push_back(VTMSTowMesh::SurfaceElementType::BOUNDARY);
+        }
+        tmp_vtms_obj.type = VTMSTowMesh::MeshType::POLY;
+
+        // Refine to ensure segments are within two std devs of the mean
+        refine_polygon_segments(tmp_vtms_obj, target_segment_length);
+
+        //write_vtk(tmp_vtms_obj.mesh, "surface_post_refine_polygon_segments.vtk");
+
+        submesh_polygons(tmp_vtms_obj, 0.5 * target_segment_length * target_segment_length);
+
+        box = std::move(tmp_vtms_obj.mesh);
+        return box;
+    }
+    else
+    {
+        box.elements().add(ElementType::T2D3N, { 2, 1, 0 }); // Bottom
+        box.elements().add(ElementType::T2D3N, { 2, 0, 3 });
+        box.elements().add(ElementType::T2D3N, { 6, 5, 1 }); // Front
+        box.elements().add(ElementType::T2D3N, { 6, 1, 2 });
+        box.elements().add(ElementType::T2D3N, { 0, 4, 7 }); // Back
+        box.elements().add(ElementType::T2D3N, { 0, 7, 3 });
+        box.elements().add(ElementType::T2D3N, { 1, 5, 0 }); // Left side
+        box.elements().add(ElementType::T2D3N, { 0, 5, 4 });
+        box.elements().add(ElementType::T2D3N, { 3, 7, 6 }); // Right side
+        box.elements().add(ElementType::T2D3N, { 3, 6, 2 });
+        box.elements().add(ElementType::T2D3N, { 6, 7, 4 }); // Top
+        box.elements().add(ElementType::T2D3N, { 6, 4, 5 });
+
+        return box;
+    }
 }
 }

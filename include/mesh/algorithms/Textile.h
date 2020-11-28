@@ -42,12 +42,15 @@ VTMSTowMesh read_vtms_ctw(const std::string& file_path);
 /// @brief Takes a polygonal discretization of a tow's surface and transforms it into a
 /// quality triangulation of the tow's surface.
 /// @param tow_surface - polygonal surface mesh for a tow returned by read_vtms_ctw
-void triangulate_tow_surface(VTMSTowMesh& tow_surface);
+/// @returns Mean segment length
+double triangulate_tow_surface(VTMSTowMesh& tow_surface);
 
 /// @brief Write a triangulated tow surface to a .ply file, which can be read in by TetWild.
 void write_to_ply(const Mesh& triangular_surface, const std::string& file_path);
 
-Mesh create_triangular_matrix_box(const Point& neg_bound, const Point& pos_bound);
+Mesh create_triangular_matrix_box(const Point& neg_bound,
+                                  const Point& pos_bound,
+                                  const double& target_segment_length = -1.0);
 
 /// @brief Takes a triangular discretization of a tow's surface and transforms it into a
 /// quality tetrahedralization.

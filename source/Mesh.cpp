@@ -140,4 +140,11 @@ Mesh& Mesh::operator=(const Mesh& other)
     return *this;
 }
 
+Mesh& Mesh::operator=(Mesh&& other)
+{
+    nodes_.swap(other.nodes_);
+    elements_.swap(other.elements_);
+    return *this;
+}
+
 }

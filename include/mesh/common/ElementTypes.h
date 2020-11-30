@@ -286,7 +286,7 @@ const std::vector<FaceInfo> get_face_info(const ElementType& geom_type)
                      { FaceType::Q3D4N, { 2, 7, 10, 6 }, { 2, 3, 7, 6 } } };
         case ElementType::T3D10N:
             // Quadratic tetrahedral
-            return { { FaceType::T3D6N, { 0, 3, 1 }, { 0, 6, 2, 5, 1, 4 } },
+            return { { FaceType::T3D6N, { 1, 3, 0 }, { 0, 6, 2, 5, 1, 4 } },
                      { FaceType::T3D6N, { 2, 5, 1 }, { 0, 7, 3, 9, 2, 6 } },
                      { FaceType::T3D6N, { 3, 5, 4 }, { 1, 5, 2, 9, 3, 8 } },
                      { FaceType::T3D6N, { 0, 4, 2 }, { 0, 4, 1, 8, 3, 7 } } };

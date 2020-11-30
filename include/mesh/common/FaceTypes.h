@@ -42,6 +42,9 @@ static FaceType get_linearized_type(const FaceType& geom_type);
 static std::vector<ConnIndex> get_linearized_permutation(const FaceType& geom_type);
 /// Returns a bool indicating if the geometry type is linear or not
 static bool is_type_linear(const FaceType& geom_type);
+/// Returns the permutation for flipping an element's connectivity (reversing outward normal).
+static std::vector<ConnIndex> flip_conn_permute(const FaceType& geom_type);
+
 
 /// @brief A simple struct to hold information about a face that is part of a element.
 struct FaceInfo
@@ -133,5 +136,21 @@ bool is_type_linear(const FaceType& geom_type)
 {
     return geom_type == FaceType::L1D1N || geom_type == FaceType::L2D2N ||
            geom_type == FaceType::Q3D4N || geom_type == FaceType::T3D3N;
+}
+
+std::vector<ConnIndex> flip_conn_permute(const FaceType& geom_type)
+{
+    switch (geom_type)
+    {
+        // 2D faces
+        case FaceType::L2D2N: return { 1, 0 };
+        case FaceType::L2D3N: return { 2, 1, 0 };
+        // 3D faces
+        case FaceType::T3D3N: return { 2, 1, 0 };
+        case FaceType::Q3D4N: return { 3, 2, 1, 0 };
+        case FaceType::T3D6N: return { 0, 5, 4, 3, 2, 1 };
+        case FaceType::Q3D8N: return { 0, 7, 6, 5, 4, 3, 2, 1 };
+        default: throw _UTIL_MSG_EXCEPT("Flip is not implemented for face type.");
+    }
 }
 };

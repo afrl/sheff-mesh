@@ -53,7 +53,7 @@ std::pair<Point, Point> find_extent(const std::vector<std::pair<Point, Point>>& 
     return { neg_point, pos_point };
 }
 
-SurfaceMesh extract_boundary(Mesh& mesh, const std::vector<LocalIndex>& elements_to_search)
+MeshSurface extract_boundary(Mesh& mesh, const std::vector<LocalIndex>& elements_to_search)
 {
     // A map from the face hash to the pair of (element index, face index) for all unmatched faces.
     // If a match is found, then the existing object is removed (thus assuming no more than 2
@@ -77,7 +77,7 @@ SurfaceMesh extract_boundary(Mesh& mesh, const std::vector<LocalIndex>& elements
         }
     }
 
-    SurfaceMesh surface_elements(mesh);
+    MeshSurface surface_elements(mesh);
     for (auto& p : unmatched_faces)
     {
         auto& element_index = p.second.first;

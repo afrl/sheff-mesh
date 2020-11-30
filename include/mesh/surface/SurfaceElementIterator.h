@@ -1,29 +1,34 @@
 #pragma once
 
 #include "mesh/surface/SurfaceElementAccessor.h"
+#include "mesh/surface/SurfaceElementConstAccessor.h"
 
 namespace mesh
 {
 /// @brief Iterator that sequentially moves through an SurfaceMesh.
-class SurfaceElementIterator
+/// @tparam SurfaceElementAccessorType - const or nonconst accessor determines if iterator is const
+/// or noncost
+template<typename SurfaceElementAccessorType>
+class SurfaceElementIteratorBase
 {
   public:
     // Iterator traits
     using difference_type   = LocalIndex;
-    using value_type        = SurfaceElementAccessor;
-    using pointer           = const SurfaceElementAccessor*;
-    using reference         = const SurfaceElementAccessor&;
+    using value_type        = SurfaceElementAccessorType;
+    using pointer           = SurfaceElementAccessorType*;
+    using reference         = SurfaceElementAccessorType&;
+    using const_reference   = const SurfaceElementAccessorType&;
     using iterator_category = std::forward_iterator_tag;
 
-    using IteratorType         = SurfaceElementIterator;
+    using IteratorType = SurfaceElementIteratorBase<SurfaceElementAccessorType>;
+    using MeshType     = typename SurfaceElementAccessorType::MeshType;
 
-    SurfaceElementIterator(SurfaceMesh& surf_mesh,
-                        LocalIndex starting_index = 0)
+    SurfaceElementIteratorBase(MeshType& surf_mesh, LocalIndex starting_index = 0)
       : accessor_(surf_mesh, starting_index)
     {
     }
 
-    ~SurfaceElementIterator() {}
+    ~SurfaceElementIteratorBase() {}
 
     /// @brief Pre-increment operator
     IteratorType& operator++()
@@ -40,22 +45,30 @@ class SurfaceElementIterator
         return retval;
     }
 
-    bool operator==(const SurfaceElementIterator& other) const
+    bool operator==(const SurfaceElementIteratorBase<SurfaceElementAccessorType>& other) const
     {
         return accessor_ == *other;
     }
 
-    bool operator!=(const SurfaceElementIterator& other) const
+    bool operator!=(const SurfaceElementIteratorBase<SurfaceElementAccessorType>& other) const
     {
         return !(*this == other);
     }
 
-    reference operator*() const
+    reference operator*()
+    {
+        return accessor_;
+    }
+
+    const_reference operator*() const
     {
         return accessor_;
     }
 
   protected:
-    SurfaceElementAccessor accessor_;
+    SurfaceElementAccessorType accessor_;
 };
+
+using SurfaceElementIterator      = SurfaceElementIteratorBase<SurfaceElementAccessor>;
+using SurfaceElementConstIterator = SurfaceElementIteratorBase<SurfaceElementConstAccessor>;
 }

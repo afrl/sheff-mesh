@@ -458,7 +458,7 @@ void refine_polygon_segments(VTMSTowMesh& tow_surface, double length_max)
 
                         // Update the segments since new points were inserted
                         segments = polygon_segments(element);
-                        segment_index += find_iter->second.size() + 1;
+                        segment_index += static_cast<int>(find_iter->second.size()) + 1;
                         n_segments = segments.size();
                     }
                     // Otherwise we need to reverse the order
@@ -478,7 +478,7 @@ void refine_polygon_segments(VTMSTowMesh& tow_surface, double length_max)
 
                         // Update the segments since new points were inserted
                         segments = polygon_segments(element);
-                        segment_index += reversed_nodes.size() + 1;
+                        segment_index += static_cast<int>(reversed_nodes.size()) + 1;
                         n_segments = segments.size();
                     }
                 }

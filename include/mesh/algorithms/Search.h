@@ -18,5 +18,5 @@ std::pair<Point, Point> find_extent(const std::vector<std::pair<Point, Point>>& 
 /// @brief TODO write doc string
 /// @param mesh 
 /// @param elements_to_search 
-SurfaceMesh extract_boundary(Mesh& mesh, const std::vector<LocalIndex>& elements_to_search);
+MeshSurface extract_boundary(Mesh& mesh, const std::vector<LocalIndex>& elements_to_search);
 }

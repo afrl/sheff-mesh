@@ -19,4 +19,17 @@ std::pair<Point, Point> find_extent(const std::vector<std::pair<Point, Point>>& 
 /// @param mesh 
 /// @param elements_to_search 
 MeshSurface extract_boundary(Mesh& mesh, const std::vector<LocalIndex>& elements_to_search);
+
+/// A helper struct for find_faces_from_node_set
+struct ElementFacePair
+{
+    LocalIndex local_element_index;
+    ConnIndex face_index;
+};
+
+/// Find all faces such that all nodes in the face appears in the given node set.
+std::vector<ElementFacePair> find_faces_from_node_set(
+  const Mesh& mesh,
+  const std::set<LocalIndex>& node_set);
+
 }

@@ -89,4 +89,25 @@ MeshSurface extract_boundary(Mesh& mesh, const std::vector<LocalIndex>& elements
     }
     return surface_elements;
 }
+std::vector<ElementFacePair> find_faces_from_node_set(const Mesh& mesh,
+                                                      const std::set<LocalIndex>& node_set)
+{
+    std::vector<ElementFacePair> faces_in_node_set;
+    for (auto& element : mesh.elements())
+    {
+        FaceContainer faces(element);
+        for (auto face_index : utility::indices(faces))
+        {
+            auto& face_conn = faces[face_index].connectivity();
+            if (std::all_of(
+                  face_conn.begin(),
+                  face_conn.end(),
+                  [&node_set](const LocalIndex& i) -> bool { return node_set.count(i) != 0; }))
+            {
+                faces_in_node_set.push_back({ element.local_index(), face_index });
+            }
+        }
+    }
+    return faces_in_node_set;
+}
 }

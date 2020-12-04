@@ -1,3 +1,5 @@
+#pragma once 
+
 #include "mesh/element/ElementIterator.h"
 
 namespace mesh
@@ -47,9 +49,6 @@ class ElementSubrangeIteratorBase
                                 LocalIndex starting_subrange_index = 0)
       : accessor_(nodes, elements)
     {
-        assert(elements_to_visit != nullptr);
-        assert(n_elements_to_visit != 0);
-
         elements_to_visit_.resize(n_elements_to_visit + 1, 0);
         for (LocalIndex i = 0; i < n_elements_to_visit; i++)
         {

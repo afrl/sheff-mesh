@@ -49,7 +49,12 @@ class ElementAdjacencyList
 
     /// @brief Clears any flags set to skip elements in neighbor searchers from a previous call to
     /// ElementAdjacencyList::skip_in_neighbor_search.
-    inline void clear_skip_flags();
+    void clear_skip_flags();
+
+    inline bool initialized() const
+    {
+        return adjacency_list_.size() > 0 || (mesh_ptr_ && mesh_ptr_->elements().size() == 0);
+    }
 
   private:
     /// @brief A helper struct (nested in ElementAdjacencyList) for storing the adjacency list

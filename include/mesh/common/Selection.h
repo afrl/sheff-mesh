@@ -41,6 +41,14 @@ struct Selection
     //////////////////
 
     Selection() {}
+    Selection(const LocalCriteria& criteria)
+    {
+        add_criteria(criteria);
+    }
+    Selection(const NonLocalCriteria& criteria)
+    {
+        add_criteria(criteria);
+    }
     /// Copy constructor takes the criteria from another Selection object, but the selected objects
     /// will be empty, requiring a call to Selection::run_selection.
     Selection(const Selection& other);
@@ -96,6 +104,7 @@ struct Selection
 struct ElementSelection : public Selection<mesh::ElementConstAccessor>
 {
   public:
+    using Selection::Selection;
     virtual ~ElementSelection() {}
 
     /// A specialization of Selection::run_selection for elements.
@@ -106,6 +115,7 @@ struct ElementSelection : public Selection<mesh::ElementConstAccessor>
 struct NodeSelection : public Selection<mesh::NodeConstAccessor>
 {
   public:
+    using Selection::Selection;
     virtual ~NodeSelection() {}
 
     /// A specialization of Selection::run_selection for nodes.
@@ -147,7 +157,7 @@ inline void Selection<ObjectType>::add_criteria(const NonLocalCriteria& criteria
 template<typename ObjectType>
 inline const std::set<LocalIndex>& Selection<ObjectType>::get_selected_indices() const
 {
-    return selected_objects_;
+    return selected_indices_;
 }
 
 /// @}

@@ -304,7 +304,7 @@ void ElementContainer::clear()
     global_indices_.clear();
     types_.clear();
     connectivities_.clear();
-    connectivity_offsets_.clear();
+    connectivity_offsets_ = { 0 };
     parent_partitions_.clear();
     groups_.clear();
     lcs_.clear();

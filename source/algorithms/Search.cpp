@@ -110,4 +110,16 @@ std::vector<ElementFacePair> find_faces_from_node_set(const Mesh& mesh,
     }
     return faces_in_node_set;
 }
+
+std::pair<bool, LocalIndex> find_element_with_point(const Mesh& mesh, const simple_math::Point x)
+{
+    for (auto& element : mesh.elements())
+    {
+        if (contains_point(element, x))
+        {
+            return { true, element.local_index() };
+        }
+    }
+    return { false, 0 };
+}
 }

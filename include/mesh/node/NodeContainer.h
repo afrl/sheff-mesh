@@ -48,7 +48,7 @@ class NodeContainer
     /// Returns the size of the container, which is the number of nodes on this partition.
     LocalIndex size() const;
 
-    /// Access a particular group by its name
+    /// Access a particular group by its name, creates a new group if none exists by the given name.
     NodeGroup& group(const std::string group_name);
     /// Const access a particular group by its name
     const NodeGroup& group(const std::string group_name) const;
@@ -63,8 +63,8 @@ class NodeContainer
     /// Adds a node to the end of the container.  Assigns the global index of the new node to the
     /// next highest number (on this partition).
     void add(const Point& p);
-    /// Adds a node to the end of the container.  If parent_partitions_ is empty, then the parent partition
-    /// parameter will be ignored.
+    /// Adds a node to the end of the container.  If parent_partitions_ is empty, then the parent
+    /// partition parameter will be ignored.
     void add(const Point& p, GlobalIndex i);
     /// Adds a node to the end of the container.
     void add(const Point& p, GlobalIndex i, PartitionIndex parent_partition);
@@ -114,20 +114,18 @@ class NodeContainer
     friend class NodeConstAccessor;
 
   private:
-    
-
     /// @name Required members
     ///@{
     /// Stores a unique identifier for each node.  The global set of indices is a 0-based,
-    /// continuous range of integers.  In a distributed analysis, multiple partitions may have the same
-    /// node. Expected size: # of nodes on partition.
+    /// continuous range of integers.  In a distributed analysis, multiple partitions may have the
+    /// same node. Expected size: # of nodes on partition.
     std::vector<GlobalIndex> global_indices_;
     /// Stores coordinates of each node in the global coordinate system used for the analysis.
     /// Expected size: 3 * # of nodes on partition.
     std::vector<Point> points_;
-    /// Stores the parent partition of each  node.  Each node is owned by exactly one partition, while
-    /// all nodes on a partition that are not owned are considered ghost nodes.
-    /// Expected size: # of nodes on partition.
+    /// Stores the parent partition of each  node.  Each node is owned by exactly one partition,
+    /// while all nodes on a partition that are not owned are considered ghost nodes. Expected size:
+    /// # of nodes on partition.
     std::vector<PartitionIndex> parent_partitions_;
     ///@}
 

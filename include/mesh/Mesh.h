@@ -64,7 +64,7 @@ class Mesh
     void clear();
 
     Mesh& operator=(const Mesh& other);
-    Mesh& operator=(Mesh&& other);
+    Mesh& operator=(Mesh&& other) noexcept;
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Serailization methods

@@ -62,7 +62,7 @@ class ElementToComponentMap
 
     /// @brief Given an element index, this returns the connectivity of for the element in
     /// terms of how the subcomponent numbers the nodes.
-    utility::Slice<const LocalIndex> get_element_subcomponent_connectivity(
+    utility::Slice<const LocalIndex, ConnIndex> get_element_subcomponent_connectivity(
       const LocalIndex element_index) const;
 
     /// Returns the number of nodes in the subcomponent (fast access)

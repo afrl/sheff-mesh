@@ -31,8 +31,7 @@ class FaceConstAccessor
         return faces_.types_[curr_face_index_];
     }
 
-    /// Returns the ordered local indices of nodes that form the connectivity of the current
-    /// element.
+    /// Returns the ordered local indices of nodes that form the connectivity of the current face.
     inline std::vector<LocalIndex> connectivity() const
     {
         const auto& conn_index_start = faces_.connectivity_offsets_[curr_face_index_];
@@ -44,12 +43,24 @@ class FaceConstAccessor
         auto element_conn = faces_.element_.connectivity();
         for (auto element_conn_index :
              utility::Slice<const mesh::ConnIndex>(&faces_.connectivities_[conn_index_start],
-                                                    conn_size))
+                                                   conn_size))
         {
             conn.push_back(element_conn[element_conn_index]);
         }
 
         return conn;
+    }
+
+    /// Returns a slice of the ordered connectivity of the face with indices relative to the parent
+    /// element's connectivity.
+    inline utility::Slice<const mesh::ConnIndex> element_conn_indices() const
+    {
+        const auto& conn_index_start = faces_.connectivity_offsets_[curr_face_index_];
+        const auto& conn_size =
+          faces_.connectivity_offsets_[curr_face_index_ + 1] - conn_index_start;
+
+        return utility::Slice<const mesh::ConnIndex>(&faces_.connectivities_[conn_index_start],
+                                                     conn_size);
     }
 
     /// Allows const-access to a particular node in the face.
@@ -77,8 +88,7 @@ class FaceConstAccessor
 
     inline bool operator==(const FaceConstAccessor& other) const
     {
-        return &faces_ == &other.faces_ &&
-               curr_face_index_ == other.curr_face_index_;
+        return &faces_ == &other.faces_ && curr_face_index_ == other.curr_face_index_;
     }
 
     /// Allow to iterator accessor to next() and goto() methods

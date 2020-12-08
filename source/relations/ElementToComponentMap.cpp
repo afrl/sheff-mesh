@@ -129,8 +129,8 @@ ElementComponentInfo ElementToComponentMap::get_element_component_info(
              element_to_index_in_subcomponent_map_[element_index] };
 }
 
-utility::Slice<const LocalIndex> ElementToComponentMap::get_element_subcomponent_connectivity(
-  const LocalIndex element_index) const
+utility::Slice<const LocalIndex, ConnIndex>
+ElementToComponentMap::get_element_subcomponent_connectivity(const LocalIndex element_index) const
 {
     // See initialize(), but element_subcomponent_connectivities_ is only filled if the connectivity
     // differs from that in the mesh.
@@ -144,9 +144,9 @@ utility::Slice<const LocalIndex> ElementToComponentMap::get_element_subcomponent
         auto& element_conn_start = connectivity_element_offsets_[element_index];
         auto element_conn_end =
           element_conn_start + mesh_ptr_->elements()[element_index].connectivity().size();
-        return utility::Slice<const LocalIndex>(
+        return utility::Slice<const LocalIndex, ConnIndex>(
           &element_subcomponent_connectivities_[element_conn_start],
-          element_conn_end - element_conn_start);
+          static_cast<ConnIndex>(element_conn_end - element_conn_start));
     }
 }
 

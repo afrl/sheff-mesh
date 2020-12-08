@@ -1,8 +1,7 @@
 #include "mesh/face/FaceHelpers.h"
 
-#include "mesh/face/FaceIterator.h"
 #include "mesh/face/FaceContainer.h"
-
+#include "mesh/face/FaceIterator.h"
 #include "simple_math/Utility.h"
 #include "utility/Hash.h"
 
@@ -35,7 +34,9 @@ double calc_signed_norm_projection(const FaceConstAccessor& face, const Point& x
     const Point centroid       = calc_mean_coordinate(face);
     const Vector3D centroidVec = simple_math::point_as_vector(centroid);
     const Vector3D vec1        = face.node(1).coord() - face.node(0).coord();
-    const Vector3D vec2        = face.node(face.connectivity().size() - 1).coord() - face.node(0).coord();
+    const Vector3D vec2 =
+      face.node(static_cast<ConnIndex>(face.connectivity().size()) - 1).coord() -
+      face.node(0).coord();
     const Vector3D normalVec = vec1.cross(vec2).normalized();
     // Center the point relative to the centroid so we get an accurate measure of direction
     const Vector3D pointCentered = simple_math::point_as_vector(x) - centroidVec;

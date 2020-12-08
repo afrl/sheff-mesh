@@ -3,6 +3,7 @@
 #include "mesh/face/Face.h"
 #include "mesh/surface/Surface.h"
 #include "utility/Hash.h"
+#include "utility/MPIUtils.h"
 
 #include <unordered_map>
 
@@ -51,6 +52,18 @@ std::pair<Point, Point> find_extent(const std::vector<std::pair<Point, Point>>& 
         }
     }
     return { neg_point, pos_point };
+}
+
+std::pair<Point, Point> find_global_extent(const Mesh& mesh)
+{
+    auto local_extent = find_extent(mesh);
+    std::pair<Point, Point> global_extent;
+    for (auto i : utility::range(3))
+    {
+        global_extent.first[i]  = utility::MPIUtils::min_across_ranks(local_extent.first[i]);
+        global_extent.second[i] = utility::MPIUtils::max_across_ranks(local_extent.second[i]);
+    }
+    return global_extent;
 }
 
 MeshSurface extract_boundary(Mesh& mesh, const std::vector<LocalIndex>& elements_to_search)

@@ -60,12 +60,14 @@ class ElementAccessorBase
 
     /// Returns the ordered local indices of nodes that form the connectivity of the current
     /// element.  Note: the (const) slice provides an immutable view of the data.
-    inline utility::Slice<ConnectivityType> connectivity() const
+    inline utility::Slice<ConnectivityType, ConnIndex> connectivity() const
     {
         const auto& conn_index_start = elements_.connectivity_offsets_[curr_index_];
-        const auto& conn_size = elements_.connectivity_offsets_[curr_index_ + 1] - conn_index_start;
-        return utility::Slice<ConnectivityType>(&elements_.connectivities_[conn_index_start],
-                                                conn_size);
+        const auto conn_size         = static_cast<const ConnIndex>(
+          elements_.connectivity_offsets_[curr_index_ + 1] - conn_index_start);
+        return utility::Slice<ConnectivityType, ConnIndex>(
+          &elements_.connectivities_[conn_index_start],
+          conn_size);
     }
 
     /// Allows access to a particular node in the element (node accessor inherits const-ness of the

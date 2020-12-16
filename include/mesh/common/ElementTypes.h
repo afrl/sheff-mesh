@@ -55,7 +55,8 @@ static constexpr ConnIndex MAX_ELEMENT_TYPE_VALUE = 48;
 enum class ElementTypeCategory : int8_t
 {
     SOLID,
-    INTERFACIAL
+    INTERFACIAL,
+    ANY ///< Used an option when indicating which category to work with
 };
 
 /// Returns the category (solid, interfacial, etc.) of the given element type.
@@ -510,8 +511,8 @@ ElementTypeCategory get_category(const ElementType& type)
         case ElementType::T2D3N:
         case ElementType::Q2D4N:
         case ElementType::T2D6N:
-        case ElementType::Q2D8N:
-        case ElementType::POLYGON: return ElementTypeCategory::SOLID;
+        case ElementType::Q2D8N: return ElementTypeCategory::SOLID;
+        case ElementType::POLYGON:
         case ElementType::C2D4N:
         case ElementType::C2D6N: return ElementTypeCategory::INTERFACIAL;
         // 3D

@@ -20,7 +20,9 @@ bool ElementContainer::operator==(const ElementContainer& other) const
     return global_indices_ == other.global_indices_ && types_ == other.types_ &&
            connectivities_ == other.connectivities_ &&
            connectivity_offsets_ == other.connectivity_offsets_ &&
-           parent_partitions_ == other.parent_partitions_ && groups_ == other.groups_ &&
+           parent_partitions_ == other.parent_partitions_ &&
+           component_ids_ == other.component_ids_ &&
+           groups_ == other.groups_ &&
            lcs_ == other.lcs_;
 }
 
@@ -108,17 +110,11 @@ void ElementContainer::add(ElementType type, const std::vector<LocalIndex>& conn
 
 void ElementContainer::add(ElementType type,
                            const std::vector<LocalIndex>& connectivity,
-                           GlobalIndex i)
-{
-    add(type, utility::slice(connectivity), i);
-}
-
-void ElementContainer::add(ElementType type,
-                           const std::vector<LocalIndex>& connectivity,
                            GlobalIndex i,
-                           PartitionIndex parent_partition)
+                           PartitionIndex parent_partition,
+                           ComponentIndex component_index)
 {
-    add(type, utility::slice(connectivity), i, parent_partition);
+    add(type, utility::slice(connectivity), i, parent_partition, component_index);
 }
 
 void ElementContainer::add(ElementType type, const utility::Slice<const LocalIndex>& connectivity)
@@ -130,27 +126,15 @@ void ElementContainer::add(ElementType type, const utility::Slice<const LocalInd
                            std::end(connectivity));
     connectivity_offsets_.push_back(connectivities_.size());
     parent_partitions_.push_back(0);
-    lcs_.push_back(QuaternionContainer());
-}
-
-void ElementContainer::add(ElementType type,
-                           const utility::Slice<const LocalIndex>& connectivity,
-                           GlobalIndex i)
-{
-    global_indices_.push_back(i);
-    types_.push_back(type);
-    connectivities_.insert(std::end(connectivities_),
-                           std::begin(connectivity),
-                           std::end(connectivity));
-    connectivity_offsets_.push_back(connectivities_.size());
-    parent_partitions_.push_back(0);
+    component_ids_.push_back(0);
     lcs_.push_back(QuaternionContainer());
 }
 
 void ElementContainer::add(ElementType type,
                            const utility::Slice<const LocalIndex>& connectivity,
                            GlobalIndex i,
-                           PartitionIndex parent_partition)
+                           PartitionIndex parent_partition,
+                           ComponentIndex component_index)
 {
     global_indices_.push_back(i);
     types_.push_back(type);
@@ -159,6 +143,7 @@ void ElementContainer::add(ElementType type,
                            std::end(connectivity));
     connectivity_offsets_.push_back(connectivities_.size());
     parent_partitions_.push_back(parent_partition);
+    component_ids_.push_back(component_index);
     lcs_.push_back(QuaternionContainer());
 }
 
@@ -173,6 +158,7 @@ ElementAccessor ElementContainer::add_copy(const ElementConstAccessor& other_ele
     lcs_.push_back(QuaternionContainer());
     lcs_.back().copy(other_element.local_coord_sys());
     parent_partitions_.push_back(other_element.parent_partition());
+    component_ids_.push_back(other_element.component_id());
 
     return back();
 }
@@ -221,6 +207,7 @@ void ElementContainer::remove_stable(LocalIndex i)
     global_indices_.erase(global_indices_.begin() + i);
     types_.erase(types_.begin() + i);
     parent_partitions_.erase(parent_partitions_.begin() + i);
+    component_ids_.erase(component_ids_.begin() + i);
     lcs_.erase(lcs_.begin() + i);
 
     auto offset_start = connectivity_offsets_[i];
@@ -250,6 +237,7 @@ void ElementContainer::swap(ElementContainer& other)
     connectivities_.swap(other.connectivities_);
     connectivity_offsets_.swap(other.connectivity_offsets_);
     parent_partitions_.swap(other.parent_partitions_);
+    component_ids_.swap(other.component_ids_);
     groups_.swap(other.groups_);
     lcs_.swap(other.lcs_);
 }
@@ -258,6 +246,7 @@ void ElementContainer::permute(const std::vector<LocalIndex>& backward_permutati
     detail::apply_permutation(global_indices_, backward_permutation_indices);
     detail::apply_permutation(types_, backward_permutation_indices);
     detail::apply_permutation(parent_partitions_, backward_permutation_indices);
+    detail::apply_permutation(component_ids_, backward_permutation_indices);
 
     // Connectivities have to be permuted specially
     std::vector<LocalIndex> new_connectivities;
@@ -306,6 +295,7 @@ void ElementContainer::clear()
     connectivities_.clear();
     connectivity_offsets_ = { 0 };
     parent_partitions_.clear();
+    component_ids_.clear();
     groups_.clear();
     lcs_.clear();
 }

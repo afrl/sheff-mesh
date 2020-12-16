@@ -73,23 +73,21 @@ class ElementContainer
     /// Adds an element to the end of the container.  Assigns the global index of the new node to
     /// the next highest number (on this rank).
     void add(ElementType type, const std::vector<LocalIndex>& connectivity);
-    /// Adds an element to the end of the container.  Assigns parent partition to 0.
-    void add(ElementType type, const std::vector<LocalIndex>& connectivity, GlobalIndex i);
-    /// Adds an element to the end of the container.
+    /// Adds an element to the end of the container with a specified global index.
     void add(ElementType type,
              const std::vector<LocalIndex>& connectivity,
              GlobalIndex i,
-             PartitionIndex parent_partition);
+             PartitionIndex parent_partition = 0,
+             ComponentIndex component_index  = 0);
     /// Adds an element to the end of the container.  Assigns the global index of the new node to
     /// the next highest number (on this partition).
     void add(ElementType type, const utility::Slice<const LocalIndex>& connectivity);
-    /// Adds an element to the end of the container.  Assigns parent partition to 0.
-    void add(ElementType type, const utility::Slice<const LocalIndex>& connectivity, GlobalIndex i);
-    /// Adds an element to the end of the container.
+    /// Adds an element to the end of the container with a specified global index.
     void add(ElementType type,
              const utility::Slice<const LocalIndex>& connectivity,
              GlobalIndex i,
-             PartitionIndex parent_partition);
+             PartitionIndex parent_partition = 0,
+             ComponentIndex component_index = 0);
 
     /// Adds an element that is a copy of another element.
     ElementAccessor add_copy(const ElementConstAccessor& other_element);
@@ -134,7 +132,8 @@ class ElementContainer
           utility::named_value("n_connectivity_entries", connectivities_.size()),
           utility::named_value("connectivities", utility::slice(connectivities_)),
           utility::named_value("connectivity_offsets", utility::slice(connectivity_offsets_)),
-          utility::named_value("parent_partitions", utility::slice(parent_partitions_)));
+          utility::named_value("parent_partitions", utility::slice(parent_partitions_)),
+          utility::named_value("component_indices", utility::slice(component_ids_)));
 
         s(utility::named_value("has_lcs", lcs_.size() > 0));
         if (lcs_.size() > 0)
@@ -161,7 +160,10 @@ class ElementContainer
 
         parent_partitions_.resize(n_elements);
         s(utility::slice(parent_partitions_));
-        
+
+        component_ids_.resize(n_elements);
+        s(utility::slice(component_ids_));
+
         bool has_lcs;
         s(has_lcs);
         if (has_lcs)
@@ -203,6 +205,10 @@ class ElementContainer
     /// elements.  During meshing, the parent partitions are not determined, so ths vector may be
     /// empty. Expected size: # of elements on partition.
     std::vector<PartitionIndex> parent_partitions_;
+    /// Stores a 0-based index of the component that each element belongs to.  Each element belongs
+    /// to exactly one component.  The components are rarely used except during visualization and
+    /// crack growth.  Expected size: # of elements on partition.
+    std::vector<ComponentIndex> component_ids_;
     ///@}
 
     /// @name Group members
@@ -222,11 +228,6 @@ class ElementContainer
     /// own local coordinate system definition, and this vector will be empty.
     /// Expected size: # of elements on partition.
     std::vector<mesh::QuaternionContainer> lcs_;
-    /// Contains information pertaining to fields and enrichments during a finite element analysis.
-    /// During meshing or visualizing the geometry, this vector will be empty.  Note that each
-    /// object will be a polymorphic type deriving from FieldLayout. Expected size: # of elements on
-    /// partition.
-    // std::vector<std::unique_ptr<FieldLayoutBase>> field_layouts_;
     ///@}
 };
 

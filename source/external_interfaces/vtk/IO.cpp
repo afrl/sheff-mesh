@@ -129,6 +129,13 @@ void write_vtk(Mesh& mesh,
         fout << element.parent_partition() << std::endl;
     }
 
+    fout << "SCALARS ComponentIDs int 1\n";
+    fout << "LOOKUP_TABLE default\n";
+    for (auto& element : mesh.elements())
+    {
+        fout << element.component_id() << std::endl;
+    }
+
     if (!element_data.empty())
     {
         if (element_data.size() != mesh.elements().size())

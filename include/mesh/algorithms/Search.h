@@ -15,10 +15,14 @@ std::pair<Point, Point> find_extent(const Mesh& mesh);
 /// @brief Returns the extent of multiple extents.
 std::pair<Point, Point> find_extent(const std::vector<std::pair<Point, Point>>& extents);
 
-/// @brief Finds global extent of the mesh (most negative and positive point forming the bounding box of
-/// the mesh) taking into considering that the mesh may be distributed across ranks.
+/// @brief Finds global extent of the mesh (most negative and positive point forming the bounding
+/// box of the mesh) taking into considering that the mesh may be distributed across ranks.
 /// @returns A pair of points with most negative point being first and most positive being second.
 std::pair<Point, Point> find_global_extent(const Mesh& mesh);
+
+/// @brief Finds the maximum component ID in the mesh taking into considering that the mesh may be
+/// distributed across ranks.
+ComponentIndex find_global_max_component_id(const Mesh& mesh);
 
 /// @brief TODO write doc string
 /// @param mesh

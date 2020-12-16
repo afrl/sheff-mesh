@@ -8,6 +8,10 @@ namespace mesh
 {
 void partition_metis(Mesh& mesh, const PartitionIndex n_parts)
 {
+    _UTIL_ASSERT(
+      mesh.partition_id() == std::numeric_limits<PartitionIndex>::max(),
+      "The mesh instance must contain the entire global mesh for the partition algorithm.");
+
     if (n_parts > 1)
     {
         // METIS input parameters
@@ -47,7 +51,8 @@ void partition_metis(Mesh& mesh, const PartitionIndex n_parts)
         // Set node partitions
         for (auto& node : mesh.nodes())
         {
-            node.parent_partition() = static_cast<PartitionIndex>(node_partitions[node.global_index()]);
+            node.parent_partition() =
+              static_cast<PartitionIndex>(node_partitions[node.global_index()]);
         }
         // Set element partitions
         for (auto& element : mesh.elements())
@@ -56,7 +61,9 @@ void partition_metis(Mesh& mesh, const PartitionIndex n_parts)
               static_cast<PartitionIndex>(element_partitions[element.global_index()]);
         }
 
-        // Note: we should not change the global numbers of the nodes or elements
+        mesh.n_partitions() = n_parts;
+
+        // Note: we should not change the global indices of the nodes or elements
     }
     else
     {
@@ -68,12 +75,16 @@ void partition_metis(Mesh& mesh, const PartitionIndex n_parts)
         {
             element.parent_partition() = 0;
         }
+
+        mesh.n_partitions() = n_parts;
     }
 }
 
 Mesh extract_partition_mesh(const Mesh& mesh, const PartitionIndex partition)
 {
     Mesh mesh_part;
+    mesh_part.n_partitions() = mesh.n_partitions();
+    mesh_part.partition_id() = partition;
 
     ElementAdjacencyList adjacency;
     adjacency.update(mesh);
@@ -94,7 +105,8 @@ Mesh extract_partition_mesh(const Mesh& mesh, const PartitionIndex partition)
     }
 
     mesh_part.copy(mesh, elements_to_keep);
-    mesh_part.sort(partition);
+
+    mesh_part.sort();
 
     return std::move(mesh_part);
 }

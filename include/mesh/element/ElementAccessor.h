@@ -103,8 +103,13 @@ class ElementAccessorBase
     /// Returns the partition that owns this element.
     inline auto& parent_partition() const
     {
-        assert(!elements_.parent_partitions_.empty());
         return elements_.parent_partitions_[curr_index_];
+    }
+
+    /// Returns the component that this element belongs to.
+    inline auto& component_id() const
+    {
+        return elements_.component_ids_[curr_index_];
     }
 
     /// Returns the object that contains the local coordinate systems throughout the elemetn.

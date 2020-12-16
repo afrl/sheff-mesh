@@ -72,6 +72,8 @@ LocalIndex MeshSurface::size() const
 Mesh MeshSurface::mesh()
 {
     Mesh mesh;
+    mesh.n_partitions()      = volume_mesh_.n_partitions();
+    mesh.partition_id()      = volume_mesh_.partition_id();
 
     LocalIndex count = 0;
     std::vector<LocalIndex> mesh_to_surf_node_map(volume_mesh_.nodes().size(),
@@ -107,7 +109,7 @@ void MeshSurface::add(const FaceConstAccessor& face)
 {
     types_.push_back(element_equivalent_for_face(face.type()));
     auto flip_permute = flip_conn_permute(face.type());
-    auto conn = face.connectivity();
+    auto conn         = face.connectivity();
     for (auto& i : flip_permute)
     {
         connectivities_.push_back(conn[i]);
@@ -145,7 +147,8 @@ MeshSurface MeshSurface::operator-(const MeshSurface& other) const
     }
 
     MeshSurface diff(volume_mesh_);
-    for (auto& p : hash_to_this_surf_elem_map) {
+    for (auto& p : hash_to_this_surf_elem_map)
+    {
         auto& surf_elem_to_copy = (*this)[p.second];
         diff.add(surf_elem_to_copy.type(), surf_elem_to_copy.connectivity());
     }

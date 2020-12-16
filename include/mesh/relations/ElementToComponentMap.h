@@ -20,17 +20,8 @@ class ElementToComponentMap
   public:
     ElementToComponentMap();
 
-    /// @brief Sizes the maps and assigns every element to component 0.
-    void initialize(const Mesh& mesh);
-
-    /// @brief Sizes the maps, assigns each element in the given element groups to the indicated
-    /// component, and assigns any remaining elements to component 0.
-    /// @param mesh - the mesh to store component assignments for
-    /// @param group_component_assignments - pairs of element group names and the component to which
-    ///        the elements in the group should be assigned
-    void initialize(
-      const Mesh& mesh,
-      const std::vector<std::pair<std::string, ComponentIndex>>& group_component_assignments);
+    /// @brief Initializes the maps
+    void update(const Mesh& mesh);
 
     /// @brief Returns the list of indices of elements are part of the given component.
     /// The elements essentially compose the subcomponent corresponding to the given component in
@@ -116,6 +107,7 @@ class ElementToComponentMap
     // We need to know the subcomponent index for each component and the subcomponent numbering for
     // each element.  Size: # of subcomponents
     std::vector<ComponentIndex> subcomponent_to_component_map_;
+    // A map from the element local index to the subcomponent index that contains the element.
     // Important note: essential piece of data
     // Size: # of elements in mesh
     std::vector<ComponentIndex> element_to_subcomponent_map_;

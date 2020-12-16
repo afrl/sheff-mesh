@@ -7,59 +7,30 @@ ElementToComponentMap::ElementToComponentMap()
 {
 }
 
-void ElementToComponentMap::initialize(const Mesh& mesh)
+void ElementToComponentMap::update(const Mesh& mesh)
 {
     mesh_ptr_ = &mesh;
 
-    subcomponent_to_component_map_ = { 0 };
-    element_to_subcomponent_map_.resize(mesh.elements().size());
-    for (auto& i : element_to_subcomponent_map_)
+    std::set<ComponentIndex> component_ids_set;
+    for (auto& element : mesh.elements())
     {
-        i = 0;
-    }
-    element_to_index_in_subcomponent_map_.resize(mesh.elements().size());
-    std::iota(element_to_index_in_subcomponent_map_.begin(),
-              element_to_index_in_subcomponent_map_.end(),
-              0);
-
-    build_maps_from_component_assignments();
-}
-
-void ElementToComponentMap::initialize(
-  const Mesh& mesh,
-  const std::vector<std::pair<std::string, ComponentIndex>>& group_component_assignments)
-{
-    mesh_ptr_ = &mesh;
-
-    element_to_subcomponent_map_.resize(mesh.elements().size());
-    for (auto& i : element_to_subcomponent_map_)
-    {
-        i = 0;
+        component_ids_set.insert(element.component_id());
     }
 
-    // Update element_to_subcomponent_map_ and subcomponent_to_component_map_
-    std::map<ComponentIndex, ComponentIndex> component_to_subcomponent_map;
     subcomponent_to_component_map_.clear();
-    for (auto& p : group_component_assignments)
+    ComponentIndex subcomponent_index = 0;
+    std::map<ComponentIndex, ComponentIndex> component_to_subcomponent_map;
+    for (auto& component_id : component_ids_set)
     {
-        ComponentIndex subcomponent_index;
-        auto find_iter = component_to_subcomponent_map.find(p.second);
-        if (find_iter == component_to_subcomponent_map.end())
-        {
-            subcomponent_index = static_cast<ComponentIndex>(component_to_subcomponent_map.size());
-            component_to_subcomponent_map[p.second] = subcomponent_index;
-            subcomponent_to_component_map_.push_back(p.second);
-        }
-        else
-        {
-            subcomponent_index = find_iter->second;
-        }
+        subcomponent_to_component_map_[subcomponent_index] = component_id;
+        component_to_subcomponent_map[component_id]        = subcomponent_index;
+    }
 
-        auto& group = mesh.elements().group(p.first);
-        for (auto& element_index : group.element_indices)
-        {
-            element_to_subcomponent_map_[element_index] = subcomponent_index;
-        }
+    element_to_subcomponent_map_.resize(mesh.elements().size());
+    for (auto& element : mesh.elements())
+    {
+        element_to_subcomponent_map_[element.local_index()] =
+          component_to_subcomponent_map[element.component_id()];
     }
 
     build_maps_from_component_assignments();

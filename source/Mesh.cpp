@@ -1,28 +1,82 @@
 #include "mesh/Mesh.h"
 
 #include "mesh/common/Permutation.h"
+#include "utility/MPIUtils.h"
 
 #include <unordered_map>
 
 namespace mesh
 {
 Mesh::Mesh()
-  : nodes_()
+  : n_partitions_(1)
+  , this_partition_id_(std::numeric_limits<PartitionIndex>::max())
+  , nodes_()
   , elements_(nodes_)
 {
 }
 
 Mesh::Mesh(Mesh&& other) noexcept
-  : nodes_()
-  , elements_(nodes_)
+  : Mesh()
 {
+    std::swap(n_partitions_, other.n_partitions_);
+    std::swap(this_partition_id_, other.this_partition_id_);
     nodes_.swap(other.nodes_);
     elements_.swap(other.elements_);
 }
 
 bool Mesh::operator==(const Mesh& other) const
 {
-    return nodes_ == other.nodes_ && elements_ == other.elements_;
+    return n_partitions_ == other.n_partitions_ &&
+           this_partition_id_ == other.this_partition_id_ && nodes_ == other.nodes_ &&
+           elements_ == other.elements_;
+}
+
+bool Mesh::contains_all_partitions() const
+{
+    return this_partition_id_ == std::numeric_limits<PartitionIndex>::max();
+}
+
+const PartitionIndex& Mesh::partition_id() const
+{
+    return this_partition_id_;
+}
+
+const PartitionIndex& Mesh::n_partitions() const
+{
+    return n_partitions_;
+}
+
+void Mesh::copy(const Mesh& other, const std::vector<LocalIndex> element_indices_to_copy)
+{
+    // Determine which nodes should be kept
+    std::set<LocalIndex> node_indices_to_copy;
+    for (auto& element_index : element_indices_to_copy)
+    {
+        for (auto& node : other.elements()[element_index].nodes())
+        {
+            node_indices_to_copy.insert(node.local_index());
+        }
+    }
+
+    std::unordered_map<LocalIndex, LocalIndex> other_to_this_node_index_map;
+    for (auto i : node_indices_to_copy)
+    {
+        auto other_node      = other.nodes()[i];
+        simple_math::Point p = { other_node.x(), other_node.y(), other_node.z() };
+        nodes_.add(p, other_node.global_index(), other_node.parent_partition());
+        other_to_this_node_index_map[other_node.local_index()] = nodes_.size() - 1;
+    }
+
+    for (auto i : element_indices_to_copy)
+    {
+        auto new_element = elements_.add_copy(other.elements()[i]);
+
+        // Remap connectivity to the indices used in this mesh
+        for (auto& c : new_element.connectivity())
+        {
+            c = other_to_this_node_index_map[c];
+        }
+    }
 }
 
 void Mesh::copy(const Mesh& other, const std::set<LocalIndex> element_indices_to_copy)
@@ -80,7 +134,7 @@ void Mesh::copy(const Mesh& other)
     }
 }
 
-void Mesh::sort(const PartitionIndex this_partition)
+void Mesh::sort()
 {
     // Local variables to bind in lambdas
     auto& nodes    = nodes_;
@@ -100,7 +154,11 @@ void Mesh::sort(const PartitionIndex this_partition)
     nodes.permute(backward_node_permutation);
     elements.permute_connectivity(detail::get_inverse_map(backward_node_permutation));
 
-
+    PartitionIndex this_partition = this_partition_id_;
+    if (contains_all_partitions())
+    {
+        this_partition = 0;
+    }
     std::vector<LocalIndex> backward_element_permutation(elements_.size());
     std::iota(backward_element_permutation.begin(), backward_element_permutation.end(), 0);
     std::sort(backward_element_permutation.begin(),
@@ -128,7 +186,10 @@ void Mesh::sort(const PartitionIndex this_partition)
     elements.permute(backward_element_permutation);
 }
 
-void Mesh::clear() {
+void Mesh::clear()
+{
+    n_partitions_      = 1;
+    this_partition_id_ = 0;
     nodes_.clear();
     elements_.clear();
 }
@@ -146,5 +207,16 @@ Mesh& Mesh::operator=(Mesh&& other) noexcept
     elements_.swap(other.elements_);
     return *this;
 }
+
+PartitionIndex& Mesh::n_partitions()
+{
+    return n_partitions_;
+}
+
+PartitionIndex& Mesh::partition_id()
+{
+    return this_partition_id_;
+}
+
 
 }

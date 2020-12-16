@@ -66,6 +66,19 @@ std::pair<Point, Point> find_global_extent(const Mesh& mesh)
     return global_extent;
 }
 
+ComponentIndex find_global_max_component_id(const Mesh& mesh)
+{
+    mesh::ComponentIndex curr_max_id = 0;
+    for (auto& element : mesh.elements())
+    {
+        if (element.component_id() > curr_max_id)
+        {
+            curr_max_id = element.component_id();
+        }
+    }
+    return utility::MPIUtils::max_across_ranks(curr_max_id);
+}
+
 MeshSurface extract_boundary(Mesh& mesh, const std::vector<LocalIndex>& elements_to_search)
 {
     // A map from the face hash to the pair of (element index, face index) for all unmatched faces.

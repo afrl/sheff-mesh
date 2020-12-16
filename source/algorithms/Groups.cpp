@@ -1,4 +1,4 @@
-#include "Groups.h"
+#include "mesh/algorithms/Groups.h"
 
 namespace mesh
 {

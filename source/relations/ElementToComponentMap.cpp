@@ -18,6 +18,7 @@ void ElementToComponentMap::update(const Mesh& mesh)
     }
 
     subcomponent_to_component_map_.clear();
+    subcomponent_to_component_map_.resize(component_ids_set.size());
     ComponentIndex subcomponent_index = 0;
     std::map<ComponentIndex, ComponentIndex> component_to_subcomponent_map;
     for (auto& component_id : component_ids_set)
@@ -105,7 +106,7 @@ ElementToComponentMap::get_element_subcomponent_connectivity(const LocalIndex el
 {
     // See initialize(), but element_subcomponent_connectivities_ is only filled if the connectivity
     // differs from that in the mesh.
-    if (element_subcomponent_connectivities_.size())
+    if (element_subcomponent_connectivities_.empty())
     {
         return mesh_ptr_->elements()[element_index].connectivity();
     }

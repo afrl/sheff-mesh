@@ -524,8 +524,9 @@ Mesh read_fea_io_from_meta(const std::string& meta_filepath,
     auto& analysis_meta_info = meta_reader.get_analysis_meta();
     auto mesh_relative_path =
       analysis_meta_info.input_info.levels_of_detail[0].mesh_objects[0].mesh_path;
+    auto mesh_path = (fs::path(meta_filepath).parent_path() / mesh_relative_path).generic_string();
 
-    Mesh mesh = read_fea_io(mesh_relative_path, partition_id);
+    Mesh mesh = read_fea_io(mesh_path, partition_id);
 
     for (auto group_relative_path :
          analysis_meta_info.input_info.levels_of_detail[0].mesh_objects[0].group_paths)

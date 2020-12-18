@@ -47,7 +47,9 @@ Mesh make_linear_grid(const std::vector<double>& x_coordinates,
     return extrude_2D_mesh(mesh_2D, z_coordinates);
 }
 
-Mesh make_linear_grid(const Point& min, const Point& max, const std::array<int, 3>& n_elements)
+Mesh make_uniform_linear_grid(const Point& min,
+                              const Point& max,
+                              const std::array<int, 3>& n_elements)
 {
     auto x_coords = simple_math::linspace(min[0], max[0], n_elements[0]);
     auto y_coords = simple_math::linspace(min[1], max[1], n_elements[1]);

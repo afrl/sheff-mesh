@@ -1,6 +1,7 @@
 #include "mesh/algorithms/Creation.h"
 
 #include "mesh/algorithms/Extrusion.h"
+#include "simple_math/Utility.h"
 
 namespace mesh
 {
@@ -44,6 +45,15 @@ Mesh make_linear_grid(const std::vector<double>& x_coordinates,
 {
     auto mesh_2D = make_linear_grid(x_coordinates, y_coordinates);
     return extrude_2D_mesh(mesh_2D, z_coordinates);
+}
+
+Mesh make_linear_grid(const Point& min, const Point& max, const std::array<int, 3>& n_elements)
+{
+    auto x_coords = simple_math::linspace(min[0], max[0], n_elements[0]);
+    auto y_coords = simple_math::linspace(min[1], max[1], n_elements[1]);
+    auto z_coords = simple_math::linspace(min[2], max[2], n_elements[2]);
+
+    return make_linear_grid(x_coords, y_coords, z_coords);
 }
 
 Mesh make_quadratic_grid(const std::vector<double>& x_coordinates,

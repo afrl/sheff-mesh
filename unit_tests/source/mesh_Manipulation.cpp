@@ -43,11 +43,11 @@ int main()
 
     convert_to_quadratic(tet);
 
-    assert(tri.elements()[0].type() == ElementType::T3D10N);
-    assert(tri.elements()[0].connectivity()[0] == 0);
-    assert(tri.elements()[0].connectivity()[1] == 1);
-    assert(tri.elements()[0].connectivity()[2] == 2);
-    assert(tri.elements()[0].connectivity()[3] == 3);
+    assert(tet.elements()[0].type() == ElementType::T3D10N);
+    assert(tet.elements()[0].connectivity()[0] == 0);
+    assert(tet.elements()[0].connectivity()[1] == 1);
+    assert(tet.elements()[0].connectivity()[2] == 2);
+    assert(tet.elements()[0].connectivity()[3] == 3);
 
     write_vtk(tet, "quadratic_tet.vtk", false);
 

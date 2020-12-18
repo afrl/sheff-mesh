@@ -1,11 +1,14 @@
 #include "mesh/algorithms/Creation.h"
 #include "mesh/algorithms/IO.h"
 #include "mesh/algorithms/Partitioning.h"
+#include "utility/MPIUtils.h"
 
 using namespace mesh;
 
-int main()
+int main(int argc, char** argv)
 {
+    utility::MPIUtils::init(&argc, &argv);
+
     std::vector<double> coordinates(5);
     std::iota(coordinates.begin(), coordinates.end(), 0.0);
 

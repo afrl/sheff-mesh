@@ -15,6 +15,12 @@ Mesh::Mesh()
 {
 }
 
+Mesh::Mesh(const Mesh& other)
+  : Mesh()
+{
+    copy(other);
+}
+
 Mesh::Mesh(Mesh&& other) noexcept
   : Mesh()
 {
@@ -26,9 +32,8 @@ Mesh::Mesh(Mesh&& other) noexcept
 
 bool Mesh::operator==(const Mesh& other) const
 {
-    return n_partitions_ == other.n_partitions_ &&
-           this_partition_id_ == other.this_partition_id_ && nodes_ == other.nodes_ &&
-           elements_ == other.elements_;
+    return n_partitions_ == other.n_partitions_ && this_partition_id_ == other.this_partition_id_ &&
+           nodes_ == other.nodes_ && elements_ == other.elements_;
 }
 
 bool Mesh::contains_all_partitions() const

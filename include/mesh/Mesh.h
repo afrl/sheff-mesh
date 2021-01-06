@@ -15,6 +15,7 @@ class Mesh
 {
   public:
     Mesh();
+    Mesh(const Mesh& other);
     /// @brief Move constructor (swaps with other)
     Mesh(Mesh&& other) noexcept;
 

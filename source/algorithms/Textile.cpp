@@ -1,6 +1,7 @@
 #include "mesh/algorithms/Textile.h"
 
 #include "mesh/algorithms/IO.h"
+#include "mesh/algorithms/Manipulation.h"
 #include "mesh/algorithms/Search.h"
 #include "mesh/relations/NodeToElementMap.h"
 #include "second_party_mesh/triangle/triangle.h"
@@ -365,24 +366,12 @@ void remove_short_segments(VTMSTowMesh& tow_surface, const double factor)
     }                 // End scope that removes segements
 
     // Remove the nodes that were merged into others
-    LocalIndex nodes_removed_count = 0;
-    std::vector<LocalIndex> old_to_new_node_index_map(tow_surface.mesh.nodes().size());
-    std::iota(old_to_new_node_index_map.begin(), old_to_new_node_index_map.end(), 0);
-    auto curr_map_index = 0;
-    for (auto& replace_pair : node_replacements)
+    std::vector<std::pair<LocalIndex, LocalIndex>> combinations;
+    for (auto& combination : node_replacements)
     {
-        while (curr_map_index != replace_pair.first)
-        {
-            old_to_new_node_index_map[curr_map_index++] -= nodes_removed_count;
-        }
-        tow_surface.mesh.nodes().remove_stable(replace_pair.first - nodes_removed_count++);
-        old_to_new_node_index_map[curr_map_index++] = replace_pair.second;
+        combinations.push_back({ combination.first, combination.second });
     }
-    for (auto i = curr_map_index; i < old_to_new_node_index_map.size(); i++)
-    {
-        old_to_new_node_index_map[i] -= nodes_removed_count;
-    }
-    tow_surface.mesh.elements().permute_connectivity(old_to_new_node_index_map);
+    combine_nodes(tow_surface.mesh, combinations);
 
     // Remove the elements that only have 2 nodes (too many edges were collapsed)
     LocalIndex elements_removed_count = 0;
@@ -422,8 +411,8 @@ void refine_polygon_segments(VTMSTowMesh& tow_surface, double length_max)
     for (auto& element : tow_surface.mesh.elements())
     {
         // Loop over the edges and check if one is too long, which would need to be refined
-        auto segments = polygon_segments(element);
-        auto n_segments = segments.size();
+        auto segments      = polygon_segments(element);
+        auto n_segments    = segments.size();
         auto segment_index = 0;
         while (segment_index < n_segments)
         {
@@ -522,8 +511,8 @@ void refine_polygon_segments(VTMSTowMesh& tow_surface, double length_max)
             {
                 segment_index++;
             }
-        }     // End loop over edges
-    }         // End loop over elements
+        } // End loop over edges
+    }     // End loop over elements
 } // End refine_polygon_segments
 
 /// @brief TODO
@@ -1033,7 +1022,7 @@ Mesh create_triangular_matrix_box(const Point& n,
         // Refine to ensure segments are within two std devs of the mean
         refine_polygon_segments(tmp_vtms_obj, target_segment_length);
 
-        //write_vtk(tmp_vtms_obj.mesh, "surface_post_refine_polygon_segments.vtk");
+        // write_vtk(tmp_vtms_obj.mesh, "surface_post_refine_polygon_segments.vtk");
 
         submesh_polygons(tmp_vtms_obj, 0.5 * target_segment_length * target_segment_length);
 

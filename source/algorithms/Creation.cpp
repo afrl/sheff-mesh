@@ -1,10 +1,114 @@
 #include "mesh/algorithms/Creation.h"
 
 #include "mesh/algorithms/Extrusion.h"
+#include "mesh/algorithms/IO.h"
+#include "mesh/algorithms/Manipulation.h"
+#include "mesh/algorithms/Search.h"
+#include "mesh/algorithms/Transformation.h"
 #include "simple_math/Utility.h"
 
 namespace mesh
 {
+//////////////////////////////////////////////////////////////////////////////////////////////////
+// Helpers
+
+/// @brief Creates a small block of mixed elements with all quarilateral faces on the outside.
+///
+/// It is composed of 10 pyramid, 4 tetrahedron, and 2 wedge elements.
+///             ^ z
+///             |
+///            4O-----------O7
+///            /|          /|
+///           / |         / | (block of pyramids and 2 tets)
+///         5O-----------O6 |
+///         /|  |    X8 /|  |
+///        / | 0X------/-|--O3 --> y
+///     11O-----------O12| /
+///      /|  |/      /|  |/   (middle layer is wedges)
+///     / | 1X------/-|--O2
+///  15O-----------O16| /
+///    |  |/    X17|  |/
+///    | 9X--------|--O10
+///    | /         | /
+///    |/          |/  (block of pyramids and 2 tets)
+///  13O-----------O14
+///      /
+///     x
+/// Diagonal connecting 0 to 6
+/// Diagonal connecting 9 to 12
+static Mesh make_mixed_element_block()
+{
+    Mesh block;
+    block.nodes().add({ 0, 0, 0 });       // 0
+    block.nodes().add({ 1, 0, 0 });       // 1
+    block.nodes().add({ 1, 1, 0 });       // 2
+    block.nodes().add({ 0, 1, 0 });       // 3
+    block.nodes().add({ 0, 0, 1 });       // 4
+    block.nodes().add({ 1, 0, 1 });       // 5
+    block.nodes().add({ 1, 1, 1 });       // 6
+    block.nodes().add({ 0, 1, 1 });       // 7
+    block.nodes().add({ 0.5, 0.5, 0.5 }); // 8
+    block.nodes().add({ 2, 0, 0 });       // 9
+    block.nodes().add({ 2, 1, 0 });       // 10
+    block.nodes().add({ 2, 0, 1 });       // 11
+    block.nodes().add({ 2, 1, 1 });       // 12
+    block.nodes().add({ 3, 0, 0 });       // 13
+    block.nodes().add({ 3, 1, 0 });       // 14
+    block.nodes().add({ 3, 0, 1 });       // 15
+    block.nodes().add({ 3, 1, 1 });       // 16
+    block.nodes().add({ 2.5, 0.5, 0.5 }); // 17
+
+    block.elements().add(ElementType::P3D5N, { 0, 1, 2, 3, 8 });
+    block.elements().add(ElementType::P3D5N, { 2, 6, 7, 3, 8 });
+    block.elements().add(ElementType::P3D5N, { 6, 5, 4, 7, 8 });
+    block.elements().add(ElementType::P3D5N, { 0, 4, 5, 1, 8 });
+    block.elements().add(ElementType::P3D5N, { 0, 3, 7, 4, 8 });
+    block.elements().add(ElementType::T3D4N, { 1, 5, 6, 8 });
+    block.elements().add(ElementType::T3D4N, { 1, 6, 2, 8 });
+    block.elements().add(ElementType::W3D6N, { 1, 6, 5, 9, 12, 11 });
+    block.elements().add(ElementType::W3D6N, { 1, 2, 6, 9, 10, 12 });
+    block.elements().add(ElementType::T3D4N, { 9, 10, 12, 17 });
+    block.elements().add(ElementType::T3D4N, { 12, 11, 9, 17 });
+    block.elements().add(ElementType::P3D5N, { 9, 11, 15, 13, 17 });
+    block.elements().add(ElementType::P3D5N, { 13, 15, 16, 14, 17 });
+    block.elements().add(ElementType::P3D5N, { 10, 14, 16, 12, 17 });
+    block.elements().add(ElementType::P3D5N, { 9, 13, 14, 10, 17 });
+    block.elements().add(ElementType::P3D5N, { 11, 12, 16, 15, 17 });
+
+    write_vtk(block, "test.vtk", false);
+
+    return block;
+};
+
+/// @brief Creates a 3x3x3 block of mixed elements
+static Mesh make_super_mixed_element_block()
+{
+    auto hex_3_stack   = make_uniform_linear_grid({ 0, 0, 0 }, { 3, 1, 1 }, { 3, 1, 1 });
+    auto mixed_3_stack = make_mixed_element_block();
+
+    Mesh mixed_grid;
+    // Layer 0
+    mixed_grid.copy(mixed_3_stack);
+    mixed_grid.copy(translate(hex_3_stack, { 0, 1, 0 }));
+    mixed_grid.copy(translate(mixed_3_stack, { 0, 2, 0 }));
+    // Layer 1
+    mixed_grid.copy(translate(hex_3_stack, { 0, -1, 1 }));
+    mixed_grid.copy(translate(mixed_3_stack, { 0, -1, 1 }));
+    mixed_grid.copy(translate(hex_3_stack, { 0, 2, 0 }));
+    // Layer 2
+    mixed_grid.copy(translate(mixed_3_stack, { 0, -1, 1 }));
+    mixed_grid.copy(translate(hex_3_stack, { 0, -1, 1 }));
+    mixed_grid.copy(translate(mixed_3_stack, { 0, 2, 0 }));
+
+    remove_duplicate_nodes(mixed_grid);
+    write_vtk(mixed_grid, "test2.vtk", false);
+
+    return mixed_grid;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+// Definitions for signatures in header
+
 Mesh make_linear_grid(const std::vector<double>& x_coordinates,
                       const std::vector<double>& y_coordinates)
 {
@@ -62,7 +166,7 @@ Mesh make_quadratic_grid(const std::vector<double>& x_coordinates,
                          const std::vector<double>& y_coordinates)
 {
     Mesh mesh;
-    
+
     throw _UTIL_MSG_EXCEPT("TODO swap order of x and y to preserve +z normals.");
 
     // Create nodes
@@ -114,7 +218,51 @@ Mesh make_quadratic_grid(const std::vector<double>& x_coordinates,
             mesh.elements().add(ElementType::Q2D8N, elem_connectivity);
         }
     }
-    
+
     return mesh;
+}
+
+Mesh make_mixed_element_grid(const Point& min,
+                             const Point& max,
+                             const std::array<uint32_t, 3>& n_blocks_along_axes)
+{
+    Mesh mixed_grid;
+    auto mixed_element_block = make_super_mixed_element_block();
+    auto i_vec               = simple_math::Vector3D(3, 0, 0);
+    auto j_vec               = simple_math::Vector3D(0, 3, 0);
+    auto k_vec               = simple_math::Vector3D(0, 0, 3);
+    for (auto i : utility::range(n_blocks_along_axes[0]))
+    {
+        for (auto j : utility::range(n_blocks_along_axes[1]))
+        {
+            for (auto k : utility::range(n_blocks_along_axes[2]))
+            {
+                auto t = i * i_vec + j * j_vec + k * k_vec;
+                mixed_grid.copy(translate(Mesh(mixed_element_block), simple_math::to_point(t)));
+            }
+        }
+    }
+
+    remove_duplicate_nodes(mixed_grid);
+
+    for (auto& node : mixed_grid.nodes())
+    {
+        node.global_index() = node.local_index();
+    }
+    for (auto& element : mixed_grid.elements())
+    {
+        element.global_index() = element.local_index();
+    }
+
+    auto extent = find_extent(mixed_grid);
+    std::array<double, 3> scale_factors;
+    for (auto i : utility::range(3))
+    {
+        scale_factors[i] = (max[i] - min[i]) / (extent.second[i] - extent.first[i]);
+    }
+    scale(mixed_grid, scale_factors);
+    translate(mixed_grid, min);
+
+    return mixed_grid;
 }
 }

@@ -26,6 +26,10 @@ ComponentIndex find_global_max_component_id(const Mesh& mesh);
 
 /// @brief TODO write doc string
 /// @param mesh
+MeshSurface extract_boundary(Mesh& mesh);
+
+/// @brief TODO write doc string
+/// @param mesh
 /// @param elements_to_search
 MeshSurface extract_boundary(Mesh& mesh, const std::vector<LocalIndex>& elements_to_search);
 
@@ -44,5 +48,6 @@ std::vector<ElementFacePair> find_faces_from_node_set(const Mesh& mesh,
 /// @returns A pair indicating (first) if an element was found and (second) the element index
 std::pair<bool, LocalIndex> find_element_with_point(const Mesh& mesh, const simple_math::Point x);
 
-
+/// @brief Counts how many elements of each unique element type in a mesh.
+std::map<ElementType, LocalIndex> count_element_types(const Mesh& mesh);
 }

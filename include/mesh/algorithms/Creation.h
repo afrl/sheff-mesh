@@ -28,4 +28,11 @@ Mesh make_uniform_linear_grid(const Point& min,
 /// @param y_coordinates - coordinates of the corners of the grid cells along y-axis
 Mesh make_quadratic_grid(const std::vector<double>& x_coordinates,
                          const std::vector<double>& y_coordinates);
+
+/// @brief Generates a 3D uniform grid composed of a mix of elements
+/// @param n_blocks_along_axes - an integer indicating how many 3x3x3 mixed element units to tile
+///        along each axis.
+Mesh make_mixed_element_grid(const Point& min,
+                             const Point& max,
+                             const std::array<uint32_t, 3>& n_blocks_along_axes);
 }

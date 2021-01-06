@@ -1,5 +1,6 @@
 #include "mesh/algorithms/Manipulation.h"
 
+#include "mesh/relations/NodeToElementMap.h"
 #include "simple_math/Utility.h"
 #include "utility/Hash.h"
 
@@ -57,7 +58,8 @@ void convert_to_quadratic(Mesh& mesh)
         auto quadratic_type    = get_quadratic_type(element.type());
         auto n_quadratic_nodes = get_num_nodes_for_type(quadratic_type);
 
-        std::vector<LocalIndex> quadratic_conn(n_quadratic_nodes, std::numeric_limits<LocalIndex>::max());
+        std::vector<LocalIndex> quadratic_conn(n_quadratic_nodes,
+                                               std::numeric_limits<LocalIndex>::max());
         QuaternionContainer quadratic_orientations;
         quadratic_orientations.initialize(element.local_coord_sys().base_type(),
                                           element.connectivity().size());
@@ -121,5 +123,68 @@ void convert_to_quadratic(Mesh& mesh)
             element.local_coord_sys() = std::move(quadratic_orientations);
         }
     }
+}
+
+void combine_nodes(Mesh& mesh, std::vector<std::pair<LocalIndex, LocalIndex>> combinations)
+{
+    std::sort(combinations.begin(),
+              combinations.end(),
+              [](const std::pair<LocalIndex, LocalIndex>& a,
+                 const std::pair<LocalIndex, LocalIndex>& b) -> bool { return a.first < b.first; });
+
+    LocalIndex nodes_removed_count = 0;
+    std::vector<LocalIndex> old_to_new_node_index_map(mesh.nodes().size());
+    std::iota(old_to_new_node_index_map.begin(), old_to_new_node_index_map.end(), 0);
+    auto curr_map_index = 0;
+    for (auto& combination : combinations)
+    {
+        while (curr_map_index != combination.first)
+        {
+            old_to_new_node_index_map[curr_map_index++] -= nodes_removed_count;
+        }
+        mesh.nodes().remove_stable(combination.first - nodes_removed_count++);
+        curr_map_index++;
+    }
+    for (auto i = curr_map_index; i < old_to_new_node_index_map.size(); i++)
+    {
+        old_to_new_node_index_map[i] -= nodes_removed_count;
+    }
+    for (auto& combination : combinations)
+    {
+        old_to_new_node_index_map[combination.first] =
+          old_to_new_node_index_map[combination.second];
+    }
+    mesh.elements().permute_connectivity(old_to_new_node_index_map);
+}
+
+void remove_duplicate_nodes(Mesh& mesh, const double tol)
+{
+    // A lambda comparator that ensure no two nodes with approximately the same position will appear
+    // in the set.
+    auto cmp = [&mesh, &tol](const LocalIndex& a, const LocalIndex& b) {
+        const auto& A = mesh.nodes()[a];
+        const auto& B = mesh.nodes()[b];
+        return (A.x() < B.x() - tol) || ((A.y() < B.y() - tol) && fabs(A.x() - B.x()) < tol) ||
+               ((A.z() < B.z() - tol) && fabs(A.x() - B.x()) < tol && fabs(A.y() - B.y()) < tol);
+    };
+
+    std::vector<std::pair<LocalIndex, LocalIndex>> combinations; // pair: from -> to
+    { // Find which nodes need to be combined into other nodes
+        std::set<LocalIndex, decltype(cmp)> kd_set(cmp);
+        for (auto& node : mesh.nodes())
+        {
+            auto find_iter = kd_set.find(node.local_index());
+            if (find_iter == kd_set.end())
+            {
+                kd_set.insert(node.local_index());
+            }
+            else
+            {
+                combinations.push_back({ node.local_index(), *find_iter });
+            }
+        }
+    }
+
+    combine_nodes(mesh, combinations);
 }
 }

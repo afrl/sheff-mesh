@@ -6,6 +6,17 @@
 
 namespace mesh
 {
+struct BasisFunctionInfo
+{
+    enum Type
+    {
+        POLYNOMIAL
+    };
+
+    Type type;
+    unsigned int order;
+};
+
 /// @brief Calculates the basis function values and derivatives (in the parametric coordinate
 /// system) for a given element type.
 ///
@@ -18,6 +29,10 @@ template<typename Coordinate, typename ElementValueVector, typename ElementDeriv
 class BasisFunctionsBase
 {
   public:
+    /// @brief Returns some basic information about the type of basis functions used for the given
+    /// element type.
+    static BasisFunctionInfo basis_info(const ElementType type);
+
     /// @brief Evaluates the basis functions at the given parametric point of an element.
     /// @param func_values (out) - vector to fill with the values (resized if needed)
     static void values(const ElementType type,
@@ -63,16 +78,45 @@ class BasisFunctionsBase
     static void deriv_lagrange_T3D4N(const Coordinate& p, ElementDerivMatrix& SDeriv);
     static void lagrange_T3D10N(const Coordinate& p, ElementValueVector& S);
     static void deriv_lagrange_T3D10N(const Coordinate& p, ElementDerivMatrix& SDeriv);
+    static void W3D6N(const Coordinate& p, ElementValueVector& S);
+    static void deriv_W3D6N(const Coordinate& p, ElementDerivMatrix& SDeriv);
     static void W3D15N(const Coordinate& p, ElementValueVector& S);
     static void deriv_W3D15N(const Coordinate& p, ElementDerivMatrix& SDeriv);
 };
 
-using BasisFunctions = BasisFunctionsBase<simple_math::Point, simple_math::GeneralVector, simple_math::GeneralMatrix>;
+using BasisFunctions =
+  BasisFunctionsBase<simple_math::Point, simple_math::GeneralVector, simple_math::GeneralMatrix>;
 
 /////////////////
 // Definitions //
 /////////////////
 
+
+template<typename Coordinate, typename ElementValueVector, typename ElementDerivMatrix>
+inline BasisFunctionInfo
+BasisFunctionsBase<Coordinate, ElementValueVector, ElementDerivMatrix>::basis_info(
+  const ElementType type)
+{
+    switch (type)
+    {
+        case ElementType::L1D2N:
+        case ElementType::T2D3N:
+        case ElementType::Q2D4N:
+        case ElementType::T3D4N:
+        case ElementType::H3D8N:
+        case ElementType::W3D6N: return { BasisFunctionInfo::POLYNOMIAL, 1 };
+        case ElementType::L1D3N:
+        case ElementType::T2D6N:
+        case ElementType::Q2D8N:
+        case ElementType::T3D10N:
+        case ElementType::H3D20N:
+        case ElementType::W3D15N:
+        case ElementType::P3D5N: // Note: currently, the basis functions are quadratic for 5-node
+                                 // pyramids.  This is odd and should be revisited.
+        case ElementType::P3D13N: return { BasisFunctionInfo::POLYNOMIAL, 2 };
+    }
+    throw _UTIL_MSG_EXCEPT("Information for element type is not in the switch statement.");
+}
 
 template<typename Coordinate, typename ElementValueVector, typename ElementDerivMatrix>
 void BasisFunctionsBase<Coordinate, ElementValueVector, ElementDerivMatrix>::values(
@@ -113,6 +157,8 @@ void BasisFunctionsBase<Coordinate, ElementValueVector, ElementDerivMatrix>::val
         P3D5N(parametric_coordinate, func_values);
     else if (type == ElementType::P3D13N)
         P3D13N(parametric_coordinate, func_values);
+    else if (type == ElementType::W3D6N)
+        W3D6N(parametric_coordinate, func_values);
     else if (type == ElementType::W3D15N)
         W3D15N(parametric_coordinate, func_values);
     else
@@ -155,6 +201,8 @@ void BasisFunctionsBase<Coordinate, ElementValueVector, ElementDerivMatrix>::der
         deriv_P3D5N(parametric_coordinate, func_derivatives);
     else if (type == ElementType::P3D13N)
         deriv_P3D13N(parametric_coordinate, func_derivatives);
+    else if (type == ElementType::W3D6N)
+        deriv_W3D6N(parametric_coordinate, func_derivatives);
     else if (type == ElementType::W3D15N)
         deriv_W3D15N(parametric_coordinate, func_derivatives);
     else
@@ -175,7 +223,8 @@ inline void BasisFunctionsBase<Coordinate, ElementValueVector, ElementDerivMatri
 }
 
 template<typename Coordinate, typename ElementValueVector, typename ElementDerivMatrix>
-inline void BasisFunctionsBase<Coordinate, ElementValueVector, ElementDerivMatrix>::deriv_lagrange_L1D2N(
+inline void
+BasisFunctionsBase<Coordinate, ElementValueVector, ElementDerivMatrix>::deriv_lagrange_L1D2N(
   const Coordinate& xi,
   ElementDerivMatrix& SDeriv)
 {
@@ -198,7 +247,8 @@ inline void BasisFunctionsBase<Coordinate, ElementValueVector, ElementDerivMatri
 }
 
 template<typename Coordinate, typename ElementValueVector, typename ElementDerivMatrix>
-inline void BasisFunctionsBase<Coordinate, ElementValueVector, ElementDerivMatrix>::deriv_lagrange_L1D3N(
+inline void
+BasisFunctionsBase<Coordinate, ElementValueVector, ElementDerivMatrix>::deriv_lagrange_L1D3N(
   const Coordinate& xi,
   ElementDerivMatrix& SDeriv)
 {
@@ -224,7 +274,8 @@ inline void BasisFunctionsBase<Coordinate, ElementValueVector, ElementDerivMatri
 }
 
 template<typename Coordinate, typename ElementValueVector, typename ElementDerivMatrix>
-inline void BasisFunctionsBase<Coordinate, ElementValueVector, ElementDerivMatrix>::deriv_lagrange_L1D4N(
+inline void
+BasisFunctionsBase<Coordinate, ElementValueVector, ElementDerivMatrix>::deriv_lagrange_L1D4N(
   const Coordinate& xi,
   ElementDerivMatrix& SDeriv)
 {
@@ -254,7 +305,8 @@ inline void BasisFunctionsBase<Coordinate, ElementValueVector, ElementDerivMatri
 }
 
 template<typename Coordinate, typename ElementValueVector, typename ElementDerivMatrix>
-inline void BasisFunctionsBase<Coordinate, ElementValueVector, ElementDerivMatrix>::deriv_lagrange_L1D5N(
+inline void
+BasisFunctionsBase<Coordinate, ElementValueVector, ElementDerivMatrix>::deriv_lagrange_L1D5N(
   const Coordinate& xi,
   ElementDerivMatrix& SDeriv)
 {
@@ -289,7 +341,8 @@ inline void BasisFunctionsBase<Coordinate, ElementValueVector, ElementDerivMatri
 }
 
 template<typename Coordinate, typename ElementValueVector, typename ElementDerivMatrix>
-inline void BasisFunctionsBase<Coordinate, ElementValueVector, ElementDerivMatrix>::deriv_lagrange_T2D3N(
+inline void
+BasisFunctionsBase<Coordinate, ElementValueVector, ElementDerivMatrix>::deriv_lagrange_T2D3N(
   const Coordinate& p,
   ElementDerivMatrix& SDeriv)
 {
@@ -325,7 +378,8 @@ inline void BasisFunctionsBase<Coordinate, ElementValueVector, ElementDerivMatri
 
 
 template<typename Coordinate, typename ElementValueVector, typename ElementDerivMatrix>
-inline void BasisFunctionsBase<Coordinate, ElementValueVector, ElementDerivMatrix>::deriv_lagrange_T2D6N(
+inline void
+BasisFunctionsBase<Coordinate, ElementValueVector, ElementDerivMatrix>::deriv_lagrange_T2D6N(
   const Coordinate& p,
   ElementDerivMatrix& SDeriv)
 {
@@ -363,7 +417,8 @@ inline void BasisFunctionsBase<Coordinate, ElementValueVector, ElementDerivMatri
 }
 
 template<typename Coordinate, typename ElementValueVector, typename ElementDerivMatrix>
-inline void BasisFunctionsBase<Coordinate, ElementValueVector, ElementDerivMatrix>::deriv_lagrange_Q2D4N(
+inline void
+BasisFunctionsBase<Coordinate, ElementValueVector, ElementDerivMatrix>::deriv_lagrange_Q2D4N(
   const Coordinate& p,
   ElementDerivMatrix& SDeriv)
 {
@@ -403,7 +458,8 @@ inline void BasisFunctionsBase<Coordinate, ElementValueVector, ElementDerivMatri
 
 
 template<typename Coordinate, typename ElementValueVector, typename ElementDerivMatrix>
-inline void BasisFunctionsBase<Coordinate, ElementValueVector, ElementDerivMatrix>::deriv_lagrange_Q2D8N(
+inline void
+BasisFunctionsBase<Coordinate, ElementValueVector, ElementDerivMatrix>::deriv_lagrange_Q2D8N(
   const Coordinate& p,
   ElementDerivMatrix& SDeriv)
 {
@@ -443,6 +499,7 @@ inline void BasisFunctionsBase<Coordinate, ElementValueVector, ElementDerivMatri
   const Coordinate& p,
   ElementValueVector& S)
 {
+    /*
     // Natural coordinates of nodes
     const std::array<double, 5> xi_n  = { -1.0, 1.0, 1.0, -1.0, 0.0 };
     const std::array<double, 5> eta_n = { -1.0, -1.0, 1.0, 1.0, 0.0 };
@@ -455,6 +512,23 @@ inline void BasisFunctionsBase<Coordinate, ElementValueVector, ElementDerivMatri
     for (auto i = 0; i < 4; i++)
         S(i) = 1.0 / 8.0 * (1.0 + xi * xi_n[i]) * (1.0 + eta * eta_n[i]) * (1.0 + mu * mu_n[i]);
     S(4) = 1.0 / 2.0 * (1.0 + mu);
+    */
+
+    const double r = p[0];
+    const double s = p[1];
+    const double t = p[2] / 2.0 + 0.5;
+
+    double ration = 0.0;
+    if (fabs(t - 1.0) > 1.0e-14)
+    {
+        ration = (r * s * t) / (1.0 - t);
+    }
+
+    S(0) = 0.25 * ((1.0 - r) * (1.0 - s) - t + ration);
+    S(1) = 0.25 * ((1.0 + r) * (1.0 - s) - t - ration);
+    S(2) = 0.25 * ((1.0 + r) * (1.0 + s) - t + ration);
+    S(3) = 0.25 * ((1.0 - r) * (1.0 + s) - t - ration);
+    S(4) = t;
 }
 
 
@@ -465,6 +539,7 @@ inline void BasisFunctionsBase<Coordinate, ElementValueVector, ElementDerivMatri
 {
     SDeriv.resize(5, 3);
 
+    /*
     const double xi  = p[0];
     const double eta = p[1];
     const double mu  = p[2];
@@ -485,6 +560,50 @@ inline void BasisFunctionsBase<Coordinate, ElementValueVector, ElementDerivMatri
     SDeriv(4, 0) = 0.0;
     SDeriv(4, 1) = 0.0;
     SDeriv(4, 2) = 0.5;
+    */
+
+    const double Q14 = 0.25;
+
+    const double r = p[0];
+    const double s = p[1];
+    const double t = p[2];
+
+    double rationdr;
+    double rationds;
+    double rationdt;
+
+    if (fabs(t - 1.0) > 1.0e-14)
+    {
+        rationdr = s * t / (1.0 - t);
+        rationds = r * t / (1.0 - t);
+        rationdt = r * s / ((1.0 - t) * (1.0 - t));
+    }
+    else
+    {
+        rationdr = 1.0;
+        rationds = 1.0;
+        rationdt = 1.0;
+    }
+
+    SDeriv(0, 0) = Q14 * (-1.0 * (1.0 - s) + rationdr);
+    SDeriv(0, 1) = Q14 * (-1.0 * (1.0 - r) + rationds);
+    SDeriv(0, 2) = Q14 * (rationdt - 1.0);
+
+    SDeriv(1, 0) = Q14 * (1.0 * (1.0 - s) - rationdr);
+    SDeriv(1, 1) = Q14 * (-1.0 * (1.0 + r) - rationds);
+    SDeriv(1, 2) = Q14 * (-1.0 * rationdt - 1.0);
+
+    SDeriv(2, 0) = Q14 * (-1.0 * (1.0 + s) - rationdr);
+    SDeriv(2, 1) = Q14 * (1.0 * (1.0 - r) - rationds);
+    SDeriv(2, 2) = Q14 * (-1.0 * rationdt - 1.0);
+
+    SDeriv(3, 0) = Q14 * (1.0 * (1.0 + s) + rationdr);
+    SDeriv(3, 1) = Q14 * (1.0 * (1.0 + r) + rationds);
+    SDeriv(3, 2) = Q14 * (rationdt - 1.0);
+
+    SDeriv(4, 0) = 0.0;
+    SDeriv(4, 1) = 0.0;
+    SDeriv(4, 2) = 1.0;
 }
 
 template<typename Coordinate, typename ElementValueVector, typename ElementDerivMatrix>
@@ -641,7 +760,8 @@ inline void BasisFunctionsBase<Coordinate, ElementValueVector, ElementDerivMatri
 
 
 template<typename Coordinate, typename ElementValueVector, typename ElementDerivMatrix>
-inline void BasisFunctionsBase<Coordinate, ElementValueVector, ElementDerivMatrix>::deriv_lagrange_H3D8N(
+inline void
+BasisFunctionsBase<Coordinate, ElementValueVector, ElementDerivMatrix>::deriv_lagrange_H3D8N(
   const Coordinate& p,
   ElementDerivMatrix& SDeriv)
 {
@@ -764,7 +884,8 @@ inline void BasisFunctionsBase<Coordinate, ElementValueVector, ElementDerivMatri
 
 
 template<typename Coordinate, typename ElementValueVector, typename ElementDerivMatrix>
-inline void BasisFunctionsBase<Coordinate, ElementValueVector, ElementDerivMatrix>::deriv_lagrange_H3D20N(
+inline void
+BasisFunctionsBase<Coordinate, ElementValueVector, ElementDerivMatrix>::deriv_lagrange_H3D20N(
   const Coordinate& p,
   ElementDerivMatrix& SDeriv)
 {
@@ -909,7 +1030,8 @@ inline void BasisFunctionsBase<Coordinate, ElementValueVector, ElementDerivMatri
 }
 
 template<typename Coordinate, typename ElementValueVector, typename ElementDerivMatrix>
-inline void BasisFunctionsBase<Coordinate, ElementValueVector, ElementDerivMatrix>::deriv_lagrange_T3D4N(
+inline void
+BasisFunctionsBase<Coordinate, ElementValueVector, ElementDerivMatrix>::deriv_lagrange_T3D4N(
   const Coordinate& p,
   ElementDerivMatrix& SDeriv)
 {
@@ -974,7 +1096,8 @@ inline void BasisFunctionsBase<Coordinate, ElementValueVector, ElementDerivMatri
 
 
 template<typename Coordinate, typename ElementValueVector, typename ElementDerivMatrix>
-inline void BasisFunctionsBase<Coordinate, ElementValueVector, ElementDerivMatrix>::deriv_lagrange_T3D10N(
+inline void
+BasisFunctionsBase<Coordinate, ElementValueVector, ElementDerivMatrix>::deriv_lagrange_T3D10N(
   const Coordinate& p,
   ElementDerivMatrix& SDeriv)
 {
@@ -1030,6 +1153,61 @@ inline void BasisFunctionsBase<Coordinate, ElementValueVector, ElementDerivMatri
         SDeriv(7, 2)    = 0.4e1 - t2 - t3 - 0.8e1 * zeta;
         SDeriv(8, 2)    = t3;
         SDeriv(9, 2)    = t2;
+    }
+}
+
+template<typename Coordinate, typename ElementValueVector, typename ElementDerivMatrix>
+inline void BasisFunctionsBase<Coordinate, ElementValueVector, ElementDerivMatrix>::W3D6N(
+  const Coordinate& p,
+  ElementValueVector& S)
+{
+    const double& xi   = p[0];
+    const double& eta  = p[1];
+    const double& zeta = p[2];
+    S(0)               = (1 - xi - eta) * (1 - zeta) / 2.0;
+    S(1)               = xi * (1 - zeta) / 2.0;
+    S(2)               = eta * (1 - zeta) / 2.0;
+    S(3)               = (1 - xi - eta) * (1 + zeta) / 2.0;
+    S(4)               = xi * (1 + zeta) / 2.0;
+    S(5)               = eta * (1 + zeta) / 2.0;
+}
+
+template<typename Coordinate, typename ElementValueVector, typename ElementDerivMatrix>
+inline void BasisFunctionsBase<Coordinate, ElementValueVector, ElementDerivMatrix>::deriv_W3D6N(
+  const Coordinate& p,
+  ElementDerivMatrix& SDeriv)
+{
+    SDeriv.resize(6, 3);
+
+    const double& xi   = p[0];
+    const double& eta  = p[1];
+    const double& zeta = p[2];
+    // Derivatives w.r.t. xi (column 0)
+    {
+        SDeriv(0, 0) = -(1 - zeta) / 2.0;
+        SDeriv(1, 0) = (1 - zeta) / 2.0;
+        SDeriv(2, 0) = 0.0;
+        SDeriv(3, 0) = -(1 + zeta) / 2.0;
+        SDeriv(4, 0) = (1 + zeta) / 2.0;
+        SDeriv(5, 0) = 0.0;
+    }
+    // Derivatives w.r.t. eta (column 1)
+    {
+        SDeriv(0, 0) = -(1 - zeta) / 2.0;
+        SDeriv(1, 0) = 0.0;
+        SDeriv(2, 0) = (1 - zeta) / 2.0;
+        SDeriv(3, 0) = -(1 + zeta) / 2.0;
+        SDeriv(4, 0) = 0.0;
+        SDeriv(5, 0) = (1 + zeta) / 2.0;
+    }
+    // Derivatives w.r.t. zeta (column 2)
+    {
+        SDeriv(0, 0) = -(1 - xi - eta) / 2.0;
+        SDeriv(1, 0) = -xi / 2.0;
+        SDeriv(2, 0) = -eta / 2.0;
+        SDeriv(3, 0) = (1 - xi - eta) / 2.0;
+        SDeriv(4, 0) = xi / 2.0;
+        SDeriv(5, 0) = eta / 2.0;
     }
 }
 

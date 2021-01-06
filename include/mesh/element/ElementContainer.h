@@ -87,7 +87,7 @@ class ElementContainer
              const utility::Slice<const LocalIndex>& connectivity,
              GlobalIndex i,
              PartitionIndex parent_partition = 0,
-             ComponentIndex component_index = 0);
+             ComponentIndex component_index  = 0);
 
     /// Adds an element that is a copy of another element.
     ElementAccessor add_copy(const ElementConstAccessor& other_element);

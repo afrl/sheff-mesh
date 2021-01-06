@@ -15,6 +15,8 @@ class NodeAccessorBase
 {
   public:
     using NodeContainerType = NC;
+    using MapCoordType = typename std::
+      conditional<std::is_const<NC>::value, const Eigen::Vector3d, Eigen::Vector3d>::type;
 
     NodeAccessorBase(NC& nodes, LocalIndex starting_index = 0)
       : nodes_(nodes)
@@ -66,9 +68,9 @@ class NodeAccessorBase
 
     /// Returns a map of the coordinates to a 3D Eigen vector. It can be used as a normal Eigen
     /// vector.
-    inline Eigen::Map<const Eigen::Vector3d> coord() const
+    inline Eigen::Map<MapCoordType> coord() const
     {
-        return Eigen::Map<const Eigen::Vector3d>(&nodes_.points_[curr_index_][0], 3);
+        return Eigen::Map<MapCoordType>(&nodes_.points_[curr_index_][0], 3);
     }
 
     /// Returns the parent partition of the current node

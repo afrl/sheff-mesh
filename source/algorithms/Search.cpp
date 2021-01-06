@@ -79,6 +79,13 @@ ComponentIndex find_global_max_component_id(const Mesh& mesh)
     return utility::MPIUtils::max_across_ranks(curr_max_id);
 }
 
+MeshSurface extract_boundary(Mesh& mesh)
+{
+    std::vector<LocalIndex> elements_to_search(mesh.elements().size());
+    std::iota(elements_to_search.begin(), elements_to_search.end(), 0);
+    return extract_boundary(mesh, elements_to_search);
+}
+
 MeshSurface extract_boundary(Mesh& mesh, const std::vector<LocalIndex>& elements_to_search)
 {
     // A map from the face hash to the pair of (element index, face index) for all unmatched faces.
@@ -147,5 +154,23 @@ std::pair<bool, LocalIndex> find_element_with_point(const Mesh& mesh, const simp
         }
     }
     return { false, 0 };
+}
+
+std::map<ElementType, LocalIndex> count_element_types(const Mesh& mesh)
+{
+    std::map<ElementType, LocalIndex> type_count_map;
+    for (auto& element : mesh.elements())
+    {
+        auto find_iter = type_count_map.find(element.type());
+        if (find_iter == type_count_map.end())
+        {
+            type_count_map[element.type()] = 1;
+        }
+        else
+        {
+            find_iter->second++;
+        }
+    }
+    return type_count_map;
 }
 }

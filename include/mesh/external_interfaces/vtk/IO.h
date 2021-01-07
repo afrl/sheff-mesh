@@ -21,7 +21,7 @@ std::vector<ConnIndex> get_vtk_permutation(const ElementType& geom_type, const C
 /// \param file_path - relative (to cwd) or absolute path (include the .vtk extension)
 /// \param write_lcs - indicates whether to write each axis of the lcs as vectors in the data
 /// \param point_data - additional point data to include
-void write_vtk(Mesh& mesh,
+void write_vtk(const Mesh& mesh,
                const std::string& file_path,
                const bool write_lcs                                = true,
                const std::vector<double>& point_data               = std::vector<double>(),

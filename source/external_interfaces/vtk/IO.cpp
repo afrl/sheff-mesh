@@ -6,7 +6,7 @@
 
 namespace mesh
 {
-void write_vtk(Mesh& mesh,
+void write_vtk(const Mesh& mesh,
                const std::string& file_path,
                const bool write_lcs,
                const std::vector<double>& point_data,

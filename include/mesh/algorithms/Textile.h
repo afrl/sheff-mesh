@@ -39,6 +39,13 @@ struct VTMSTowMesh
 /// @param file_path - relative (to cwd) or absolute path to .ctw file
 VTMSTowMesh read_vtms_ctw(const std::string& file_path);
 
+/// @brief Creates a tow surface mesh from data structures instead of a .ctw file. @see read_vtms_ctw
+VTMSTowMesh create_tow_surface(const int material_number,
+                               const std::vector<double>& points,
+                               const std::vector<LocalIndex>& connectivities,
+                               const std::vector<LocalIndex>& n_nodes_per_element,
+                               const std::vector<double>& medials);
+
 /// @brief Takes a polygonal discretization of a tow's surface and transforms it into a
 /// quality triangulation of the tow's surface.
 /// @param tow_surface - polygonal surface mesh for a tow returned by read_vtms_ctw

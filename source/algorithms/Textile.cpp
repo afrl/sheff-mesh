@@ -904,6 +904,58 @@ VTMSTowMesh read_vtms_ctw(const std::string& file_path)
     return tow_surface;
 }
 
+VTMSTowMesh create_tow_surface(const int material_number,
+                               const std::vector<double>& points,
+                               const std::vector<LocalIndex>& connectivities,
+                               const std::vector<LocalIndex>& n_nodes_per_element,
+                               const std::vector<double>& medials)
+{
+    VTMSTowMesh tow_surface;
+    tow_surface.type            = VTMSTowMesh::MeshType::POLY;
+    tow_surface.material_number = material_number;
+
+    for (auto i = 0; i < points.size(); i += 3)
+    {
+        tow_surface.mesh.nodes().add({ points[i], points[i + 1], points[i + 2] });
+    }
+
+    // It will start pointing outward, but we will switch this during algorithms
+    tow_surface.surface_normal_direction = VTMSTowMesh::NormalDirection::OUTWARD;
+
+    std::size_t curr_conn_offset = 0;
+    tow_surface.surface_element_types.reserve(n_nodes_per_element.size());
+    for (int i = 0; i < n_nodes_per_element.size(); i++)
+    {
+        LocalIndex node_index;
+        std::vector<LocalIndex> connectivity(n_nodes_per_element[i], 0);
+        for (int j = 0; j < n_nodes_per_element[i]; j++)
+        {
+            connectivity[j] = connectivities[curr_conn_offset++];
+        }
+
+        // Note: this is a hack to determine if the polygonal is on the boundary or not.  Ideally,
+        // VTMS should output this information, but for now, we will assume if it has more than 10
+        // points, then it was clipped.
+        if (connectivity.size() > 10)
+        {
+            tow_surface.surface_element_types.push_back(VTMSTowMesh::SurfaceElementType::BOUNDARY);
+        }
+        else
+        {
+            tow_surface.surface_element_types.push_back(VTMSTowMesh::SurfaceElementType::INTERIOR);
+        }
+
+        tow_surface.mesh.elements().add(ElementType::POLYGON, connectivity);
+    }
+
+    for (auto i = 0; i < medials.size(); i += 3)
+    {
+        tow_surface.medials.push_back({ medials[i], medials[i + 1], medials[i + 2] });
+    }
+
+    return tow_surface;
+}
+
 double triangulate_tow_surface(VTMSTowMesh& tow_surface)
 {
     _UTIL_ASSERT(tow_surface.type == VTMSTowMesh::MeshType::POLY,

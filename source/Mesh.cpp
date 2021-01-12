@@ -77,9 +77,28 @@ void Mesh::copy(const Mesh& other, const std::vector<LocalIndex> element_indices
         auto new_element = elements_.add_copy(other.elements()[i]);
 
         // Remap connectivity to the indices used in this mesh
-        for (auto& c : new_element.connectivity())
+        // Note: be careful with polyhedron elements
+        if (new_element.type() == ElementType::POLYHEDRON)
         {
-            c = other_to_this_node_index_map[c];
+            auto conn                       = new_element.connectivity();
+            mesh::ConnIndex curr_conn_index = 0;
+            const auto& n_facets            = conn[curr_conn_index++];
+            for (auto facet_index : utility::range(n_facets))
+            {
+                const auto& n_points_in_facet = conn[curr_conn_index++];
+                for (auto point_index_in_facet : utility::range(n_points_in_facet))
+                {
+                    conn[curr_conn_index] = other_to_this_node_index_map[conn[curr_conn_index]];
+                    curr_conn_index++;
+                }
+            }
+        }
+        else
+        {
+            for (auto& c : new_element.connectivity())
+            {
+                c = other_to_this_node_index_map[c];
+            }
         }
     }
 }
@@ -110,9 +129,28 @@ void Mesh::copy(const Mesh& other, const std::set<LocalIndex> element_indices_to
         auto new_element = elements_.add_copy(other.elements()[i]);
 
         // Remap connectivity to the indices used in this mesh
-        for (auto& c : new_element.connectivity())
+        // Note: be careful with polyhedron elements
+        if (new_element.type() == ElementType::POLYHEDRON)
         {
-            c = other_to_this_node_index_map[c];
+            auto conn                       = new_element.connectivity();
+            mesh::ConnIndex curr_conn_index = 0;
+            const auto& n_facets            = conn[curr_conn_index++];
+            for (auto facet_index : utility::range(n_facets))
+            {
+                const auto& n_points_in_facet = conn[curr_conn_index++];
+                for (auto point_index_in_facet : utility::range(n_points_in_facet))
+                {
+                    conn[curr_conn_index] = other_to_this_node_index_map[conn[curr_conn_index]];
+                    curr_conn_index++;
+                }
+            }
+        }
+        else
+        {
+            for (auto& c : new_element.connectivity())
+            {
+                c = other_to_this_node_index_map[c];
+            }
         }
     }
 }
@@ -132,9 +170,28 @@ void Mesh::copy(const Mesh& other)
         auto new_element = elements_.add_copy(other_element);
 
         // Remap connectivity to the indices used in this mesh
-        for (auto& c : new_element.connectivity())
+        // Note: be careful with polyhedron elements
+        if (new_element.type() == ElementType::POLYHEDRON)
         {
-            c = c + node_offset;
+            auto conn                       = new_element.connectivity();
+            mesh::ConnIndex curr_conn_index = 0;
+            const auto& n_facets            = conn[curr_conn_index++];
+            for (auto facet_index : utility::range(n_facets))
+            {
+                const auto& n_points_in_facet = conn[curr_conn_index++];
+                for (auto point_index_in_facet : utility::range(n_points_in_facet))
+                {
+                    conn[curr_conn_index] = conn[curr_conn_index] + node_offset;
+                    curr_conn_index++;
+                }
+            }
+        }
+        else
+        {
+            for (auto& c : new_element.connectivity())
+            {
+                c = c + node_offset;
+            }
         }
     }
 }

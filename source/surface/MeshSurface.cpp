@@ -44,7 +44,7 @@ SurfaceElementConstIterator MeshSurface::end() const
     return SurfaceElementConstIterator(*this, size());
 }
 
-inline SurfaceElementAccessor MeshSurface::operator[](LocalIndex i)
+SurfaceElementAccessor MeshSurface::operator[](LocalIndex i)
 {
     return SurfaceElementAccessor(*this, i);
 }
@@ -154,5 +154,27 @@ MeshSurface MeshSurface::operator-(const MeshSurface& other) const
     }
 
     return diff;
+}
+
+MeshSurface& MeshSurface::operator+=(const MeshSurface& other)
+{
+    std::unordered_map<std::size_t, LocalIndex> hash_to_this_surf_elem_map;
+    for (auto& surf_elem : *this)
+    {
+        auto hash                        = utility::hash_sorted(surf_elem.connectivity());
+        hash_to_this_surf_elem_map[hash] = surf_elem.local_index();
+    }
+
+    for (auto& surf_elem : other)
+    {
+        auto hash      = utility::hash_sorted(surf_elem.connectivity());
+        auto find_iter = hash_to_this_surf_elem_map.find(hash);
+        if (find_iter == hash_to_this_surf_elem_map.end())
+        {
+            this->add(surf_elem.type(), surf_elem.connectivity());
+        }
+    }
+
+    return *this;
 }
 }

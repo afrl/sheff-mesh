@@ -65,6 +65,7 @@ class MeshSurface
 
     // Yeilds a temporary object that holds the difference (boolean) of this and the other surface.
     MeshSurface operator-(const MeshSurface& other) const;
+    MeshSurface& operator+=(const MeshSurface& other);
 
     friend class SurfaceElementAccessor;
     friend class SurfaceElementConstAccessor;

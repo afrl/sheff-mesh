@@ -54,7 +54,7 @@ fea_io::MeshInfo<GlobalIndex, LocalIndex, FloatType> get_fea_io_mesh_info(
         mesh_info.extent             = fea_io::Extent<FloatType>(extent.first, extent.second);
     }
 
-    auto n_components = find_global_max_component_id(mesh);
+    auto n_components = (ComponentIndex)(find_global_max_component_id(mesh) + 1);
     for (auto component_id : utility::range(n_components))
     {
         // Ensure the orientation type for all the elements is the same

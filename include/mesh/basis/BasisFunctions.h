@@ -514,21 +514,21 @@ inline void BasisFunctionsBase<Coordinate, ElementValueVector, ElementDerivMatri
     S(4) = 1.0 / 2.0 * (1.0 + mu);
     */
 
-    const double r = p[0];
-    const double s = p[1];
-    const double t = p[2] / 2.0 + 0.5;
+    const double xi = p[0];
+    const double eta = p[1];
+    const double mu = p[2] / 2.0 + 0.5;
 
     double ration = 0.0;
-    if (fabs(t - 1.0) > 1.0e-14)
+    if (fabs(mu - 1.0) > 1.0e-14)
     {
-        ration = (r * s * t) / (1.0 - t);
+        ration = (xi * eta * mu) / (1.0 - mu);
     }
 
-    S(0) = 0.25 * ((1.0 - r) * (1.0 - s) - t + ration);
-    S(1) = 0.25 * ((1.0 + r) * (1.0 - s) - t - ration);
-    S(2) = 0.25 * ((1.0 + r) * (1.0 + s) - t + ration);
-    S(3) = 0.25 * ((1.0 - r) * (1.0 + s) - t - ration);
-    S(4) = t;
+    S(0) = 0.25 * ((1.0 - xi) * (1.0 - eta) - mu + ration);
+    S(1) = 0.25 * ((1.0 + xi) * (1.0 - eta) - mu - ration);
+    S(2) = 0.25 * ((1.0 + xi) * (1.0 + eta) - mu + ration);
+    S(3) = 0.25 * ((1.0 - xi) * (1.0 + eta) - mu - ration);
+    S(4) = mu;
 }
 
 
@@ -564,46 +564,48 @@ inline void BasisFunctionsBase<Coordinate, ElementValueVector, ElementDerivMatri
 
     const double Q14 = 0.25;
 
-    const double r = p[0];
-    const double s = p[1];
-    const double t = p[2];
+    const double xi = p[0];
+    const double eta = p[1];
+    const double zeta = p[2];
+    const double mu   = zeta / 2.0 + 0.5;
 
-    double rationdr;
-    double rationds;
-    double rationdt;
+    double dration_dxi;
+    double dration_deta;
+    double dration_dzeta;
+    const double dmu_dzeta = 0.5;
 
-    if (fabs(t - 1.0) > 1.0e-14)
+    if (fabs(mu - 1.0) > 1.0e-14)
     {
-        rationdr = s * t / (1.0 - t);
-        rationds = r * t / (1.0 - t);
-        rationdt = r * s / ((1.0 - t) * (1.0 - t));
+        dration_dxi = eta * mu / (1.0 - mu);
+        dration_deta = xi * mu / (1.0 - mu);
+        dration_dzeta = dmu_dzeta * xi * eta / ((1.0 - mu) * (1.0 - mu));
     }
     else
     {
-        rationdr = 1.0;
-        rationds = 1.0;
-        rationdt = 1.0;
+        dration_dxi = 1.0;
+        dration_deta = 1.0;
+        dration_dzeta = dmu_dzeta; // dration_dmu = 1.0
     }
 
-    SDeriv(0, 0) = Q14 * (-1.0 * (1.0 - s) + rationdr);
-    SDeriv(0, 1) = Q14 * (-1.0 * (1.0 - r) + rationds);
-    SDeriv(0, 2) = Q14 * (rationdt - 1.0);
+    SDeriv(0, 0) = Q14 * (-(1.0 - eta) + dration_dxi);
+    SDeriv(0, 1) = Q14 * (-(1.0 - xi) + dration_deta);
+    SDeriv(0, 2) = Q14 * (dration_dzeta - dmu_dzeta);
 
-    SDeriv(1, 0) = Q14 * (1.0 * (1.0 - s) - rationdr);
-    SDeriv(1, 1) = Q14 * (-1.0 * (1.0 + r) - rationds);
-    SDeriv(1, 2) = Q14 * (-1.0 * rationdt - 1.0);
+    SDeriv(1, 0) = Q14 * ( (1.0 - eta) - dration_dxi);
+    SDeriv(1, 1) = Q14 * (-(1.0 + xi) - dration_deta);
+    SDeriv(1, 2) = Q14 * (-dration_dzeta - dmu_dzeta);
 
-    SDeriv(2, 0) = Q14 * (-1.0 * (1.0 + s) - rationdr);
-    SDeriv(2, 1) = Q14 * (1.0 * (1.0 - r) - rationds);
-    SDeriv(2, 2) = Q14 * (-1.0 * rationdt - 1.0);
+    SDeriv(2, 0) = Q14 * ( (1.0 + eta) + dration_dxi);
+    SDeriv(2, 1) = Q14 * ( (1.0 + xi) + dration_deta);
+    SDeriv(2, 2) = Q14 * (dration_dzeta - dmu_dzeta);
 
-    SDeriv(3, 0) = Q14 * (1.0 * (1.0 + s) + rationdr);
-    SDeriv(3, 1) = Q14 * (1.0 * (1.0 + r) + rationds);
-    SDeriv(3, 2) = Q14 * (rationdt - 1.0);
+    SDeriv(3, 0) = Q14 * (-(1.0 + eta) - dration_dxi);
+    SDeriv(3, 1) = Q14 * ( (1.0 - xi) - dration_deta);
+    SDeriv(3, 2) = Q14 * (-dration_dzeta - dmu_dzeta);
 
     SDeriv(4, 0) = 0.0;
     SDeriv(4, 1) = 0.0;
-    SDeriv(4, 2) = 1.0;
+    SDeriv(4, 2) = dmu_dzeta;
 }
 
 template<typename Coordinate, typename ElementValueVector, typename ElementDerivMatrix>
@@ -1193,21 +1195,21 @@ inline void BasisFunctionsBase<Coordinate, ElementValueVector, ElementDerivMatri
     }
     // Derivatives w.r.t. eta (column 1)
     {
-        SDeriv(0, 0) = -(1 - zeta) / 2.0;
-        SDeriv(1, 0) = 0.0;
-        SDeriv(2, 0) = (1 - zeta) / 2.0;
-        SDeriv(3, 0) = -(1 + zeta) / 2.0;
-        SDeriv(4, 0) = 0.0;
-        SDeriv(5, 0) = (1 + zeta) / 2.0;
+        SDeriv(0, 1) = -(1 - zeta) / 2.0;
+        SDeriv(1, 1) = 0.0;
+        SDeriv(2, 1) = (1 - zeta) / 2.0;
+        SDeriv(3, 1) = -(1 + zeta) / 2.0;
+        SDeriv(4, 1) = 0.0;
+        SDeriv(5, 1) = (1 + zeta) / 2.0;
     }
     // Derivatives w.r.t. zeta (column 2)
     {
-        SDeriv(0, 0) = -(1 - xi - eta) / 2.0;
-        SDeriv(1, 0) = -xi / 2.0;
-        SDeriv(2, 0) = -eta / 2.0;
-        SDeriv(3, 0) = (1 - xi - eta) / 2.0;
-        SDeriv(4, 0) = xi / 2.0;
-        SDeriv(5, 0) = eta / 2.0;
+        SDeriv(0, 2) = -(1 - xi - eta) / 2.0;
+        SDeriv(1, 2) = -xi / 2.0;
+        SDeriv(2, 2) = -eta / 2.0;
+        SDeriv(3, 2) = (1 - xi - eta) / 2.0;
+        SDeriv(4, 2) = xi / 2.0;
+        SDeriv(5, 2) = eta / 2.0;
     }
 }
 

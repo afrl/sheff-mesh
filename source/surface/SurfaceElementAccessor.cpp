@@ -57,6 +57,22 @@ IteratorRange<NodeSubrangeIterator> SurfaceElementAccessor::nodes()
     };
 }
 
+IteratorRange<NodeSubrangeConstIterator> SurfaceElementAccessor::nodes() const
+{
+    const auto& conn_index_start = surf_mesh_.connectivity_offsets_[curr_index_];
+    const auto& conn_size =
+      static_cast<LocalIndex>(surf_mesh_.connectivity_offsets_[curr_index_ + 1] - conn_index_start);
+    return {
+        NodeSubrangeConstIterator(surf_mesh_.volume_mesh_.nodes(),
+                                  &surf_mesh_.connectivities_[conn_index_start],
+                                  conn_size), // begin
+        NodeSubrangeConstIterator(surf_mesh_.volume_mesh_.nodes(),
+                                  &surf_mesh_.connectivities_[conn_index_start],
+                                  conn_size,
+                                  conn_size) // end
+    };
+}
+
 bool SurfaceElementAccessor::operator==(const SurfaceElementAccessor& other) const
 {
     return &surf_mesh_ == &other.surf_mesh_ && curr_index_ == other.curr_index_;

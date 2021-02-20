@@ -35,6 +35,10 @@ class SurfaceElementAccessor
     /// order will match the indices returned by connectivity().
     IteratorRange<NodeSubrangeIterator> nodes();
 
+    /// Returns a range over the ordered nodes that compose the connectivity of the element.  The
+    /// order will match the indices returned by connectivity().
+    IteratorRange<NodeSubrangeConstIterator> nodes() const;
+
     bool operator==(const SurfaceElementAccessor& other) const;
 
     bool operator!=(const SurfaceElementAccessor& other) const;

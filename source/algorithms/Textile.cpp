@@ -1056,12 +1056,12 @@ Mesh create_triangular_matrix_box(const Point& n,
 
     if (target_segment_length > 0.0)
     {
-        box.elements().add(ElementType::POLYGON, { 0, 3, 2, 1 }); // Bottom
-        box.elements().add(ElementType::POLYGON, { 1, 2, 6, 5 }); // Front
-        box.elements().add(ElementType::POLYGON, { 0, 4, 7, 3 }); // Back
-        box.elements().add(ElementType::POLYGON, { 1, 5, 4, 0 }); // Left side
-        box.elements().add(ElementType::POLYGON, { 3, 7, 6, 2 }); // Right side
-        box.elements().add(ElementType::POLYGON, { 6, 7, 4, 5 }); // Top
+        box.elements().add(ElementType::POLYGON, { 0, 3, 2, 1 }, 0, 0, 0); // Bottom
+        box.elements().add(ElementType::POLYGON, { 1, 2, 6, 5 }, 1, 0, 1); // Front
+        box.elements().add(ElementType::POLYGON, { 0, 4, 7, 3 }, 2, 0, 2); // Back
+        box.elements().add(ElementType::POLYGON, { 1, 5, 4, 0 }, 3, 0, 3); // Left side
+        box.elements().add(ElementType::POLYGON, { 3, 7, 6, 2 }, 4, 0, 4); // Right side
+        box.elements().add(ElementType::POLYGON, { 6, 7, 4, 5 }, 5, 0, 5); // Top
 
         VTMSTowMesh tmp_vtms_obj;
         tmp_vtms_obj.mesh = std::move(box);
@@ -1083,18 +1083,18 @@ Mesh create_triangular_matrix_box(const Point& n,
     }
     else
     {
-        box.elements().add(ElementType::T2D3N, { 2, 1, 0 }); // Bottom
-        box.elements().add(ElementType::T2D3N, { 2, 0, 3 });
-        box.elements().add(ElementType::T2D3N, { 6, 5, 1 }); // Front
-        box.elements().add(ElementType::T2D3N, { 6, 1, 2 });
-        box.elements().add(ElementType::T2D3N, { 0, 4, 7 }); // Back
-        box.elements().add(ElementType::T2D3N, { 0, 7, 3 });
-        box.elements().add(ElementType::T2D3N, { 1, 5, 0 }); // Left side
-        box.elements().add(ElementType::T2D3N, { 0, 5, 4 });
-        box.elements().add(ElementType::T2D3N, { 3, 7, 6 }); // Right side
-        box.elements().add(ElementType::T2D3N, { 3, 6, 2 });
-        box.elements().add(ElementType::T2D3N, { 6, 7, 4 }); // Top
-        box.elements().add(ElementType::T2D3N, { 6, 4, 5 });
+        box.elements().add(ElementType::T2D3N, { 2, 1, 0 }, 0, 0, 0); // Bottom
+        box.elements().add(ElementType::T2D3N, { 2, 0, 3 }, 1, 0, 0);
+        box.elements().add(ElementType::T2D3N, { 6, 5, 1 }, 2, 0, 1); // Front
+        box.elements().add(ElementType::T2D3N, { 6, 1, 2 }, 3, 0, 1);
+        box.elements().add(ElementType::T2D3N, { 0, 4, 7 }, 4, 0, 2); // Back
+        box.elements().add(ElementType::T2D3N, { 0, 7, 3 }, 5, 0, 2);
+        box.elements().add(ElementType::T2D3N, { 1, 5, 0 }, 6, 0, 3); // Left side
+        box.elements().add(ElementType::T2D3N, { 0, 5, 4 }, 7, 0, 3);
+        box.elements().add(ElementType::T2D3N, { 3, 7, 6 }, 8, 0, 4); // Right side
+        box.elements().add(ElementType::T2D3N, { 3, 6, 2 }, 9, 0, 4);
+        box.elements().add(ElementType::T2D3N, { 6, 7, 4 }, 10, 0, 5); // Top
+        box.elements().add(ElementType::T2D3N, { 6, 4, 5 }, 11, 0, 5);
 
         return box;
     }

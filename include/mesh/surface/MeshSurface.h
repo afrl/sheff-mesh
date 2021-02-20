@@ -79,4 +79,8 @@ class MeshSurface
     /// Offsets for connectivities_ for all of the surface elements
     std::vector<std::size_t> connectivity_offsets_;
 };
+
+/// Returns a mean coordinate of the nodes which should be interior to the element in most cases.
+Point calc_mean_coordinate_surface_element(const SurfaceElementConstAccessor& surf_element);
+Point calc_mean_coordinate_surface_element(const SurfaceElementAccessor& surf_element);
 }

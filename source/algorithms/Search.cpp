@@ -9,6 +9,27 @@
 
 namespace mesh
 {
+std::pair<Point, Point> find_extent(const std::vector<simple_math::Point>& points)
+{
+    Point neg_point = { INFINITY, INFINITY, INFINITY };
+    Point pos_point = { -INFINITY, -INFINITY, -INFINITY };
+    for (auto& p : points)
+    {
+        for (auto i = 0; i < neg_point.size(); i++)
+        {
+            if (p[i] < neg_point[i])
+            {
+                neg_point[i] = p[i];
+            }
+            if (p[i] > pos_point[i])
+            {
+                pos_point[i] = p[i];
+            }
+        }
+    }
+    return { neg_point, pos_point };
+}
+
 std::pair<Point, Point> find_extent(const Mesh& mesh)
 {
     Point neg_point = { INFINITY, INFINITY, INFINITY };

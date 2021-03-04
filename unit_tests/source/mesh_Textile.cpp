@@ -10,25 +10,6 @@
 
 using namespace mesh;
 
-std::vector<std::string> get_files_with_extension(const std::string& path,
-                                                  const std::string& ext,
-                                                  const bool absolute_path)
-{
-    std::vector<std::string> files;
-
-    for (auto& p : fs::directory_iterator(path))
-    {
-        if (utility::istr_is_equal(p.path().extension().string(), ext))
-            if (absolute_path)
-                files.push_back(p.path().string());
-            else
-                files.push_back(p.path().relative_path().string());
-    }
-    std::sort(files.begin(), files.end(), doj::alphanum_less<std::string>());
-
-    return files;
-}
-
 void exe_code()
 {
     auto tow_ctw_filepaths = get_files_with_extension("./", ".ctw", false);

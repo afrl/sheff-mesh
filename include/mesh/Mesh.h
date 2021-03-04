@@ -75,6 +75,9 @@ class Mesh
     /// nodes/elements.
     void copy(const Mesh& other, const std::set<LocalIndex> element_indices_to_copy);
 
+    /// @brief See other definitions of copy for documentation (this only copies one element).
+    void copy(const Mesh& other, const LocalIndex& element_index_to_copy);
+
     /// Copies all elements and nodes from another mesh and adds them to the end of this container
     /// and also copies any nodes that appear in the element connectivies being copied.
     /// @important No checks are performed to see if a node already exists, so duplicate nodes could

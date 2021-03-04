@@ -21,4 +21,18 @@ static Mesh get_unit_linear_hex()
 
     return mesh;
 }
+
+static Mesh get_unit_P3D5N()
+{
+    Mesh mesh;
+    mesh.nodes().add({ -1, -1, -1 });
+    mesh.nodes().add({ 1, -1, -1 });
+    mesh.nodes().add({ 1, 1, -1 });
+    mesh.nodes().add({ -1, 1, -1 });
+    mesh.nodes().add({ 0, 0, 1 });
+
+    mesh.elements().add(mesh::ElementType::P3D5N, { 0, 1, 2, 3, 4 });
+
+    return mesh;
+}
 }

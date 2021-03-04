@@ -7,6 +7,11 @@
 
 namespace mesh
 {
+/// @brief Finds extent of a list of points (most negative and positive point forming the bounding box of
+/// the mesh).
+/// @returns A pair of points with most negative point being first and most positive being second.
+std::pair<Point, Point> find_extent(const std::vector<simple_math::Point>& points);
+
 /// @brief Finds extent of the mesh (most negative and positive point forming the bounding box of
 /// the mesh).
 /// @returns A pair of points with most negative point being first and most positive being second.

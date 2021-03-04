@@ -209,12 +209,25 @@ static fea_io::Partition<GlobalIndex, LocalIndex, FloatType> get_fea_io_partitio
         // subcomponent based on the numbering of nodes_in_partition and elements_in_partition,
         // so a map is needed from the mesh-based index to the partition-based index for ndoes.
         {
-            std::unordered_map<LocalIndex, LocalIndex> mesh_to_local_numbering_map;
+            std::vector<LocalIndex> mesh_to_partition_node_index_map(
+              mesh.nodes().size(),
+              std::numeric_limits<LocalIndex>::max());
             for (auto i : utility::indices(nodes_in_partition))
             {
-                mesh_to_local_numbering_map[nodes_in_partition[i]] = static_cast<LocalIndex>(i);
+                mesh_to_partition_node_index_map[nodes_in_partition[i]] =
+                  static_cast<LocalIndex>(i);
             }
 
+            std::vector<LocalIndex> mesh_to_partition_element_index_map(
+              mesh.elements().size(),
+              std::numeric_limits<LocalIndex>::max());
+            for (auto i : utility::indices(elements_in_partition))
+            {
+                mesh_to_partition_element_index_map[elements_in_partition[i]] =
+                  static_cast<LocalIndex>(i);
+            }
+
+            // Note: indices are in the partitiong numbering (not neccessarily the total mesh)
             std::unordered_set<LocalIndex> nodes_in_subcomponent_set;
             for (auto i : utility::indices(elements_in_partition))
             {
@@ -223,10 +236,12 @@ static fea_io::Partition<GlobalIndex, LocalIndex, FloatType> get_fea_io_partitio
 
                 if (element.component_id() == component_info.id)
                 {
-                    subcomponent.elements_in_subcomponent.push_back(element.local_index());
+                    subcomponent.elements_in_subcomponent.push_back(
+                      mesh_to_partition_element_index_map[element.local_index()]);
                     for (auto& node_index : element.connectivity())
                     {
-                        nodes_in_subcomponent_set.insert(mesh_to_local_numbering_map[node_index]);
+                        nodes_in_subcomponent_set.insert(
+                          mesh_to_partition_node_index_map[node_index]);
                     }
                 }
             }

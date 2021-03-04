@@ -259,20 +259,20 @@ const std::vector<FaceInfo> get_face_info(const ElementType& geom_type)
         // 3D Connectivitives
         case ElementType::T3D4N:
             // Linear tetrahedral
-            return { { FaceType::T3D3N, { 0, 3, 1 }, { 0, 2, 1 } },
+            return { { FaceType::T3D3N, { 1, 3, 0 }, { 0, 2, 1 } },
                      { FaceType::T3D3N, { 2, 5, 1 }, { 0, 3, 2 } },
                      { FaceType::T3D3N, { 3, 5, 4 }, { 1, 2, 3 } },
                      { FaceType::T3D3N, { 0, 4, 2 }, { 0, 1, 3 } } };
         case ElementType::P3D5N:
             // Linear pyramid
-            return { { FaceType::Q3D4N, { 0, 1, 2, 3 }, { 0, 3, 2, 1 } },
+            return { { FaceType::Q3D4N, { 3, 2, 1, 0 }, { 0, 3, 2, 1 } },
                      { FaceType::T3D3N, { 0, 5, 4 }, { 0, 1, 4 } },
                      { FaceType::T3D3N, { 1, 6, 5 }, { 1, 2, 4 } },
                      { FaceType::T3D3N, { 2, 7, 6 }, { 2, 3, 4 } },
                      { FaceType::T3D3N, { 3, 4, 7 }, { 3, 0, 4 } } };
         case ElementType::W3D6N:
             // Linear wedge
-            return { { FaceType::T3D3N, { 0, 2, 1 }, { 0, 2, 1 } },
+            return { { FaceType::T3D3N, { 2, 1, 0 }, { 0, 2, 1 } },
                      { FaceType::T3D3N, { 6, 7, 8 }, { 3, 4, 5 } },
                      { FaceType::Q3D4N, { 0, 4, 6, 3 }, { 0, 1, 4, 3 } },
                      { FaceType::Q3D4N, { 3, 8, 5, 2 }, { 0, 3, 5, 2 } },

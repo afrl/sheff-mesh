@@ -155,6 +155,11 @@ void Mesh::copy(const Mesh& other, const std::set<LocalIndex> element_indices_to
     }
 }
 
+void Mesh::copy(const Mesh& other, const LocalIndex& element_index_to_copy)
+{
+    copy(other, std::vector<LocalIndex>({ element_index_to_copy }));
+}
+
 void Mesh::copy(const Mesh& other)
 {
     LocalIndex node_offset = nodes_.size();

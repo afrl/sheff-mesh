@@ -12,7 +12,9 @@ void write_vtk(const Mesh& mesh,
                const std::vector<double>& point_data,
                const std::vector<double>& element_data,
                const std::vector<unsigned int>& point_attributes,
-               const std::vector<unsigned int>& element_attributes)
+               const std::vector<unsigned int>& element_attributes,
+               const simple_math::GeneralMatrix& point_vector_data,
+               const simple_math::GeneralMatrix& element_vector_data)
 {
     std::ofstream fout(file_path.c_str());
     if (!fout)
@@ -72,19 +74,9 @@ void write_vtk(const Mesh& mesh,
     }
 
     // Write data
-    bool wrote_point_data_header = false;
 
     // Note: the cell data has to all be together in the VTK file
     fout << "CELL_DATA " << mesh.elements().size() << std::endl;
-
-    /* Note: I think component ID's have been phased out, so commenting out for now.
-    fout << "SCALARS ComponentIDs int 1\n";
-    fout << "LOOKUP_TABLE default\n";
-    for (auto element : mesh.elements())
-    {
-        fout << e_ptr->get_component_id() << std::endl;
-    }
-    */
 
     // Write orientation data
     if (write_lcs)
@@ -157,7 +149,7 @@ void write_vtk(const Mesh& mesh,
         if (element_attributes.size() != mesh.elements().size())
         {
             throw _UTIL_MSG_EXCEPT(
-              "The size of the given cell attributes did not match the number of elmeents.");
+              "The size of the given cell attributes did not match the number of elements.");
         }
 
         fout << "SCALARS Attributes unsigned_int 1\n";
@@ -168,11 +160,29 @@ void write_vtk(const Mesh& mesh,
         }
     }
 
-    if (!wrote_point_data_header)
+    if (element_vector_data.size() > 0)
     {
-        fout << "POINT_DATA " << mesh.nodes().size() << std::endl;
-        wrote_point_data_header = true;
+        _UTIL_ASSERT(
+          element_vector_data.rows() == mesh.elements().size(),
+          "The size of the given cell vector data did not match the number of elements.");
+
+        auto n_components = element_vector_data.cols();
+        fout << "SCALARS VectorData float " + std::to_string(n_components) + "\n";
+        fout << "LOOKUP_TABLE default\n";
+        for (auto i : utility::range(element_vector_data.rows()))
+        {
+            for (auto j : utility::range(element_vector_data.cols()))
+            {
+                fout << element_vector_data(i, j) << " ";
+            }
+            fout << std::endl;
+        }
     }
+    
+
+    // Start of writing point data
+    fout << "POINT_DATA " << mesh.nodes().size() << std::endl;
+
     fout << "SCALARS GlobalIDs int 1\n";
     fout << "LOOKUP_TABLE default\n";
     for (auto node : mesh.nodes())
@@ -195,11 +205,6 @@ void write_vtk(const Mesh& mesh,
               "The size of the given point data did not match the number of nodes.");
         }
 
-        if (!wrote_point_data_header)
-        {
-            fout << "POINT_DATA " << mesh.nodes().size() << std::endl;
-            wrote_point_data_header = true;
-        }
         fout << "SCALARS Data float 1\n";
         fout << "LOOKUP_TABLE default\n";
         for (auto& value : point_data)
@@ -216,16 +221,30 @@ void write_vtk(const Mesh& mesh,
               "The size of the given point attributes did not match the number of nodes.");
         }
 
-        if (!wrote_point_data_header)
-        {
-            fout << "POINT_DATA " << mesh.nodes().size() << std::endl;
-            wrote_point_data_header = true;
-        }
         fout << "SCALARS Attributes unsigned_int 1\n";
         fout << "LOOKUP_TABLE default\n";
         for (auto& value : point_attributes)
         {
             fout << value << std::endl;
+        }
+    }
+
+    if (point_vector_data.size() > 0)
+    {
+        _UTIL_ASSERT(
+          point_vector_data.rows() == mesh.nodes().size(),
+          "The size of the given point vector data did not match the number of nodes.");
+
+        auto n_components = point_vector_data.cols();
+        fout << "SCALARS VectorData float " + std::to_string(n_components) + "\n";
+        fout << "LOOKUP_TABLE default\n";
+        for (auto i : utility::range(point_vector_data.rows()))
+        {
+            for (auto j : utility::range(point_vector_data.cols()))
+            {
+                fout << point_vector_data(i, j) << " ";
+            }
+            fout << std::endl;
         }
     }
 

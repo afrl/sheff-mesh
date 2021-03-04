@@ -187,7 +187,7 @@ static const double* get_parametric_points_P3D5N(const std::array<double, 6>& pa
                  "Parametric points not implemented for given type of quadrature.  \
                       Maybe update NodeParametricCoordinates.h for a new type.");
 
-    static double points[15] = { -1, -1, -1, -1, 1, -1, 1, 1, -1, 1, -1, -1, 0, 0, 1 };
+    static double points[15] = { -1, -1, -1, 1, -1, -1, 1, 1, -1, -1, 1, -1, 0, 0, 1 };
     return points;
 }
 

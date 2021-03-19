@@ -75,6 +75,25 @@ std::pair<Point, Point> find_extent(const std::vector<std::pair<Point, Point>>& 
     return { neg_point, pos_point };
 }
 
+std::vector<LocalIndex> find_elements_in_box(const Mesh& mesh, const Point& min, const Point& max)
+{
+    std::vector<LocalIndex> element_indices;
+    for (auto e : mesh.elements())
+    {
+        auto m      = calc_mean_coordinate(e);
+        bool inside = true;
+        for (auto i : utility::range(3))
+        {
+            inside &= m[i] >= min[i] && m[i] <= max[i];
+        }
+        if (inside)
+        {
+            element_indices.push_back(e.local_index());
+        }
+    }
+    return element_indices;
+}
+
 std::pair<Point, Point> find_global_extent(const Mesh& mesh)
 {
     auto local_extent = find_extent(mesh);

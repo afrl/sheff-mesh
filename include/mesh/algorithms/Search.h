@@ -20,6 +20,9 @@ std::pair<Point, Point> find_extent(const Mesh& mesh);
 /// @brief Returns the extent of multiple extents.
 std::pair<Point, Point> find_extent(const std::vector<std::pair<Point, Point>>& extents);
 
+/// @brief Finds all elements whose centroid is the in the bounding box defined by (min, max)
+std::vector<LocalIndex> find_elements_in_box(const Mesh& mesh, const Point& min, const Point& max);
+
 /// @brief Finds global extent of the mesh (most negative and positive point forming the bounding
 /// box of the mesh) taking into considering that the mesh may be distributed across ranks.
 /// @returns A pair of points with most negative point being first and most positive being second.

@@ -1,14 +1,25 @@
 # Make sure we have public dependencies available
-find_package(RapidJSON 1.1.0 CONFIG REQUIRED HINTS 
-  "${CMAKE_SOURCE_DIR}/../third_party/rapidjson_install_dir" "${CMAKE_SOURCE_DIR}/../../third_party/rapidjson_install_dir" "${CMAKE_SOURCE_DIR}/modules/third_party/rapidjson_install_dir")
-find_package(SecondPartyMesh CONFIG REQUIRED HINTS 
-  "${CMAKE_SOURCE_DIR}/../second_party/second_party_mesh/install_dir" "${CMAKE_SOURCE_DIR}/../second_party_mesh/install_dir" "${CMAKE_SOURCE_DIR}/modules/second_party/second_party_mesh/install_dir")
-find_package(SecondPartyMetis CONFIG REQUIRED HINTS 
-  "${CMAKE_SOURCE_DIR}/../second_party/second_party_metis/install_dir" "${CMAKE_SOURCE_DIR}/../second_party_metis/install_dir" "${CMAKE_SOURCE_DIR}/modules/second_party/second_party_metis/install_dir")
-find_package(SimpleMath CONFIG REQUIRED HINTS 
-  "${CMAKE_SOURCE_DIR}/../simple_math/install_dir" "${CMAKE_SOURCE_DIR}/../../simple_math/install_dir" "${CMAKE_SOURCE_DIR}/modules/simple_math/install_dir")
-find_package(Utility CONFIG REQUIRED HINTS 
-  "${CMAKE_SOURCE_DIR}/../utility/install_dir" "${CMAKE_SOURCE_DIR}/../../utility/install_dir" "${CMAKE_SOURCE_DIR}/modules/utility/install_dir")
+if(NOT RapidJSON_FOUND)
+    message(STATUS "SecondPartyMath did not already exist, finding package.")
+    find_package(RapidJSON 1.1.0 CONFIG REQUIRED HINTS
+                 "${PROJECT_SOURCE_DIR}/../../third_party/rapidjson_install_dir")
+endif()
+if(NOT TARGET SecondPartyMesh::SecondPartyMesh)
+    message(STATUS "SecondPartyMesh did not already exist, finding package.")
+    find_package(SecondPartyMesh CONFIG REQUIRED HINTS "${PROJECT_SOURCE_DIR}/../../second_party/second_party_mesh/build")
+endif()
+if(NOT TARGET SecondPartyMetis::SecondPartyMetis)
+    message(STATUS "SecondPartyMetis did not already exist, finding package.")
+    find_package(SecondPartyMetis CONFIG REQUIRED HINTS "${PROJECT_SOURCE_DIR}/../../second_party/second_party_metis/build")
+endif()
+if(NOT TARGET SimpleMath::SimpleMath)
+    message(STATUS "SimpleMath did not already exist, finding package.")
+    find_package(SimpleMath CONFIG REQUIRED HINTS "${PROJECT_SOURCE_DIR}/../../first_party/simple_math/build")
+endif()
+if(NOT TARGET Utility::Utility)
+    message(STATUS "Utility did not already exist, finding package.")
+    find_package(Utility CONFIG REQUIRED HINTS "${PROJECT_SOURCE_DIR}/../../first_party/utility/build")
+endif()
 
 if(@MESH_USE_FEAIO@)
   find_package(FeaIo CONFIG REQUIRED HINTS 

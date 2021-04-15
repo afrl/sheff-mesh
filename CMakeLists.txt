@@ -4,12 +4,12 @@ cmake_policy(SET CMP0048 NEW)
 project(MESH VERSION 1.0.0 LANGUAGES CXX)
 
 # Options
-option(MESH_BuildTests "Build the unit tests." OFF)
-option(MESH_USE_FEAIO "Indicates if the build will support the fea_io file format, requiring the library." ON)
+option(SHEFF_BuildTests "Build the unit tests." OFF)
+option(SHEFF_USE_FEAIO "Indicates if the build will support the fea_io file format, requiring the library." ON)
 
 # For debugging, print generator, compiler, and options
 message(STATUS "Gen: ${CMAKE_GENERATOR}, CXX: ${CMAKE_CXX_COMPILER_ID}, Mode: ${CMAKE_BUILD_TYPE}")
-message(STATUS "Tests: ${MESH_BuildTests}, FEAIO: ${MESH_USE_FEAIO}")
+message(STATUS "Tests: ${SHEFF_BuildTests}, FEAIO: ${SHEFF_USE_FEAIO}")
 
 # Add cmake dir to module path
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
@@ -46,7 +46,7 @@ if(NOT TARGET Utility::Utility)
     find_package(Utility CONFIG REQUIRED HINTS "${PROJECT_SOURCE_DIR}/../../first_party/utility/build")
 endif()
 
-if(MESH_USE_FEAIO)
+if(SHEFF_USE_FEAIO)
     if(NOT TARGET FeaIo::FeaIo)
         message(STATUS "FeaIo did not already exist, finding package.")
         find_package(FeaIo CONFIG REQUIRED HINTS "${PROJECT_SOURCE_DIR}/../../first_party/fea_io/build")
@@ -87,7 +87,7 @@ target_link_libraries(mesh PUBLIC SecondPartyMesh::SecondPartyMesh)
 target_link_libraries(mesh PUBLIC SecondPartyMetis::SecondPartyMetis)
 target_link_libraries(mesh PUBLIC SimpleMath::SimpleMath)
 
-if(MESH_USE_FEAIO)
+if(SHEFF_USE_FEAIO)
 	target_compile_definitions(mesh PUBLIC USE_FEAIO)
 	target_link_libraries(mesh PUBLIC FeaIo::FeaIo)
 endif()
@@ -107,7 +107,7 @@ assign_source_groups_sheff()
 #################################
     
 # Build tests
-if(MESH_BuildTests)
+if(SHEFF_BuildTests)
     include(CTest)
     enable_testing()
     add_subdirectory(unit_tests)

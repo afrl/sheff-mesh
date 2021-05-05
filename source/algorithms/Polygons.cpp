@@ -25,7 +25,7 @@ namespace mesh
 /// @param allow_new_nodes_on_boundary
 /// @param max_triangle_area
 /// @param min_angle
-triangulateio triangle_kernel(
+triangulateio triangle_polygon_kernel(
   const std::vector<Point>& points,
   const std::vector<int>& point_markers,
   const std::vector<std::pair<LocalIndex, LocalIndex>>& boundary_segments,
@@ -279,16 +279,16 @@ void triangulate_polygon(Mesh& total_mesh,
     }
 
     // Call triangle
-    struct triangulateio output = triangle_kernel(transformed_points,
-                                                  markers,
-                                                  boundary_segments,
-                                                  {},
-                                                  {},
-                                                  {},
-                                                  {},
-                                                  false,
-                                                  max_area,
-                                                  10.0);
+    struct triangulateio output = triangle_polygon_kernel(transformed_points,
+                                                          markers,
+                                                          boundary_segments,
+                                                          {},
+                                                          {},
+                                                          {},
+                                                          {},
+                                                          false,
+                                                          max_area,
+                                                          10.0);
 
     {
         // So, I will exploit the fact that triangle labels the given points first

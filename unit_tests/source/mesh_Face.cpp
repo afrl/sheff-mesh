@@ -10,7 +10,7 @@ using namespace mesh;
 
 int main()
 {
-    Mesh mesh = get_unit_linear_hex();
+    Mesh mesh = get_unit_element(mesh::ElementType::H3D8N);
 
     ElementConstAccessor element = mesh.elements()[0];
     FaceContainer faces(element);

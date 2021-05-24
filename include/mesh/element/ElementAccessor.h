@@ -112,7 +112,7 @@ class ElementAccessorBase
         return elements_.component_ids_[curr_index_];
     }
 
-    /// Returns the object that contains the local coordinate systems throughout the elemetn.
+    /// Returns the object that contains the local coordinate systems throughout the element.
     inline auto& local_coord_sys() const
     {
         assert(!elements_.lcs_.empty());

@@ -25,7 +25,7 @@ Mesh read_abaqus(const std::string& file_path)
         {
             // Read data lines
             getline(input_stream, line);
-            while (line.find("*") == std::string::npos && line.find("*") == std::string::npos)
+            while (line.find("*") == std::string::npos && line.size() > 0)
             {
                 // Replace all commas with spaces so we have only whitespace delimiters
                 std::replace(line.begin(), line.end(), ',', ' ');

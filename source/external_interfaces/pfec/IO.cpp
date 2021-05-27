@@ -100,7 +100,8 @@ Mesh read_pfec(const std::string& meta_file_path, const PartitionIndex partition
             mesh.elements().add(convert_element_type(element_types[i]),
                                 connectivity,
                                 static_cast<GlobalIndex>(global_numbers[i]),
-                                static_cast<PartitionIndex>(partitions[i]));
+                                static_cast<PartitionIndex>(partitions[i]),
+                                static_cast<ComponentIndex>(domains[i]));
         }
 
         // Create a group for the domains
@@ -142,13 +143,20 @@ Mesh read_pfec(const std::string& meta_file_path, const PartitionIndex partition
                         lcs.initialize(LCSAssignmentType::Element,
                                        static_cast<ConnIndex>(element.connectivity().size()));
                     }
+                    else if (n_quaterions_in_element > 1)
+                    {
+                        lcs.initialize(LCSAssignmentType::Node,
+                                       static_cast<ConnIndex>(element.connectivity().size()));
+                    }
 
                     for (auto j = 0; j < n_quaterions_in_element; ++j)
                     {
-                        lcs[j].w() = quaterions[local_index][j][0];
-                        lcs[j].x() = quaterions[local_index][j][1];
-                        lcs[j].y() = quaterions[local_index][j][2];
-                        lcs[j].z() = quaterions[local_index][j][3];
+                        auto& w = quaterions[local_index][j][0];
+                        auto& x = quaterions[local_index][j][1];
+                        auto& y = quaterions[local_index][j][2];
+                        auto& z = quaterions[local_index][j][3];
+                        auto q  = simple_math::Quaternion(w, x, y, z);
+                        lcs.set(j, q);
                     }
                 }
             }

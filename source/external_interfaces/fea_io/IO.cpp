@@ -325,19 +325,19 @@ static void write_serial_single_partition(Mesh& mesh, const std::string file_ste
         {
             if (group_info.type == fea_io::GroupType::Node)
             {
-                auto& node_indices = mesh.nodes().group(group_info.name).node_indices;
+                auto& nodes_in_group = mesh.nodes().group(group_info.name).node_indices;
                 group_writer.write_list(group_info.name,
                                         0,
-                                        static_cast<LocalIndex>(node_indices.size()),
-                                        node_indices.data());
+                                        static_cast<LocalIndex>(nodes_in_group.size()),
+                                        nodes_in_group.data());
             }
             else if (group_info.type == fea_io::GroupType::Element)
             {
                 auto& elements_in_group = mesh.elements().group(group_info.name).element_indices;
                 group_writer.write_list(group_info.name,
                                         0,
-                                        static_cast<LocalIndex>(element_indices.size()),
-                                        element_indices.data());
+                                        static_cast<LocalIndex>(elements_in_group.size()),
+                                        elements_in_group.data());
             }
         }
         group_writer.close();
@@ -501,9 +501,10 @@ Mesh read_fea_io(const std::string& file_stem, const PartitionIndex partition_id
         }
 
         // Create a group for the elements in the component
-        auto component_group = mesh.elements().group(find_iter->name);
+        auto& component_group = mesh.elements().group(find_iter->name);
         for (auto local_elem_id : subcomponent.elements_in_subcomponent)
         {
+            mesh.elements()[local_elem_id].component_id() = subcomponent.component_id;
             component_group.element_indices.push_back(local_elem_id);
         }
 
@@ -520,10 +521,12 @@ Mesh read_fea_io(const std::string& file_stem, const PartitionIndex partition_id
               static_cast<ConnIndex>(element.connectivity().size()));
             for (auto i = 0; i < lcs.size(); i++)
             {
-                lcs[i].w() = subcomponent.lcs_parameters_in_subcomponent[curr_lcs_index++];
-                lcs[i].x() = subcomponent.lcs_parameters_in_subcomponent[curr_lcs_index++];
-                lcs[i].y() = subcomponent.lcs_parameters_in_subcomponent[curr_lcs_index++];
-                lcs[i].z() = subcomponent.lcs_parameters_in_subcomponent[curr_lcs_index++];
+                auto& w = subcomponent.lcs_parameters_in_subcomponent[curr_lcs_index++];
+                auto& x = subcomponent.lcs_parameters_in_subcomponent[curr_lcs_index++];
+                auto& y = subcomponent.lcs_parameters_in_subcomponent[curr_lcs_index++];
+                auto& z = subcomponent.lcs_parameters_in_subcomponent[curr_lcs_index++];
+                auto q  = simple_math::Quaternion(w, x, y, z);
+                lcs.set(i, q);
             }
         }
     }

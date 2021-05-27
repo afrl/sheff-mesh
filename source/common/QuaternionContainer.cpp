@@ -140,8 +140,7 @@ void mesh::QuaternionContainer::refer_to(const QuaternionContainer& other)
 void QuaternionContainer::copy(const QuaternionContainer& other)
 {
     cleanup_if_needed();
-    type_ = get_non_ref_equivalent(other.type_);
-    initialize(type_, other.size());
+    initialize(get_non_ref_equivalent(other.type_), other.size());
     for (auto i : utility::range(n_quaternions_))
     {
         quaternions_[i] = other.quaternions_[i];

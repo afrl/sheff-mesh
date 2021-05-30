@@ -156,7 +156,7 @@ Mesh read_pfec(const std::string& meta_file_path, const PartitionIndex partition
                         auto& y = quaterions[local_index][j][2];
                         auto& z = quaterions[local_index][j][3];
                         auto q  = simple_math::Quaternion(w, x, y, z);
-                        lcs.set(j, q);
+                        lcs.set(j, q.inverse());
                     }
                 }
             }

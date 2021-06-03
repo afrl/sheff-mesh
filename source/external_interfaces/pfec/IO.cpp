@@ -112,7 +112,7 @@ Mesh read_pfec(const std::string& meta_file_path, const PartitionIndex partition
         }
         for (auto& domain : domains_set)
         {
-            auto& group = mesh.elements().group("Domain" + std::to_string(domain));
+            auto& group = mesh.elements().group("Component" + std::to_string(domain));
             for (auto i : utility::indices(domains))
             {
                 if (domains[i] == domain)

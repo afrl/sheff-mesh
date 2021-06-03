@@ -25,6 +25,7 @@ void ElementToComponentMap::update(const Mesh& mesh)
     {
         subcomponent_to_component_map_[subcomponent_index] = component_id;
         component_to_subcomponent_map[component_id]        = subcomponent_index;
+        subcomponent_index++;
     }
 
     element_to_subcomponent_map_.resize(mesh.elements().size());
@@ -187,14 +188,15 @@ void ElementToComponentMap::build_maps_from_component_assignments()
             {
                 if (element_to_subcomponent_map_[element_index] == subcomponent_index)
                 {
+
+                    connectivity_element_offsets_[element_index] =
+                      element_subcomponent_connectivities_.size();
+
                     for (auto& node_index : mesh_ptr_->elements()[element_index].connectivity())
                     {
                         element_subcomponent_connectivities_.push_back(
                           local_index_to_subcomponent_index[node_index]);
                     }
-
-                    connectivity_element_offsets_[element_index] =
-                      element_subcomponent_connectivities_.size();
                 }
             }
         }

@@ -115,6 +115,7 @@ void Mesh::copy(const Mesh& other, const std::set<LocalIndex> element_indices_to
         }
     }
 
+    LocalIndex node_offset = nodes_.size();
     std::unordered_map<LocalIndex, LocalIndex> other_to_this_node_index_map;
     for (auto i : node_indices_to_copy)
     {
@@ -124,6 +125,19 @@ void Mesh::copy(const Mesh& other, const std::set<LocalIndex> element_indices_to
         other_to_this_node_index_map[other_node.local_index()] = nodes_.size() - 1;
     }
 
+    for (auto& other_group : other.nodes().groups())
+    {
+        auto& this_group = nodes().group(other_group.name);
+        for (auto& i : other_group.node_indices)
+        {
+            if (other_to_this_node_index_map.count(i) > 0)
+            {
+                this_group.node_indices.push_back(i + node_offset);
+            }
+        }
+    }
+
+    LocalIndex element_offset = elements_.size();
     for (auto i : element_indices_to_copy)
     {
         auto new_element = elements_.add_copy(other.elements()[i]);
@@ -153,6 +167,23 @@ void Mesh::copy(const Mesh& other, const std::set<LocalIndex> element_indices_to
             }
         }
     }
+
+    if (other.elements().groups().size() > 0)
+    {
+        std::set<mesh::LocalIndex> element_indices_to_copy_set(element_indices_to_copy.begin(),
+                                                               element_indices_to_copy.end());
+        for (auto& other_group : other.elements().groups())
+        {
+            auto& this_group = elements().group(other_group.name);
+            for (auto& i : other_group.element_indices)
+            {
+                if (element_indices_to_copy_set.count(i) > 0)
+                {
+                    this_group.element_indices.push_back(i + element_offset);
+                }
+            }
+        }
+    }
 }
 
 void Mesh::copy(const Mesh& other, const LocalIndex& element_index_to_copy)
@@ -170,6 +201,16 @@ void Mesh::copy(const Mesh& other)
                    other_node.parent_partition());
     }
 
+    for (auto& other_group : other.nodes().groups())
+    {
+        auto& this_group = nodes().group(other_group.name);
+        for (auto& i : other_group.node_indices)
+        {
+            this_group.node_indices.push_back(i + node_offset);
+        }
+    }
+
+    LocalIndex element_offset = elements_.size();
     for (auto& other_element : other.elements())
     {
         auto new_element = elements_.add_copy(other_element);
@@ -197,6 +238,15 @@ void Mesh::copy(const Mesh& other)
             {
                 c = c + node_offset;
             }
+        }
+    }
+
+    for (auto& other_group : other.elements().groups())
+    {
+        auto& this_group = elements().group(other_group.name);
+        for (auto& i : other_group.element_indices)
+        {
+            this_group.element_indices.push_back(i + element_offset);
         }
     }
 }

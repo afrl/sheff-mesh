@@ -228,7 +228,7 @@ static fea_io::Partition<GlobalIndex, LocalIndex, FloatType> get_fea_io_partitio
             }
 
             // Note: indices are in the partitiong numbering (not neccessarily the total mesh)
-            std::unordered_set<LocalIndex> nodes_in_subcomponent_set;
+            std::set<LocalIndex> nodes_in_subcomponent_set;
             for (auto i : utility::indices(elements_in_partition))
             {
                 auto& e_local_id = elements_in_partition[i];

@@ -1,7 +1,9 @@
 #include "mesh/algorithms/Search.h"
 
+#include "mesh/basis/BasisFunctions.h"
 #include "mesh/face/Face.h"
 #include "mesh/surface/Surface.h"
+#include "simple_math/Utility.h"
 #include "utility/Hash.h"
 #include "utility/MPIUtils.h"
 
@@ -119,14 +121,14 @@ ComponentIndex find_global_max_component_id(const Mesh& mesh)
     return utility::MPIUtils::max_across_ranks(curr_max_id);
 }
 
-MeshSurface extract_boundary(Mesh& mesh)
+BoundaryInfo extract_boundary(const Mesh& mesh)
 {
     std::vector<LocalIndex> elements_to_search(mesh.elements().size());
     std::iota(elements_to_search.begin(), elements_to_search.end(), 0);
     return extract_boundary(mesh, elements_to_search);
 }
 
-MeshSurface extract_boundary(Mesh& mesh, const std::vector<LocalIndex>& elements_to_search)
+BoundaryInfo extract_boundary(const Mesh& mesh, const std::vector<LocalIndex>& elements_to_search)
 {
     // A map from the face hash to the pair of (element index, face index) for all unmatched faces.
     // If a match is found, then the existing object is removed (thus assuming no more than 2
@@ -150,7 +152,7 @@ MeshSurface extract_boundary(Mesh& mesh, const std::vector<LocalIndex>& elements
         }
     }
 
-    MeshSurface surface_elements(mesh);
+    BoundaryInfo boundary_info = { MeshSurface(mesh), {} };
     for (auto& p : unmatched_faces)
     {
         auto& element_index = p.second.first;
@@ -158,9 +160,11 @@ MeshSurface extract_boundary(Mesh& mesh, const std::vector<LocalIndex>& elements
 
         FaceContainer faces(mesh.elements()[element_index]);
         auto& face = faces[face_index];
-        surface_elements.add(face);
+        boundary_info.surface.add(face);
+        boundary_info.parent_volume_elements.push_back(element_index);
+        boundary_info.face_in_parent_volume_elements.push_back(face_index);
     }
-    return surface_elements;
+    return boundary_info;
 }
 std::vector<ElementFacePair> find_faces_from_node_set(const Mesh& mesh,
                                                       const std::set<LocalIndex>& node_set)
@@ -212,5 +216,41 @@ std::map<ElementType, LocalIndex> count_element_types(const Mesh& mesh)
         }
     }
     return type_count_map;
+}
+
+simple_math::Point find_parametric_point(const ElementConstAccessor& element,
+                                         const simple_math::Point& global_point)
+{
+    auto global_coord = simple_math::point_as_vector(global_point);
+    simple_math::GeneralMatrix node_coords(element.connectivity().size(), 3);
+    for (auto i : utility::range(element.connectivity().size()))
+    {
+        node_coords.row(i) = element.node(i).coord();
+    }
+
+    simple_math::GeneralVector values;
+    simple_math::GeneralMatrix derivatives;
+    simple_math::Vector3D curr_guess = simple_math::Vector3D::Zero();
+    simple_math::Point curr_guess_p;
+    int curr_iteration               = 0;
+
+    do
+    {
+        curr_guess_p = simple_math::to_point(curr_guess);
+        BasisFunctions::values(element.type(), curr_guess_p, values);
+        auto residual = node_coords.transpose() * values - global_coord;
+        if (residual.norm() < 1e-8)
+        {
+            return curr_guess_p;
+        }
+
+        BasisFunctions::derivatives(element.type(), curr_guess_p, derivatives);
+        auto jacobian = derivatives.transpose() * node_coords;
+
+        curr_guess -= jacobian.inverse() * residual;
+        curr_iteration++;
+    } while (curr_iteration < 20);
+
+    throw _UTIL_MSG_EXCEPT("Inverse problem to find parametric coordinate did not converge.");
 }
 }

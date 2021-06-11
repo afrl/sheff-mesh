@@ -75,7 +75,8 @@ class Mesh
     /// nodes/elements.
     void copy(const Mesh& other, const std::set<LocalIndex> element_indices_to_copy);
 
-    /// @brief See other definitions of copy for documentation (this only copies one element).
+    /// Copies an element from another mesh.  See other versions of this method for more
+    /// information.
     void copy(const Mesh& other, const LocalIndex& element_index_to_copy);
 
     /// Copies all elements and nodes from another mesh and adds them to the end of this container
@@ -133,10 +134,7 @@ class Mesh
     template<typename SerializerType>
     void deserialize(SerializerType& s)
     {
-        s(n_partitions_,
-          this_partition_id_,
-          nodes_,
-          elements_);
+        s(n_partitions_, this_partition_id_, nodes_, elements_);
     }
 
   private:

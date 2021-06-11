@@ -50,7 +50,7 @@ VTMSTowMesh create_tow_surface(const int material_number,
 /// quality triangulation of the tow's surface.
 /// @param tow_surface - polygonal surface mesh for a tow returned by read_vtms_ctw
 /// @returns Mean segment length
-double triangulate_tow_surface(VTMSTowMesh& tow_surface);
+double triangulate_tow_surface(VTMSTowMesh& tow_surface, const bool refine = true);
 
 /// @brief Write a triangulated tow surface to a .ply file, which can be read in by TetWild.
 void write_to_ply(const Mesh& triangular_surface, const std::string& file_path);

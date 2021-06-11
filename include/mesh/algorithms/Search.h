@@ -7,8 +7,8 @@
 
 namespace mesh
 {
-/// @brief Finds extent of a list of points (most negative and positive point forming the bounding box of
-/// the mesh).
+/// @brief Finds extent of a list of points (most negative and positive point forming the bounding
+/// box of the mesh).
 /// @returns A pair of points with most negative point being first and most positive being second.
 std::pair<Point, Point> find_extent(const std::vector<simple_math::Point>& points);
 
@@ -32,14 +32,21 @@ std::pair<Point, Point> find_global_extent(const Mesh& mesh);
 /// distributed across ranks.
 ComponentIndex find_global_max_component_id(const Mesh& mesh);
 
+struct BoundaryInfo
+{
+    MeshSurface surface;
+    std::vector<LocalIndex> parent_volume_elements;
+    std::vector<ConnIndex> face_in_parent_volume_elements;
+};
+
 /// @brief TODO write doc string
 /// @param mesh
-MeshSurface extract_boundary(Mesh& mesh);
+BoundaryInfo extract_boundary(const Mesh& mesh);
 
 /// @brief TODO write doc string
 /// @param mesh
 /// @param elements_to_search
-MeshSurface extract_boundary(Mesh& mesh, const std::vector<LocalIndex>& elements_to_search);
+BoundaryInfo extract_boundary(const Mesh& mesh, const std::vector<LocalIndex>& elements_to_search);
 
 /// A helper struct for find_faces_from_node_set
 struct ElementFacePair
@@ -58,4 +65,9 @@ std::pair<bool, LocalIndex> find_element_with_point(const Mesh& mesh, const simp
 
 /// @brief Counts how many elements of each unique element type in a mesh.
 std::map<ElementType, LocalIndex> count_element_types(const Mesh& mesh);
+
+/// @brief Finds the parametric coordinate in an element that yields the given global point by
+/// iteratively solves the inverse problem using Newton's method.
+simple_math::Point find_parametric_point(const ElementConstAccessor& element,
+                                         const simple_math::Point& global_point);
 }

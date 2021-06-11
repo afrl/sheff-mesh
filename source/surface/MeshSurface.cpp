@@ -1,7 +1,6 @@
 #include "mesh/surface/MeshSurface.h"
 
 #include "mesh/surface/SurfaceElementAccessor.h"
-#include "mesh/surface/SurfaceElementConstAccessor.h"
 #include "mesh/surface/SurfaceElementIterator.h"
 #include "simple_math/Utility.h"
 #include "utility/Hash.h"
@@ -11,7 +10,7 @@
 namespace mesh
 {
 
-MeshSurface::MeshSurface(Mesh& volume_mesh)
+MeshSurface::MeshSurface(const Mesh& volume_mesh)
   : volume_mesh_(volume_mesh)
   , connectivity_offsets_({ 0 })
 {
@@ -25,44 +24,24 @@ MeshSurface::MeshSurface(MeshSurface&& other) noexcept
     connectivity_offsets_.swap(other.connectivity_offsets_);
 }
 
-SurfaceElementIterator MeshSurface::begin()
+MeshSurface::SurfaceElementIterator MeshSurface::begin() const
 {
     return SurfaceElementIterator(*this, 0);
 }
 
-SurfaceElementConstIterator MeshSurface::begin() const
-{
-    return SurfaceElementConstIterator(*this, 0);
-}
-
-SurfaceElementIterator MeshSurface::end()
+MeshSurface::SurfaceElementIterator MeshSurface::end() const
 {
     return SurfaceElementIterator(*this, size());
 }
 
-SurfaceElementConstIterator MeshSurface::end() const
-{
-    return SurfaceElementConstIterator(*this, size());
-}
-
-SurfaceElementAccessor MeshSurface::operator[](LocalIndex i)
+SurfaceElementAccessor MeshSurface::operator[](LocalIndex i) const
 {
     return SurfaceElementAccessor(*this, i);
 }
 
-SurfaceElementConstAccessor MeshSurface::operator[](LocalIndex i) const
-{
-    return SurfaceElementConstAccessor(*this, i);
-}
-
-SurfaceElementAccessor MeshSurface::back()
+SurfaceElementAccessor MeshSurface::back() const
 {
     return SurfaceElementAccessor(*this, size() - 1);
-}
-
-SurfaceElementConstAccessor MeshSurface::back() const
-{
-    return SurfaceElementConstAccessor(*this, size() - 1);
 }
 
 LocalIndex MeshSurface::size() const
@@ -70,24 +49,31 @@ LocalIndex MeshSurface::size() const
     return static_cast<LocalIndex>(types_.size());
 }
 
-Mesh MeshSurface::mesh()
+Mesh MeshSurface::mesh() const
+{
+    return mesh_with_map().surface_mesh;
+}
+
+SurfaceMeshWithMaps MeshSurface::mesh_with_map() const
 {
     Mesh mesh;
-    mesh.n_partitions()      = volume_mesh_.n_partitions();
-    mesh.partition_id()      = volume_mesh_.partition_id();
+    mesh.n_partitions() = volume_mesh_.n_partitions();
+    mesh.partition_id() = volume_mesh_.partition_id();
 
     LocalIndex count = 0;
-    std::vector<LocalIndex> mesh_to_surf_node_map(volume_mesh_.nodes().size(),
+    std::vector<LocalIndex> vol_to_surf_node_map(volume_mesh_.nodes().size(),
                                                   std::numeric_limits<LocalIndex>::max());
+    std::vector<LocalIndex> surf_to_vol_node_map;
     for (auto& surf_element : *this)
     {
         for (auto& i : surf_element.connectivity())
         {
-            if (mesh_to_surf_node_map[i] == std::numeric_limits<LocalIndex>::max())
+            if (vol_to_surf_node_map[i] == std::numeric_limits<LocalIndex>::max())
             {
                 auto& node = volume_mesh_.nodes()[i];
                 mesh.nodes().add(node.point(), node.global_index());
-                mesh_to_surf_node_map[i] = count++;
+                vol_to_surf_node_map[i] = count++;
+                surf_to_vol_node_map.push_back(i);
             }
         }
     }
@@ -98,12 +84,12 @@ Mesh MeshSurface::mesh()
                                             surf_element.connectivity().end());
         for (auto& i : conn)
         {
-            i = mesh_to_surf_node_map[i];
+            i = vol_to_surf_node_map[i];
         }
         mesh.elements().add(surf_element.type(), conn);
     }
 
-    return mesh;
+    return { mesh, vol_to_surf_node_map, surf_to_vol_node_map };
 }
 
 void MeshSurface::add(const FaceConstAccessor& face)
@@ -119,6 +105,16 @@ void MeshSurface::add(const FaceConstAccessor& face)
 }
 
 void MeshSurface::add(const ElementType& type, const utility::Slice<const LocalIndex>& conn)
+{
+    types_.push_back(type);
+    for (auto& i : conn)
+    {
+        connectivities_.push_back(i);
+    }
+    connectivity_offsets_.push_back(connectivities_.size());
+}
+
+void MeshSurface::add(const ElementType& type, const utility::Slice<const LocalIndex, ConnIndex>& conn)
 {
     types_.push_back(type);
     for (auto& i : conn)
@@ -177,33 +173,5 @@ MeshSurface& MeshSurface::operator+=(const MeshSurface& other)
     }
 
     return *this;
-}
-
-Point calc_mean_coordinate_surface_element(const SurfaceElementConstAccessor& element)
-{
-    using namespace simple_math::point_operators;
-
-    Point mean                = { 0, 0, 0 };
-    const FloatType num_nodes = static_cast<FloatType>(element.connectivity().size());
-    for (auto& node : element.nodes())
-    {
-        mean = mean + node.point();
-    }
-    mean = (1.0 / num_nodes) * mean;
-    return mean;
-}
-
-Point calc_mean_coordinate_surface_element(const SurfaceElementAccessor& element)
-{
-    using namespace simple_math::point_operators;
-
-    Point mean                = { 0, 0, 0 };
-    const FloatType num_nodes = static_cast<FloatType>(element.connectivity().size());
-    for (auto& node : element.nodes())
-    {
-        mean = mean + node.point();
-    }
-    mean = (1.0 / num_nodes) * mean;
-    return mean;
 }
 }

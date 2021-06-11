@@ -40,6 +40,10 @@ OptionBlock::OptionBlock(std::istream& file, std::string line)
     {
         block_type = BlockType::ORIENTATION;
     }
+    else if (utility::istr_is_equal(tokens[0], "*STOP"))
+    {
+        block_type = BlockType::STOP;
+    }
     else
     {
         block_type = BlockType::OTHER;
@@ -59,6 +63,18 @@ OptionBlock::OptionBlock(std::istream& file, std::string line)
 
         bool ends_with_comma = ends_with(line, ",");
     }
+}
+
+bool OptionBlock::has_option(const std::string& option) const
+{
+    for (auto& o : options)
+    {
+        if (utility::istr_is_equal(option, o))
+        {
+            return true;
+        }
+    }
+    return false;
 }
 
 bool OptionBlock::ends_with(std::string str, std::string ending)

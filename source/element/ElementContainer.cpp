@@ -224,7 +224,10 @@ void ElementContainer::remove_stable(LocalIndex i)
 
 void ElementContainer::remove_stable(std::vector<LocalIndex>& v)
 {
-    for (auto& i : v)
+    std::vector<LocalIndex> sorted_v = v;
+    std::sort(sorted_v.begin(), sorted_v.end());
+    std::reverse(sorted_v.begin(), sorted_v.end());
+    for (auto& i : sorted_v)
     {
         remove_stable(i);
     }

@@ -61,4 +61,19 @@ bool contains_point(const FaceContainer& faces, const Point& x)
     }
     return true;
 }
+
+std::pair<bool, double> contains_point2(const ElementConstAccessor& element, const Point& x)
+{
+    double max_dist = -std::numeric_limits<double>::max();
+    FaceContainer faces(element);
+    for (auto& face : faces)
+    {
+        const double d = calc_signed_norm_projection(face, x);
+        if (d > max_dist)
+        {
+            max_dist = d;
+        }
+    }
+    return { max_dist <= 0.0, max_dist };
+}
 }

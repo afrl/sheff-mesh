@@ -1,7 +1,6 @@
 #pragma once
 
 #include "mesh/surface/SurfaceElementAccessor.h"
-#include "mesh/surface/SurfaceElementConstAccessor.h"
 
 namespace mesh
 {
@@ -70,5 +69,4 @@ class SurfaceElementIteratorBase
 };
 
 using SurfaceElementIterator      = SurfaceElementIteratorBase<SurfaceElementAccessor>;
-using SurfaceElementConstIterator = SurfaceElementIteratorBase<SurfaceElementConstAccessor>;
 }

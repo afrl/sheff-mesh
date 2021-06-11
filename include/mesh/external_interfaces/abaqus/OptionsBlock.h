@@ -20,6 +20,7 @@ struct OptionBlock
         NODESET,
         ELEMENTSET,
         ORIENTATION,
+        STOP,
         OTHER
     };
 
@@ -36,6 +37,8 @@ struct OptionBlock
     /// the .inp file has them as mixed or lower case), but values perserve case.
     std::map<std::string, std::string> keywords;
     std::set<std::string> options;
+
+    bool has_option(const std::string& option) const;
 
   private:
     bool ends_with(std::string str, std::string ending);

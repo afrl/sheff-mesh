@@ -86,6 +86,13 @@ class FaceConstAccessor
         };
     }
 
+    /// @Returns an accessor to the element that contains the face that was used to initialize the
+    /// FaceContainer (which may be only one of the two elements that contain the face).
+    ElementConstAccessor parent_element() const
+    {
+        return faces_.element_;
+    }
+
     inline bool operator==(const FaceConstAccessor& other) const
     {
         return &faces_ == &other.faces_ && curr_face_index_ == other.curr_face_index_;

@@ -7,14 +7,14 @@
 
 namespace mesh
 {
-/// @brief Provides an interface to access surface element information.
+/// @brief Provides a const interface to access surface element information.
 class SurfaceElementAccessor
 {
   public:
     // typedef for the benefit of SurfaceElementIterator
-    using MeshType = MeshSurface;
+    using MeshType = const MeshSurface;
 
-    SurfaceElementAccessor(MeshSurface& surf_mesh, LocalIndex starting_index = 0);
+    SurfaceElementAccessor(const MeshSurface& surf_mesh, LocalIndex starting_index = 0);
     SurfaceElementAccessor(const SurfaceElementAccessor& other);
 
     /// Returns the index of the current element within the ElementContainer that contains it.
@@ -25,15 +25,11 @@ class SurfaceElementAccessor
 
     /// Returns the ordered local indices of nodes that form the connectivity of the current
     /// element.  Note: the (const) slice provides an immutable view of the data.
-    utility::Slice<const LocalIndex> connectivity() const;
+    utility::Slice<const LocalIndex, ConnIndex> connectivity() const;
 
     /// Allows access to a particular node in the element (node accessor inherits const-ness of the
     /// element accessor).
-    NodeAccessor node(ConnIndex i);
-
-    /// Returns a range over the ordered nodes that compose the connectivity of the element.  The
-    /// order will match the indices returned by connectivity().
-    IteratorRange<NodeSubrangeIterator> nodes();
+    NodeConstAccessor node(ConnIndex i) const;
 
     /// Returns a range over the ordered nodes that compose the connectivity of the element.  The
     /// order will match the indices returned by connectivity().
@@ -48,7 +44,7 @@ class SurfaceElementAccessor
     friend class SurfaceElementIteratorBase;
 
   private:
-    MeshSurface& surf_mesh_;
+    const MeshSurface& surf_mesh_;
     LocalIndex curr_index_;
 
     /// Moves accessor to the next element in the container (based on local index).

@@ -20,4 +20,9 @@ bool contains_point(const ElementConstAccessor& element, const Point& x);
 /// @brief Equivalent to other contains_point() function, but requires the FaceContainer of the
 /// element to be checked.
 bool contains_point(const FaceContainer& faces, const Point& x);
+
+
+/// @brief Determines if an element contains a given point based on projection on the faces and also
+/// returns	the closest distance to any face if it lies outside (if inside, value 0).
+std::pair<bool, double> contains_point2(const ElementConstAccessor& element, const Point& x);
 }

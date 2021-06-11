@@ -2,6 +2,7 @@
 
 #include "mesh/algorithms/IO.h"
 #include "mesh/algorithms/Manipulation.h"
+#include "mesh/algorithms/Polygons.h"
 #include "mesh/algorithms/Search.h"
 #include "mesh/relations/NodeToElementMap.h"
 #include "second_party_mesh/triangle/triangle.h"
@@ -12,6 +13,7 @@
 #include <fstream>
 #include <iomanip>
 #include <type_traits>
+#include <unordered_map>
 
 using namespace simple_math::point_operators;
 
@@ -118,57 +120,6 @@ void snap_boundary_points(VTMSTowMesh& tow_surface)
     }
 }
 
-
-
-struct SegmentStats
-{
-    double mean;
-    double std_dev;
-};
-
-SegmentStats calculate_segment_length_stats(VTMSTowMesh& tow_surface)
-{
-    std::vector<double> segment_lengths;
-    for (auto& element : tow_surface.mesh.elements())
-    {
-        auto& conn = element.connectivity();
-        for (auto segment : polygon_segments(element))
-        {
-            auto p1 = tow_surface.mesh.nodes()[conn[segment.first]].point();
-            auto p2 = tow_surface.mesh.nodes()[conn[segment.second]].point();
-
-            double segment_length = simple_math::distance(p1, p2);
-            segment_lengths.push_back(segment_length);
-        }
-    }
-
-    SegmentStats stats;
-    stats.mean    = simple_math::calculate_mean(segment_lengths);
-    stats.std_dev = simple_math::calculate_std_dev(segment_lengths);
-    return stats;
-};
-
-SegmentStats calculate_segment_length_stats(const ElementConstAccessor& polygon)
-{
-    assert(polygon.type() == ElementType::POLYGON);
-
-    std::vector<double> segment_lengths;
-    auto& conn = polygon.connectivity();
-    for (auto segment : polygon_segments(polygon))
-    {
-        auto p1 = polygon.node(conn[segment.first]).point();
-        auto p2 = polygon.node(conn[segment.second]).point();
-
-        double segment_length = simple_math::distance(p1, p2);
-        segment_lengths.push_back(segment_length);
-    }
-
-    SegmentStats stats;
-    stats.mean    = simple_math::calculate_mean(segment_lengths);
-    stats.std_dev = simple_math::calculate_std_dev(segment_lengths);
-    return stats;
-};
-
 /// Loops over the segments and removes any that are smaller than
 /// factor*avg_segment_length and combines the nodes.
 /// It then cleans up any polygons with two or less segments,
@@ -176,7 +127,7 @@ SegmentStats calculate_segment_length_stats(const ElementConstAccessor& polygon)
 void remove_short_segments(VTMSTowMesh& tow_surface, const double factor)
 {
     // Find the mean and standard deviation
-    auto seg_stats    = calculate_segment_length_stats(tow_surface);
+    auto seg_stats    = calc_segment_length_stats(tow_surface.mesh);
     double length_min = factor * seg_stats.mean;
 
     // Map, key: node to be replaced, value: node that replaces it
@@ -515,278 +466,6 @@ void refine_polygon_segments(VTMSTowMesh& tow_surface, double length_max)
     }     // End loop over elements
 } // End refine_polygon_segments
 
-/// @brief TODO
-/// @param output
-/// @param points - list of points to include in the triangulation (assumes 2D, so 3rd coordinate is
-///        ignored)
-/// @param point_markers
-/// @param boundary_segments
-/// @param boundary_segment_markers
-/// @param hole_points - list of points that indicating regions where a hole should lie (assumes 2D,
-///        so 3rd coordinate is ignored).  Note: the point just has to be in any closed region
-///        defined by the boundary segments.
-/// @param attribute_points
-/// @param attributes
-/// @param allow_new_nodes_on_boundary
-/// @param max_triangle_area
-/// @param min_angle
-triangulateio triangle_kernel(
-  const std::vector<Point>& points,
-  const std::vector<int>& point_markers,
-  const std::vector<std::pair<LocalIndex, LocalIndex>>& boundary_segments,
-  const std::vector<int>& boundary_segment_markers,
-  const std::vector<std::vector<double>>& hole_points,
-  const std::vector<std::vector<double>>& attribute_points,
-  const std::vector<double>& attributes,
-  const bool allow_new_nodes_on_boundary = false,
-  const double max_triangle_area         = -1.0,
-  double min_angle                       = 28.6)
-{
-    // Note - This method uses Triangle, a program by Jonathan Richard Shewchuk at Berkely
-    // See his website at http://www.cs.cmu.edu/~quake/triangle.html for more information
-    // This method is fashioned after tricall.c
-    struct triangulateio in;
-
-    in.numberofpoints          = static_cast<int>(points.size());
-    in.numberofpointattributes = 0;
-    in.pointlist               = new double[points.size() * 2];
-    if (point_markers.size() > 0)
-    {
-        in.pointmarkerlist = new int[in.numberofpoints];
-    }
-    else
-    {
-        in.pointmarkerlist = NULL;
-    }
-    for (unsigned int i = 0; i < points.size(); ++i)
-    {
-        in.pointlist[i * 2]     = points[i][0];
-        in.pointlist[i * 2 + 1] = points[i][1];
-        if (point_markers.size() > 0)
-        {
-            in.pointmarkerlist[i] = point_markers[i];
-        }
-    }
-    in.pointattributelist = NULL;
-    in.numberofsegments   = static_cast<int>(boundary_segments.size());
-    in.segmentlist        = new int[in.numberofsegments * 2];
-    if (boundary_segment_markers.size() > 0)
-    {
-        in.segmentmarkerlist = new int[in.numberofsegments];
-    }
-    else
-    {
-        in.segmentmarkerlist = NULL;
-    }
-    for (int i = 0; i < in.numberofsegments; ++i)
-    {
-        in.segmentlist[i * 2]     = boundary_segments[i].first;
-        in.segmentlist[i * 2 + 1] = boundary_segments[i].second;
-        if (boundary_segment_markers.size() > 0)
-        {
-            in.segmentmarkerlist[i] = boundary_segment_markers[i];
-        }
-    }
-    in.numberofholes = static_cast<int>(hole_points.size());
-    in.holelist      = new double[hole_points.size() * 2];
-    for (unsigned int i = 0; i < hole_points.size(); ++i)
-    {
-        in.holelist[i * 2]     = hole_points[i][0];
-        in.holelist[i * 2 + 1] = hole_points[i][1];
-    }
-    in.numberofregions = static_cast<int>(attribute_points.size());
-    if (attribute_points.size() != attributes.size())
-    {
-        delete[] in.pointlist;
-        delete[] in.segmentlist;
-        delete[] in.holelist;
-        throw _UTIL_MSG_EXCEPT("AttributeCoords and Attributes are not same size!");
-    }
-    in.regionlist = new double[attribute_points.size() * 4];
-    for (unsigned int i = 0; i < attribute_points.size(); ++i)
-    {
-        in.regionlist[i * 4]     = attribute_points[i][0];
-        in.regionlist[i * 4 + 1] = attribute_points[i][1];
-        in.regionlist[i * 4 + 2] = attributes[i];
-        in.regionlist[i * 4 + 3] = -1.0; // Area constraint, negative means none applied.
-    }
-
-    triangulateio output;
-    output.pointlist             = NULL;
-    output.pointattributelist    = NULL;
-    output.pointmarkerlist       = NULL;
-    output.trianglelist          = NULL;
-    output.triangleattributelist = NULL;
-    output.neighborlist          = NULL;
-    output.segmentlist           = NULL;
-    output.segmentmarkerlist     = NULL;
-    output.edgelist              = NULL;
-    output.edgemarkerlist        = NULL;
-
-    std::ostringstream tri_arg_stream;
-    tri_arg_stream << "AQp";
-    // Note: a double Y indicates that Triangle will not add any new points.
-    // One Y means prohibits the any new nodes on the boundary
-    if (!allow_new_nodes_on_boundary)
-    {
-        tri_arg_stream << "Y";
-    }
-    tri_arg_stream << "ezDq" << min_angle;
-    if (max_triangle_area > 0)
-    {
-        tri_arg_stream.precision(15);
-        tri_arg_stream << "a" << std::fixed << max_triangle_area;
-    }
-    char args[50];
-    strcpy_s(args, tri_arg_stream.str().c_str());
-
-    triangulate(args, &in, &output, (struct triangulateio*)NULL);
-
-    // frees memory used by triangle
-    delete[] in.pointlist;
-    delete[] in.segmentlist;
-    if (in.segmentmarkerlist != NULL)
-    {
-        delete[] in.segmentmarkerlist;
-    }
-    delete[] in.holelist;
-    delete[] in.regionlist;
-    free(in.pointattributelist);
-
-    return output;
-}
-
-void triangulate_polygon(VTMSTowMesh& tow_surface,
-                         const ElementConstAccessor& polygon_element,
-                         const double max_area)
-{
-    auto n_nodes = polygon_element.connectivity().size();
-
-    // Define a coordinate system
-    auto mean_point = calc_mean_coordinate(polygon_element);
-    auto p1         = polygon_element.node(0).point();
-    auto p2         = polygon_element.node(1).point();
-    auto axis_1     = simple_math::point_as_vector(p1 - mean_point).normalized();
-    auto axis_3     = calculate_polygon_unit_normal(polygon_element);
-    auto axis_2     = axis_3.cross(axis_1);
-
-    // Transform coordinates to this normalized coordinate system
-    simple_math::Matrix3D transformation;
-    transformation << axis_1[0], axis_1[1], axis_1[2], axis_2[0], axis_2[1], axis_2[2], axis_3[0],
-      axis_3[1], axis_3[2];
-    std::vector<Point> transformed_points;
-    transformed_points.reserve(polygon_element.connectivity().size());
-    // Save the nodes' indices in the connectivity as markers so we can recover the nodes after
-    // triangulation
-    std::vector<int> markers;
-    markers.reserve(polygon_element.connectivity().size());
-    double normalized_z_offset = 0.0;
-    LocalIndex count           = 0;
-    for (auto& node : polygon_element.nodes())
-    {
-        auto transformed_p  = transformation * node.coord();
-        normalized_z_offset = transformed_p(2);
-        transformed_points.push_back({ transformed_p(0), transformed_p(1), 0.0 });
-        // n->set_local_number(count);
-        // uniqueNodesVec.push_back(n);
-        markers.push_back(count);
-        count++;
-    }
-
-    // Create the boundary segments for the triangulation
-    std::vector<std::pair<LocalIndex, LocalIndex>> boundary_segments;
-    for (auto segment : polygon_segments(polygon_element))
-    {
-        boundary_segments.push_back({ segment.first, segment.second });
-    }
-
-    // Call triangle
-    struct triangulateio output = triangle_kernel(transformed_points,
-                                                  markers,
-                                                  boundary_segments,
-                                                  {},
-                                                  {},
-                                                  {},
-                                                  {},
-                                                  false,
-                                                  max_area,
-                                                  10.0);
-
-    {
-        // So, I will exploit the fact that triangle labels the given points first
-        // Add all the points, starting after the points I seeded
-        transformation.transposeInPlace(); // Now this transforms normalized to global
-        std::vector<LocalIndex> nodes_in_triangulation(polygon_element.connectivity().begin(),
-                                                       polygon_element.connectivity().end());
-        for (int i = static_cast<int>(polygon_element.connectivity().size());
-             i < output.numberofpoints;
-             i++)
-        {
-            // Note: we need to transform the coords back to global system
-            simple_math::Vector3D coord_2D = { output.pointlist[i * 2],
-                                               output.pointlist[i * 2 + 1],
-                                               normalized_z_offset };
-            auto global_p                  = simple_math::to_point(transformation * coord_2D);
-            tow_surface.mesh.nodes().add(global_p);
-            nodes_in_triangulation.push_back(tow_surface.mesh.nodes().size() - 1);
-        }
-        // Now form the connectivities for the new triangles
-        std::vector<LocalIndex> conn(3, 0);
-        for (int i = 0; i < output.numberoftriangles; i++)
-        {
-            for (auto j : utility::range(3))
-            {
-                conn[j] = nodes_in_triangulation[output.trianglelist[i * 3 + j]];
-            }
-            tow_surface.mesh.elements().add(ElementType::T2D3N, conn);
-        }
-    }
-
-    // frees memory used by triangle
-    free(output.pointlist);
-    free(output.pointattributelist);
-    free(output.pointmarkerlist);
-    free(output.trianglelist);
-    free(output.triangleattributelist);
-    free(output.neighborlist);
-    free(output.segmentlist);
-    free(output.segmentmarkerlist);
-    free(output.edgelist);
-    free(output.edgemarkerlist);
-}
-
-void submesh_polygons(VTMSTowMesh& tow_surface, double max_tri_area)
-{
-    // Loop over elements in surface mesh and submesh polygons with more than 4 nodes
-    LocalIndex n_elements_removed = 0;
-    for (auto polygon_element_index : utility::range(tow_surface.mesh.elements().size()))
-    {
-        auto& element = tow_surface.mesh.elements()[polygon_element_index - n_elements_removed];
-        if (element.connectivity().size() > 3)
-        {
-            std::vector<std::vector<LocalIndex>> boundary_segments;
-            auto& conn = element.connectivity();
-            for (auto segment : polygon_segments(element))
-            {
-                boundary_segments.push_back({ conn[segment.first], conn[segment.second] });
-            }
-            triangulate_polygon(tow_surface, element, max_tri_area);
-
-            // Remove the original polygon element
-            tow_surface.mesh.elements().remove_stable(polygon_element_index - n_elements_removed++);
-        }
-        else if (element.connectivity().size() == 3)
-        {
-            // Convert polygons to trianlges
-            element.type() = ElementType::T2D3N;
-        }
-        else
-        {
-            throw _UTIL_MSG_EXCEPT("Bad element in surface.");
-        }
-    }
-}
-
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // Definitions from header
 
@@ -825,6 +504,7 @@ VTMSTowMesh read_vtms_ctw(const std::string& file_path)
     int n_vertices;
     std::string line;
     tow_surface.surface_element_types.reserve(n_polys);
+    std::unordered_map<int, mesh::ComponentIndex> facet_indicator_to_component_map;
     for (int i = 0; i < n_polys; i++)
     {
         // VTMS is not consistent with the text format and adds a node
@@ -835,9 +515,10 @@ VTMSTowMesh read_vtms_ctw(const std::string& file_path)
             std::getline(fin, line);
         }
 
-        auto tokens = utility::tokenize(line);
-        number      = atoi(tokens[0].c_str());
-        n_vertices  = atoi(tokens[1].c_str());
+        auto tokens         = utility::tokenize(line);
+        number              = atoi(tokens[0].c_str());
+        n_vertices          = atoi(tokens[1].c_str());
+        int facet_indicator = atoi(tokens[2].c_str());
 
         LocalIndex node_index;
         std::vector<LocalIndex> connectivity(n_vertices, 0);
@@ -847,10 +528,7 @@ VTMSTowMesh read_vtms_ctw(const std::string& file_path)
             connectivity[j] = node_index;
         }
 
-        // Note: this is a hack to determine if the polygonal is on the boundary or not.  Ideally,
-        // VTMS should output this information, but for now, we will assume if it has more than 10
-        // points, then it was clipped.
-        if (connectivity.size() > 10)
+        if (facet_indicator < 0)
         {
             tow_surface.surface_element_types.push_back(VTMSTowMesh::SurfaceElementType::BOUNDARY);
         }
@@ -860,6 +538,20 @@ VTMSTowMesh read_vtms_ctw(const std::string& file_path)
         }
 
         tow_surface.mesh.elements().add(ElementType::POLYGON, connectivity);
+
+        auto find_iter = facet_indicator_to_component_map.find(facet_indicator);
+        if (find_iter == facet_indicator_to_component_map.end())
+        {
+            auto new_index = facet_indicator_to_component_map.size();
+            facet_indicator_to_component_map[facet_indicator] = new_index;
+            tow_surface.mesh.elements().back().component_id() = new_index;
+            std::cout << "Adding facet " << new_index << " for indicator " << facet_indicator
+                      << std::endl;
+        }
+        else
+        {
+            tow_surface.mesh.elements().back().component_id() = find_iter->second;
+        }
     }
 
     // It will start pointing outward, but we will switch this during algorithms
@@ -956,33 +648,43 @@ VTMSTowMesh create_tow_surface(const int material_number,
     return tow_surface;
 }
 
-double triangulate_tow_surface(VTMSTowMesh& tow_surface)
+double triangulate_tow_surface(VTMSTowMesh& tow_surface, const bool refine)
 {
     _UTIL_ASSERT(tow_surface.type == VTMSTowMesh::MeshType::POLY,
                  "The tow surface must be polygonal.");
     _UTIL_ASSERT(tow_surface.surface_element_types.size() == tow_surface.mesh.elements().size(),
                  "The surface element types must match the number of elements in the mesh.");
 
-    // Remove really short segments that would result in bad elements
-    // Will remove 25% of the average segment length or smaller
-    remove_short_segments(tow_surface, 0.25);
+    if (refine)
+    {
+        // Remove really short segments that would result in bad elements
+        // Will remove 25% of the average segment length or smaller
+        remove_short_segments(tow_surface, 0.25);
 
-    // write_vtk(tow_surface.mesh, "surface_post_remove_short_segments.vtk");
+        // write_vtk(tow_surface.mesh, "surface_post_remove_short_segments.vtk");
 
-    // Find the mean and standard deviation
-    auto n_std_devs   = 4;
-    auto seg_stats    = calculate_segment_length_stats(tow_surface);
-    double length_max = seg_stats.mean + n_std_devs * seg_stats.std_dev;
+        // Find the mean and standard deviation
+        auto n_std_devs   = 4;
+        auto seg_stats    = calc_segment_length_stats(tow_surface.mesh);
+        double length_max = seg_stats.mean + n_std_devs * seg_stats.std_dev;
 
-    // Refine to ensure segments are within two std devs of the mean
-    refine_polygon_segments(tow_surface, length_max);
+        // Refine to ensure segments are within two std devs of the mean
+        refine_polygon_segments(tow_surface, length_max);
 
-    // write_vtk(tow_surface.mesh, "surface_post_refine_polygon_segments.vtk");
+        // write_vtk(tow_surface.mesh, "surface_post_refine_polygon_segments.vtk");
 
-    seg_stats = calculate_segment_length_stats(tow_surface);
-    submesh_polygons(tow_surface, seg_stats.mean * seg_stats.mean);
+        seg_stats = calc_segment_length_stats(tow_surface.mesh);
+        triangulate_all_polygons(tow_surface.mesh, seg_stats.mean * seg_stats.mean);
 
-    return seg_stats.mean;
+        return seg_stats.mean;
+    }
+    else
+    {
+        triangulate_all_polygons(tow_surface.mesh, -1);
+
+        auto seg_stats = calc_segment_length_stats(tow_surface.mesh);
+        return seg_stats.mean;
+    }
 }
 
 void write_to_ply(const Mesh& triangular_surface, const std::string& file_path)
@@ -1076,7 +778,8 @@ Mesh create_triangular_matrix_box(const Point& n,
 
         // write_vtk(tmp_vtms_obj.mesh, "surface_post_refine_polygon_segments.vtk");
 
-        submesh_polygons(tmp_vtms_obj, 0.5 * target_segment_length * target_segment_length);
+        triangulate_all_polygons(tmp_vtms_obj.mesh,
+                                 0.5 * target_segment_length * target_segment_length);
 
         box = std::move(tmp_vtms_obj.mesh);
         return box;

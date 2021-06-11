@@ -8,7 +8,18 @@ namespace mesh
 template<typename SurfaceElementAccessorType>
 class SurfaceElementIteratorBase;
 class SurfaceElementAccessor;
-class SurfaceElementConstAccessor;
+
+/// @brief Struct holding the result of MeshSurface::mesh_with_maps
+struct SurfaceMeshWithMaps
+{
+    // A surface mesh containing only nodes that lie on a surface mesh.
+    Mesh surface_mesh;
+    // A map going from the volume node id to the surface id.  For nodes that appear in the volume
+    // mesh but not in the surface mesh, the value will be std::numeric_limits<LocalIndex>::max()
+    std::vector<LocalIndex> volume_to_surface_node_id_map;
+    // A map going from the surface node id to the volume id.
+    std::vector<LocalIndex> surface_to_volume_node_id_map;
+};
 
 /// @brief Stores a description of a surface of another volumetric mesh.
 ///
@@ -18,39 +29,36 @@ class SurfaceElementConstAccessor;
 class MeshSurface
 {
   public:
-    using SurfaceElementIterator      = SurfaceElementIteratorBase<SurfaceElementAccessor>;
-    using SurfaceElementConstIterator = SurfaceElementIteratorBase<SurfaceElementConstAccessor>;
+    using SurfaceElementIterator = SurfaceElementIteratorBase<SurfaceElementAccessor>;
 
-    MeshSurface(Mesh& volume_mesh);
+    MeshSurface(const Mesh& volume_mesh);
     MeshSurface(MeshSurface&& other) noexcept;
 
     /// @name Accessors
     ///@{
 
     /// Enables ranged-based loop over elements.
-    SurfaceElementIterator begin();
-    /// Enables const ranged-based loop over elements.
-    SurfaceElementConstIterator begin() const;
+    SurfaceElementIterator begin() const;
     /// Enables ranged-based loop over elements.
-    SurfaceElementIterator end();
-    /// Enables const ranged-based loop over elements.
-    SurfaceElementConstIterator end() const;
+    SurfaceElementIterator end() const;
 
     /// Access a particular element by local index
-    SurfaceElementAccessor operator[](LocalIndex i);
-    /// Const access a particular element by local index
-    SurfaceElementConstAccessor operator[](LocalIndex i) const;
+    SurfaceElementAccessor operator[](LocalIndex i) const;
 
     /// Access the last element
-    SurfaceElementAccessor back();
-    /// Const access the last element
-    SurfaceElementConstAccessor back() const;
+    SurfaceElementAccessor back() const;
 
     /// Returns the size of the container.
     LocalIndex size() const;
 
-    /// Creates a mesh object of the surface that no longer references a volumetric mesh.
-    Mesh mesh();
+    /// Creates a mesh object of the surface that no longer references a volumetric mesh and only
+    /// contains nodes that appear in the volume mesh.
+    Mesh mesh() const;
+
+    /// Creates a mesh object of the surface that no longer references a volumetric mesh and only
+    /// contains nodes that appear in the volume mesh, but also returns maps to go between nodes
+    /// indexing in the volume and surface meshes
+    SurfaceMeshWithMaps mesh_with_map() const;
 
     ///@}
     /// @param face
@@ -62,16 +70,16 @@ class MeshSurface
     /// @param conn - connectivity relative to the referenced volume mesh (assumed to be ordered to
     /// point outward).
     void add(const ElementType& type, const utility::Slice<const LocalIndex>& conn);
+    void add(const ElementType& type, const utility::Slice<const LocalIndex, ConnIndex>& conn);
 
     // Yeilds a temporary object that holds the difference (boolean) of this and the other surface.
     MeshSurface operator-(const MeshSurface& other) const;
     MeshSurface& operator+=(const MeshSurface& other);
 
     friend class SurfaceElementAccessor;
-    friend class SurfaceElementConstAccessor;
 
   private:
-    Mesh& volume_mesh_;
+    const Mesh& volume_mesh_;
     /// Stores the geometric type of each surface element.
     std::vector<ElementType> types_;
     /// Stores the connectivities of all surface elements on the partition as a 1D array.
@@ -79,8 +87,4 @@ class MeshSurface
     /// Offsets for connectivities_ for all of the surface elements
     std::vector<std::size_t> connectivity_offsets_;
 };
-
-/// Returns a mean coordinate of the nodes which should be interior to the element in most cases.
-Point calc_mean_coordinate_surface_element(const SurfaceElementConstAccessor& surf_element);
-Point calc_mean_coordinate_surface_element(const SurfaceElementAccessor& surf_element);
 }

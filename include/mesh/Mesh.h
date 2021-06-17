@@ -54,6 +54,12 @@ class Mesh
     /// convenient test for this case.
     const PartitionIndex& partition_id() const;
 
+    /// Counts the number of components in the mesh
+    ComponentIndex n_components() const;
+
+    /// Finds the set of component indices in the mesh (no duplicates)
+    std::vector<ComponentIndex> component_indices() const;
+
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Mutator methods
 

@@ -20,6 +20,7 @@ Mesh get_mesh_from_tetgen_input(tetgen::tetgenio& in)
     for (int i = 0; i < in.numberoffacets; i++)
     {
         f = &in.facetlist[i];
+        auto marker = in.facetmarkerlist[i];
         for (int j = 0; j < f->numberofpolygons; j++)
         {
             p = &f->polygonlist[j];
@@ -29,6 +30,7 @@ Mesh get_mesh_from_tetgen_input(tetgen::tetgenio& in)
                 element_connectivity[j] = p->vertexlist[j];
             }
             mesh.elements().add(ElementType::POLYGON, element_connectivity);
+            mesh.elements().back().component_id() = marker;
         }
     }
 

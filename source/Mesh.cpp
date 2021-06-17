@@ -4,6 +4,7 @@
 #include "utility/MPIUtils.h"
 
 #include <unordered_map>
+#include <unordered_set>
 
 namespace mesh
 {
@@ -44,6 +45,21 @@ bool Mesh::contains_all_partitions() const
 const PartitionIndex& Mesh::partition_id() const
 {
     return this_partition_id_;
+}
+
+ComponentIndex Mesh::n_components() const
+{
+    return static_cast<ComponentIndex>(component_indices().size());
+}
+
+std::vector<ComponentIndex> Mesh::component_indices() const
+{
+    std::unordered_set<ComponentIndex> component_indices_set;
+    for (auto e : elements())
+    {
+        component_indices_set.insert(e.component_id());
+    }
+    return std::vector<ComponentIndex>(component_indices_set.begin(), component_indices_set.end());
 }
 
 const PartitionIndex& Mesh::n_partitions() const

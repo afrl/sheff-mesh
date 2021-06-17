@@ -3,6 +3,7 @@
 #include "mesh/Mesh.h"
 #include "simple_math/EigenDefines.h"
 #include "utility/DynamicBitset.h"
+#include "second_party_mesh/triangle/triangle.h"
 
 #include <unordered_map>
 
@@ -24,6 +25,7 @@ std::vector<std::pair<ConnIndex, ConnIndex>> polygon_segments(
 
 // Implements Newell's method to calculate a polygons normal vector
 simple_math::Vector3D calc_polygon_unit_normal(const ElementConstAccessor& polygon_element);
+simple_math::Vector3D calc_polygon_unit_normal(const std::vector<simple_math::Point>& points);
 
 SegmentStats calc_segment_length_stats(const Mesh& m);
 SegmentStats calc_segment_length_stats(const ElementConstAccessor& polygon_element);
@@ -57,5 +59,20 @@ std::vector<LocalIndex> triangulate_polygon(Mesh& total_mesh,
 std::pair<std::vector<LocalIndex>, std::vector<LocalIndex>> triangulate_all_polygons(
   Mesh& total_mesh,
   double max_tri_area = 1.0);
+
+namespace detail
+{
+triangulateio triangle_kernel(
+  const std::vector<Point>& points,
+  const std::vector<int>& point_markers,
+  const std::vector<std::pair<LocalIndex, LocalIndex>>& boundary_segments,
+  const std::vector<int>& boundary_segment_markers,
+  const std::vector<std::vector<double>>& hole_points,
+  const std::vector<std::vector<double>>& attribute_points,
+  const std::vector<double>& attributes,
+  const bool allow_new_nodes_on_boundary = false,
+  const double max_triangle_area         = -1.0,
+  double min_angle                       = 28.6);
+}
 
 }

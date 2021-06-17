@@ -17,6 +17,9 @@ namespace mesh
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // Helpers
 
+namespace detail
+{
+
 /// @brief TODO
 /// @param output
 /// @param points - list of points to include in the triangulation (assumes 2D, so 3rd coordinate is
@@ -40,9 +43,9 @@ triangulateio triangle_polygon_kernel(
   const std::vector<std::vector<double>>& hole_points,
   const std::vector<std::vector<double>>& attribute_points,
   const std::vector<double>& attributes,
-  const bool allow_new_nodes_on_boundary = false,
-  const double max_triangle_area         = -1.0,
-  double min_angle                       = 28.6)
+  const bool allow_new_nodes_on_boundary,
+  const double max_triangle_area,
+  double min_angle)
 {
     // Note - This method uses Triangle, a program by Jonathan Richard Shewchuk at Berkely
     // See his website at http://www.cs.cmu.edu/~quake/triangle.html for more information
@@ -165,6 +168,7 @@ triangulateio triangle_polygon_kernel(
 
     return output;
 }
+}
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // Definitions from header
@@ -197,6 +201,23 @@ simple_math::Vector3D calc_polygon_unit_normal(const ElementConstAccessor& polyg
     {
         auto p0 = polygon_element.node(segment.first).coord();
         auto p1 = polygon_element.node(segment.second).coord();
+        normal += p0.cross(p1);
+    }
+    return normal.normalized();
+}
+
+simple_math::Vector3D calc_polygon_unit_normal(const std::vector<simple_math::Point>& points)
+{
+    simple_math::Vector3D normal = simple_math::Vector3D::Zero();
+    for (auto i : utility::range(points.size() - 1))
+    {
+        auto p0 = simple_math::point_as_vector(points[i]);
+        auto p1 = simple_math::point_as_vector(points[i + 1]);
+        normal += p0.cross(p1);
+    }
+    { // Closing the loop
+        auto p0 = simple_math::point_as_vector(points.back());
+        auto p1 = simple_math::point_as_vector(points.front());
         normal += p0.cross(p1);
     }
     return normal.normalized();
@@ -597,7 +618,7 @@ std::unordered_map<std::size_t, std::vector<LocalIndex>> refine_all_polygon_segm
                         new_nodes.push_back(mesh.nodes().size() - 1);
                     }
 
-                    
+
                     // Save the info for future segments
                     std::vector<LocalIndex> new_edge_conn = { conn[segment.first],
                                                               conn[segment.second] };

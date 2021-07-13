@@ -709,16 +709,16 @@ std::vector<LocalIndex> triangulate_polygon(Mesh& total_mesh,
     triangulateio output;
     try
     {
-        output = triangle_polygon_kernel(transformed_points,
-                                        markers,
-                                        boundary_segments,
-                                        {},
-                                        {},
-                                        {},
-                                        {},
-                                        false,
-                                        max_area,
-                                        10.0);
+        output = detail::triangle_polygon_kernel(transformed_points,
+                                                 markers,
+                                                 boundary_segments,
+                                                 {},
+                                                 {},
+                                                 {},
+                                                 {},
+                                                 false,
+                                                 max_area,
+                                                 10.0);
     }
     catch (...)
     {

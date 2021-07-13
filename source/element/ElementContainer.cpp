@@ -119,7 +119,8 @@ void ElementContainer::add(ElementType type,
 
 void ElementContainer::add(ElementType type, const utility::Slice<const LocalIndex>& connectivity)
 {
-    global_indices_.push_back(static_cast<GlobalIndex>(global_indices_.size()));
+    auto next_index = static_cast<GlobalIndex>(global_indices_.size());
+    global_indices_.push_back(next_index);
     types_.push_back(type);
     connectivities_.insert(std::end(connectivities_),
                            std::begin(connectivity),

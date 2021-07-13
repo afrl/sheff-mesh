@@ -83,7 +83,8 @@ const std::vector<NodeGroup>& NodeContainer::groups() const
 
 void NodeContainer::add(const Point& p)
 {
-    global_indices_.push_back(static_cast<GlobalIndex>(global_indices_.size()));
+    auto next_index = static_cast<GlobalIndex>(global_indices_.size());
+    global_indices_.push_back(next_index);
     points_.push_back(p);
     parent_partitions_.push_back(0);
 }

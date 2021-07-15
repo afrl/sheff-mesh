@@ -24,6 +24,11 @@ NodeConstIterator NodeContainer::begin() const
     return NodeConstIterator(*this);
 }
 
+NodeIterator NodeContainer::end()
+{
+    return NodeIterator(*this, static_cast<LocalIndex>(global_indices_.size()));
+}
+
 NodeConstIterator NodeContainer::end() const
 {
     return NodeConstIterator(*this, static_cast<LocalIndex>(global_indices_.size()));

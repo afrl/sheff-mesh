@@ -2,7 +2,7 @@
 
 namespace mesh
 {
-LCSAssignmentType mesh::convert_lcs_assignment(fea_io::LCSAssignment lcs_assignment)
+LCSAssignmentType convert_lcs_assignment(fea_io::LCSAssignment lcs_assignment)
 {
     if (lcs_assignment == fea_io::LCSAssignment::Component)
         return LCSAssignmentType::Component;

@@ -21,12 +21,12 @@ void create_groups_for_nodes_on_extent(Mesh& mesh,
 /// @brief Adds the nodes to a group based on a selection object.
 /// @param group_name - the name of the group to add the selected nodes to (does not require the
 ///        group to exist before this call)
-void add_to_group(Mesh& mesh, const std::string group_name, NodeSelection& selection);
+void add_to_group(Mesh& mesh, const std::string group_name, NodeSelection selection);
 
 /// @brief Adds the elements to a group based on a selection object.
 /// @param group_name - the name of the group to add the selected elements to (does not require the
 ///        group to exist before this call)
-void add_to_group(Mesh& mesh, const std::string group_name, ElementSelection& selection);
+void add_to_group(Mesh& mesh, const std::string group_name, ElementSelection selection);
 
 /// @brief Adds the list of elements to a group (ensuring no duplicates)
 /// @param group_name - the name of the group to add to (does not require the group to exist before

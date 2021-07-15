@@ -36,6 +36,11 @@ ElementConstIterator ElementContainer::begin() const
     return ElementConstIterator(nodes_, *this);
 }
 
+ElementIterator ElementContainer::end()
+{
+    return ElementIterator(nodes_, *this, static_cast<LocalIndex>(global_indices_.size()));
+}
+
 ElementConstIterator ElementContainer::end() const
 {
     return ElementConstIterator(nodes_, *this, static_cast<LocalIndex>(global_indices_.size()));

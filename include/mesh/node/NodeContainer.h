@@ -40,6 +40,8 @@ class NodeContainer
     /// Enables ranged-based loop over nodes (const).
     NodeConstIterator begin() const;
     /// Enables ranged-based loop over nodes.
+    NodeIterator end();
+    /// Enables ranged-based loop over nodes (const).
     NodeConstIterator end() const;
     /// Access a particular node by local index
     NodeAccessor operator[](LocalIndex i);
@@ -110,8 +112,8 @@ class NodeContainer
           utility::Slice<PartitionIndex>(parent_partitions_.data(), parent_partitions_.size()));
     }
 
-    friend class NodeAccessor;
-    friend class NodeConstAccessor;
+    template<typename NC>
+    friend class NodeAccessorBase;
 
   private:
     /// @name Required members

@@ -36,9 +36,9 @@ std::pair<Point, Point> find_extent(const Mesh& mesh)
 {
     Point neg_point = { INFINITY, INFINITY, INFINITY };
     Point pos_point = { -INFINITY, -INFINITY, -INFINITY };
-    for (auto& node : mesh.nodes())
+    for (auto node : mesh.nodes())
     {
-        auto& p = node.point();
+        auto p = node.point();
         for (auto i = 0; i < neg_point.size(); i++)
         {
             if (p[i] < neg_point[i])
@@ -159,7 +159,7 @@ BoundaryInfo extract_boundary(const Mesh& mesh, const std::vector<LocalIndex>& e
         auto& face_index    = p.second.second;
 
         FaceContainer faces(mesh.elements()[element_index]);
-        auto& face = faces[face_index];
+        auto face = faces[face_index];
         boundary_info.surface.add(face);
         boundary_info.parent_volume_elements.push_back(element_index);
         boundary_info.face_in_parent_volume_elements.push_back(face_index);
@@ -175,7 +175,7 @@ std::vector<ElementFacePair> find_faces_from_node_set(const Mesh& mesh,
         FaceContainer faces(element);
         for (auto face_index : utility::indices(faces))
         {
-            auto& face_conn = faces[face_index].connectivity();
+            auto face_conn = faces[face_index].connectivity();
             if (std::all_of(
                   face_conn.begin(),
                   face_conn.end(),

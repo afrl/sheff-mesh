@@ -43,6 +43,8 @@ class ElementContainer
     /// Enables ranged-based loop over elements (const).
     ElementConstIterator begin() const;
     /// Enables ranged-based loop over elements.
+    ElementIterator end();
+    /// Enables ranged-based loop over elements (const).
     ElementConstIterator end() const;
 
     /// Access a particular element by local index
@@ -173,8 +175,8 @@ class ElementContainer
         }
     }
 
-    friend class ElementAccessor;
-    friend class ElementConstAccessor;
+    template<typename NC, typename EC>
+    friend class ElementAccessorBase;
 
   private:
     /// Reference held for construction of element accessors/iterators

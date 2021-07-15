@@ -137,7 +137,7 @@ inline Selection<ObjectType>::Selection(const Selection& other)
 template<typename ObjectType>
 inline Selection<ObjectType>::Selection(Selection&& other) noexcept
 {
-    selected_objects_.swap(other.selected_objects_);
+    selected_indices_.swap(other.selected_indices_);
     local_criteria_.swap(other.local_criteria_);
     non_local_criteria_.swap(other.non_local_criteria_);
 }

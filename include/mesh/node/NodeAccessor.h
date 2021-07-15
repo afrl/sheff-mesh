@@ -112,7 +112,7 @@ class NodeAccessorBase
     // Note: omitted deserialize because an accessor is not stored (it only provides a view)
 
     /// Allow friend access to other NodeAccessor types for comparison operators
-    template<typename NC>
+    template<typename NC2>
     friend class NodeAccessorBase;
     /// Allow to iterator accessor to next() method
     template<typename NodeAccessorType>

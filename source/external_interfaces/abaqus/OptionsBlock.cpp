@@ -10,7 +10,7 @@ OptionBlock::OptionBlock(std::istream& file, std::string line)
 {
     bool ends_with_comma = ends_with(line, ",");
 
-    line.erase(std::remove_if(line.begin(), line.end(), std::isspace),
+    line.erase(std::remove_if(line.begin(), line.end(), ::isspace),
                line.end()); // remove whitespace
     std::replace(line.begin(), line.end(), ',', ' ');
     auto tokens = utility::tokenize(line);
@@ -55,7 +55,7 @@ OptionBlock::OptionBlock(std::istream& file, std::string line)
     while (ends_with_comma)
     {
         getline(file, line);
-        line.erase(std::remove_if(line.begin(), line.end(), std::isspace),
+        line.erase(std::remove_if(line.begin(), line.end(), ::isspace),
                    line.end()); // remove whitespace
         std::replace(line.begin(), line.end(), ',', ' ');
         auto tokens = utility::tokenize(line);

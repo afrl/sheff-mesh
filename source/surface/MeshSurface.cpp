@@ -70,7 +70,7 @@ SurfaceMeshWithMaps MeshSurface::mesh_with_map() const
         {
             if (vol_to_surf_node_map[i] == std::numeric_limits<LocalIndex>::max())
             {
-                auto& node = volume_mesh_.nodes()[i];
+                auto node = volume_mesh_.nodes()[i];
                 mesh.nodes().add(node.point(), node.global_index());
                 vol_to_surf_node_map[i] = count++;
                 surf_to_vol_node_map.push_back(i);
@@ -146,7 +146,7 @@ MeshSurface MeshSurface::operator-(const MeshSurface& other) const
     MeshSurface diff(volume_mesh_);
     for (auto& p : hash_to_this_surf_elem_map)
     {
-        auto& surf_elem_to_copy = (*this)[p.second];
+        auto surf_elem_to_copy = (*this)[p.second];
         diff.add(surf_elem_to_copy.type(), surf_elem_to_copy.connectivity());
     }
 

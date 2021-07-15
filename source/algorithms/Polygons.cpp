@@ -9,6 +9,7 @@
 #include "utility/Hash.h"
 
 #include <algorithm>
+#include <string.h>
 
 using namespace simple_math::point_operators;
 
@@ -151,7 +152,7 @@ triangulateio triangle_polygon_kernel(
         tri_arg_stream << "a" << std::fixed << max_triangle_area;
     }
     char args[50];
-    strcpy_s(args, tri_arg_stream.str().c_str());
+    strcpy(args, tri_arg_stream.str().c_str());
 
     triangulate(args, &in, &output, (struct triangulateio*)NULL);
 
@@ -226,9 +227,9 @@ simple_math::Vector3D calc_polygon_unit_normal(const std::vector<simple_math::Po
 SegmentStats calc_segment_length_stats(const Mesh& m)
 {
     std::vector<double> segment_lengths;
-    for (auto& element : m.elements())
+    for (auto element : m.elements())
     {
-        auto& conn = element.connectivity();
+        auto conn = element.connectivity();
         for (auto segment : polygon_segments(element.connectivity()))
         {
             auto p1 = m.nodes()[conn[segment.first]].point();
@@ -250,7 +251,7 @@ SegmentStats calc_segment_length_stats(const ElementConstAccessor& polygon_eleme
     assert(polygon_element.type() == ElementType::POLYGON);
 
     std::vector<double> segment_lengths;
-    auto& conn = polygon_element.connectivity();
+    auto conn = polygon_element.connectivity();
     for (auto segment : polygon_segments(conn))
     {
         auto p1 = polygon_element.node(segment.first).point();
@@ -310,7 +311,7 @@ CollapseSegmentsResult collapse_short_polygon_segments(
     node_to_element.update(mesh);
 
     // Loop over the elements and remove edges that are too short
-    for (auto& element : mesh.elements())
+    for (auto element : mesh.elements())
     {
         bool need_to_check_edges = true;
         while (need_to_check_edges)
@@ -326,7 +327,7 @@ CollapseSegmentsResult collapse_short_polygon_segments(
 
             // Loop over the polygon segments and check if one is too short, which would need to
             // be removed
-            auto& conn = element.connectivity();
+            auto conn = element.connectivity();
             for (auto segment : polygon_segments(element.connectivity()))
             {
                 const auto& n1_id = conn[segment.first];
@@ -433,15 +434,15 @@ CollapseSegmentsResult collapse_short_polygon_segments(
                                                          utility::slice(new_conn));
 
                     // Loop over the elements that contain the node to remove
-                    for (auto& parent_index : node_to_element.get_element_indices(node_to_remove))
+                    for (auto parent_index : node_to_element.get_element_indices(node_to_remove))
                     {
                         if (parent_index != element.local_index())
                         {
-                            auto& parent = mesh.elements()[parent_index];
+                            auto parent = mesh.elements()[parent_index];
 
                             // If the element contains both nodes being combined, then delete
                             // the node being removed from the connectivity
-                            auto& parent_conn = parent.connectivity();
+                            auto parent_conn = parent.connectivity();
                             if (parent_conn.contains(node_to_remove) &&
                                 parent_conn.contains(node_to_keep))
                             {
@@ -470,7 +471,7 @@ CollapseSegmentsResult collapse_short_polygon_segments(
                     }
 
                     // Debug
-                    for (auto& element_2 : mesh.elements())
+                    for (auto element_2 : mesh.elements())
                     {
                         for (auto& i : element_2.connectivity())
                         {
@@ -506,7 +507,7 @@ CollapseSegmentsResult collapse_short_polygon_segments(
     std::vector<LocalIndex> elements_removed;
     for (auto element_index : utility::range(mesh.elements().size()))
     {
-        auto& element = mesh.elements()[element_index - elements_removed_count];
+        auto element = mesh.elements()[element_index - elements_removed_count];
         if (element.connectivity().size() <= 2)
         {
             // Account for the fact the local numbers are changing as elements are removed
@@ -517,7 +518,7 @@ CollapseSegmentsResult collapse_short_polygon_segments(
     }
 
     // Check connectivities are at least within a plausible range (catching dumb mistakes)
-    for (auto& element : mesh.elements())
+    for (auto element : mesh.elements())
     {
         for (auto& i : element.connectivity())
         {
@@ -544,7 +545,7 @@ std::unordered_map<std::size_t, std::vector<LocalIndex>> refine_all_polygon_segm
         auto segment_index = 0;
         while (segment_index < n_segments)
         {
-            auto& conn    = element.connectivity();
+            auto conn    = element.connectivity();
             auto& segment = segments[segment_index];
             auto p1       = mesh.nodes()[conn[segment.first]].point();
             auto p2       = mesh.nodes()[conn[segment.second]].point();
@@ -826,11 +827,11 @@ std::pair<std::vector<LocalIndex>, std::vector<LocalIndex>> triangulate_all_poly
     std::vector<LocalIndex> elements_to_remove;
     for (auto polygon_element_index : utility::range(mesh.elements().size()))
     {
-        auto& element = mesh.elements()[polygon_element_index];
+        auto element = mesh.elements()[polygon_element_index];
         if (element.connectivity().size() > 3)
         {
             std::vector<std::vector<LocalIndex>> boundary_segments;
-            auto& conn = element.connectivity();
+            auto conn = element.connectivity();
             for (auto segment : polygon_segments(element.connectivity()))
             {
                 boundary_segments.push_back({ conn[segment.first], conn[segment.second] });

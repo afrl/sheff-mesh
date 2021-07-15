@@ -44,7 +44,7 @@ int8_t find_axis_closest_aligned_along_tow(const VTMSTowMesh& tow_mesh)
 std::vector<std::pair<ConnIndex, ConnIndex>> polygon_segments(const ElementConstAccessor& element)
 {
     std::vector<std::pair<ConnIndex, ConnIndex>> segments;
-    auto& conn = element.connectivity();
+    auto conn = element.connectivity();
     for (auto i = 0; i < conn.size() - 1; i++)
     {
         segments.push_back({ i, i + 1 });
@@ -76,7 +76,7 @@ void snap_boundary_points(VTMSTowMesh& tow_surface)
     for (auto element_index :
          utility::range_as<LocalIndex>(tow_surface.surface_element_types.size()))
     {
-        auto& element = tow_surface.mesh.elements()[element_index];
+        auto element = tow_surface.mesh.elements()[element_index];
         auto& type    = tow_surface.surface_element_types[element_index];
 
         if (type == VTMSTowMesh::SurfaceElementType::BOUNDARY)
@@ -113,7 +113,7 @@ void snap_boundary_points(VTMSTowMesh& tow_surface)
             // Move the nodes to lie on the plane
             for (auto& node_index : element.connectivity())
             {
-                auto& node              = tow_surface.mesh.nodes()[node_index];
+                auto node              = tow_surface.mesh.nodes()[node_index];
                 node.point(normal_axis) = new_value;
             }
         }
@@ -154,7 +154,7 @@ void remove_short_segments(VTMSTowMesh& tow_surface, const double factor)
 
                 // Loop over the polygon segments and check if one is too short, which would need to
                 // be removed
-                auto& conn = element.connectivity();
+                auto conn = element.connectivity();
                 for (auto segment : polygon_segments(element))
                 {
                     auto p1 = tow_surface.mesh.nodes()[conn[segment.first]].point();
@@ -260,11 +260,11 @@ void remove_short_segments(VTMSTowMesh& tow_surface, const double factor)
                         {
                             if (parent_index != element.local_index())
                             {
-                                auto& parent = tow_surface.mesh.elements()[parent_index];
+                                auto parent = tow_surface.mesh.elements()[parent_index];
 
                                 // If the element contains both nodes being combined, then delete
                                 // the node being removed from the connectivity
-                                auto& parent_conn = parent.connectivity();
+                                auto parent_conn = parent.connectivity();
                                 if (parent_conn.contains(node_to_remove) &&
                                     parent_conn.contains(node_to_keep))
                                 {
@@ -328,7 +328,7 @@ void remove_short_segments(VTMSTowMesh& tow_surface, const double factor)
     LocalIndex elements_removed_count = 0;
     for (auto element_index : utility::range(tow_surface.mesh.elements().size()))
     {
-        auto& element = tow_surface.mesh.elements()[element_index - elements_removed_count];
+        auto element = tow_surface.mesh.elements()[element_index - elements_removed_count];
         if (element.connectivity().size() <= 2)
         {
             // Account for the fact the local numbers are changing as elements are removed
@@ -367,7 +367,7 @@ void refine_polygon_segments(VTMSTowMesh& tow_surface, double length_max)
         auto segment_index = 0;
         while (segment_index < n_segments)
         {
-            auto& conn    = element.connectivity();
+            auto conn    = element.connectivity();
             auto& segment = segments[segment_index];
             auto p1       = tow_surface.mesh.nodes()[conn[segment.first]].point();
             auto p2       = tow_surface.mesh.nodes()[conn[segment.second]].point();

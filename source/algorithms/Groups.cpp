@@ -51,7 +51,7 @@ void create_groups_for_nodes_on_extent(Mesh& mesh,
                      return fabs(n.z() - val) < t;
                  }));
 }
-void add_to_group(Mesh& mesh, const std::string group_name, NodeSelection& selection)
+void add_to_group(Mesh& mesh, const std::string group_name, NodeSelection selection)
 {
     auto& group = mesh.nodes().group(group_name);
     selection.run_selection(mesh);
@@ -64,7 +64,7 @@ void add_to_group(Mesh& mesh, const std::string group_name, NodeSelection& selec
     group.node_indices = std::vector<LocalIndex>(selected_indices.begin(), selected_indices.end());
 }
 
-void add_to_group(Mesh& mesh, const std::string group_name, ElementSelection& selection)
+void add_to_group(Mesh& mesh, const std::string group_name, ElementSelection selection)
 {
     auto& group = mesh.elements().group(group_name);
     selection.run_selection(mesh);

@@ -238,18 +238,19 @@ Mesh make_mixed_element_grid(const Point& min,
             for (auto k : utility::range(n_blocks_along_axes[2]))
             {
                 auto t = i * i_vec + j * j_vec + k * k_vec;
-                mixed_grid.copy(translate(Mesh(mixed_element_block), simple_math::to_point(t)));
+                Mesh tmp_block(mixed_element_block);
+                mixed_grid.copy(translate(tmp_block, simple_math::to_point(t)));
             }
         }
     }
 
     remove_duplicate_nodes(mixed_grid);
 
-    for (auto& node : mixed_grid.nodes())
+    for (auto node : mixed_grid.nodes())
     {
         node.global_index() = node.local_index();
     }
-    for (auto& element : mixed_grid.elements())
+    for (auto element : mixed_grid.elements())
     {
         element.global_index() = element.local_index();
     }

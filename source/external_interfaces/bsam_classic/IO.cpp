@@ -185,7 +185,7 @@ Mesh read_bsam_classic(const std::string& file_path)
     return mesh;
 }
 
-std::vector<Mesh> mesh::read_bsam_classic_by_cluster(const std::string& file_path)
+std::vector<Mesh> read_bsam_classic_by_cluster(const std::string& file_path)
 {
     std::vector<Mesh> meshes;
 

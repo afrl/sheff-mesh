@@ -151,7 +151,7 @@ class ElementAccessorBase
     // Note: omitted deserialize because an accessor is not stored (it only provides a view)
 
     /// Allow friend access to other ElementAccessor types for comparison operators
-    template<typename NC, typename EC>
+    template<typename NC2, typename EC2>
     friend class ElementAccessorBase;
     /// Allow to iterator accessor to next() and goto() methods
     template<typename ElementAccessorType>

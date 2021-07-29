@@ -97,7 +97,7 @@ Mesh extract_partition_mesh(const Mesh& mesh, const PartitionIndex partition)
         if (element.parent_partition() == partition)
         {
             elements_to_keep.insert(element.local_index());
-            for (auto& neighbor : adjacency.get_elements(element.local_index()))
+            for (auto& neighbor : adjacency.get_adjacent_elements(element.local_index()))
             {
                 elements_to_keep.insert(neighbor.local_index());
             }
@@ -139,7 +139,7 @@ std::pair<std::vector<LocalIndex>, std::vector<LocalIndex>> extract_partition_in
         std::set<LocalIndex> ghost_layer_elements;
         for (auto& e_local_id : elements_to_include)
         {
-            for (auto& neighbor_index : adjacency_list.get_element_indices(e_local_id))
+            for (auto& neighbor_index : adjacency_list.get_adjacent_element_indices(e_local_id))
             {
                 ghost_layer_elements.insert(neighbor_index);
             }

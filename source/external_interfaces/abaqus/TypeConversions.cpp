@@ -14,6 +14,10 @@ ElementType convert_abaqus_type(const std::string& abaqus_type)
     {
         return ElementType::T3D4N;
     }
+    else if (utility::istr_is_equal(abaqus_type, "C3D10"))
+    {
+        return ElementType::T3D10N;
+    }
     else if (utility::istr_is_equal(abaqus_type, "CPS3"))
     {
         return ElementType::T2D3N;

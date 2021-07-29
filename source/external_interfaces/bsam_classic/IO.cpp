@@ -1,5 +1,6 @@
 #include "mesh/external_interfaces/bsam_classic/IO.h"
 
+#include "mesh/algorithms/LCSAssignments.h"
 #include "mesh/external_interfaces/abaqus/OptionsBlock.h"
 #include "mesh/external_interfaces/abaqus/TypeConversions.h"
 #include "utility/ASCIIStreamHelpers.h"
@@ -84,8 +85,8 @@ static bool read_next_cluster(std::ifstream& input_stream,
                 std::replace(line.begin(), line.end(), ',', ' ');
                 auto tokens = utility::tokenize(line);
                 assert(tokens.size() == 3);
-                int start = atoi(tokens[0].c_str());
-                int end = atoi(tokens[1].c_str());
+                int start     = atoi(tokens[0].c_str());
+                int end       = atoi(tokens[1].c_str());
                 int increment = atoi(tokens[2].c_str());
                 for (auto i = start; i <= end; i += increment)
                 {
@@ -142,15 +143,74 @@ static bool read_next_cluster(std::ifstream& input_stream,
                 getline(input_stream, line);
             }
         }
+        else if (block.block_type == OptionBlock::BlockType::ORIENTATION)
+        {
+            assert(block.keywords.count("NAME") == 1);
+
+            // Note: the keyword "NAME" is misnomer and really means the type
+            auto orientation_type = block.keywords["NAME"];
+            // Can either be ORI-ELE for element based or ORI-NODE for node
+            assert(orientation_type == "ORI-ELE" || orientation_type == "ORI-NODE" ||
+                   orientation_type == "ORI");
+
+            std::vector<simple_math::Quaternion> quaternions;
+
+            // Read data lines
+            getline(input_stream, line);
+            while (line.find("*") == std::string::npos && line != "")
+            {
+                // Replace all commas with spaces so we have only whitespace delimiters
+                std::replace(line.begin(), line.end(), ',', ' ');
+                auto tokens = utility::tokenize(line);
+                assert(tokens.size() == 8);
+
+                // tokens[0] is just the id of the node/element, but every node/element
+                // is required, thus it is irrelevant
+                simple_math::Point local_x = { atof(tokens[1].c_str()),
+                                               atof(tokens[2].c_str()),
+                                               atof(tokens[3].c_str()) };
+                simple_math::Point local_z = { atof(tokens[4].c_str()),
+                                               atof(tokens[5].c_str()),
+                                               atof(tokens[6].c_str()) };
+                // tokens[7] is the local fiber volume fraction, which is not used in the mesh.
+                // It should be parsed in a different SHEFF module to set internal state variables.
+                quaternions.push_back(x_z_to_quaterion(local_x, local_z));
+
+                getline(input_stream, line);
+            }
+
+            if (orientation_type == "ORI-ELE")
+            {
+                assert(quaternions.size() == mesh.elements().size());
+
+                for (auto i : utility::range(quaternions.size()))
+                {
+                    mesh.elements()[i].local_coord_sys().initialize(LCSAssignmentType::Element);
+                    for (auto& q : mesh.elements()[i].local_coord_sys())
+                    {
+                        q = quaternions[i];
+                    }
+                }
+            }
+            else
+            {
+                assert(quaternions.size() == mesh.nodes().size());
+
+                for (auto e : mesh.elements())
+                {
+                    e.local_coord_sys().initialize(LCSAssignmentType::Node,
+                                                   e.connectivity().size());
+                    for (auto i : utility::range(e.connectivity().size()))
+                    {
+                        e.local_coord_sys()[i] = quaternions[e.connectivity()[i]];
+                    }
+                }
+            }
+        }
         else if (block.block_type == OptionBlock::BlockType::STOP)
         {
             return true;
         }
-        // Note for orientations:
-        // * name=ORI means node-based
-        // * name=ORI-ELE means element-based
-        // * node/element #, fiber direction, 2nd vector (through-thickness), fiber Vf
-        // (placeholder)
         else
         {
             // Move to next line
@@ -179,6 +239,21 @@ Mesh read_bsam_classic(const std::string& file_path)
                              mesh))
     {
     }
+
+    input_stream.close();
+
+    return mesh;
+}
+
+Mesh read_ele(const std::string& file_path)
+{
+    std::ifstream input_stream(file_path);
+
+    LocalIndex n_nodes_before_prev_block    = 0;
+    LocalIndex n_elements_before_prev_block = 0;
+
+    Mesh mesh;
+    read_next_cluster(input_stream, n_nodes_before_prev_block, n_elements_before_prev_block, mesh);
 
     input_stream.close();
 

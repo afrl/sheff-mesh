@@ -20,6 +20,8 @@ Mesh::Mesh(const Mesh& other)
   : Mesh()
 {
     copy(other);
+    n_partitions_ = other.n_partitions_;
+    this_partition_id_ = other.this_partition_id_;
 }
 
 Mesh::Mesh(Mesh&& other) noexcept
@@ -331,11 +333,15 @@ Mesh& Mesh::operator=(const Mesh& other)
 {
     clear();
     copy(other);
+    n_partitions_      = other.n_partitions_;
+    this_partition_id_ = other.this_partition_id_;
     return *this;
 }
 
 Mesh& Mesh::operator=(Mesh&& other) noexcept
 {
+    std::swap(n_partitions_, other.n_partitions_);
+    std::swap(this_partition_id_, other.this_partition_id_);
     nodes_.swap(other.nodes_);
     elements_.swap(other.elements_);
     return *this;

@@ -73,7 +73,7 @@ static ElementType infer_type(unsigned int dimensionality, ConnIndex num_nodes);
 
 /// Given a geometry type, this function will return the linear version
 /// if one exists.  Otherwise it will return UNKNGEOM.
-ElementType get_linearized_type(const ElementType& geom_type);
+static ElementType get_linearized_type(const ElementType& geom_type);
 /// Returns the permuation vector to go from the quadratic connectivity
 /// to the linear connectivity.  If the type is already linear, then
 /// an empty vector is returned.  Will throw for unrecognized types.
@@ -665,6 +665,24 @@ ElementType infer_type(unsigned int dimensionality, ConnIndex num_nodes)
             }
         default: throw _UTIL_MSG_EXCEPT("Invalid dimensionality.");
     }
+}
+
+ElementType get_linearized_type(const ElementType& geom_type)
+{
+    switch (geom_type)
+    {
+        case ElementType::L1D3N: return ElementType::L1D2N;
+        case ElementType::T2D6N: return ElementType::T2D3N;
+        case ElementType::Q2D8N: return ElementType::Q2D4N;
+        case ElementType::C2D6N: return ElementType::C2D4N;
+        case ElementType::T3D10N: return ElementType::T3D4N;
+        case ElementType::P3D13N: return ElementType::P3D5N;
+        case ElementType::W3D15N: return ElementType::W3D6N;
+        case ElementType::H3D20N: return ElementType::H3D8N;
+        case ElementType::Q3D8N: return ElementType::Q3D4N;
+        case ElementType::C3D16N: return ElementType::C3D8N;
+    }
+    return geom_type;
 }
 
 bool is_type_linear(const ElementType& geom_type)

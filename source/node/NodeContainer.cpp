@@ -125,6 +125,17 @@ void NodeContainer::remove_stable(LocalIndex i)
     parent_partitions_.erase(parent_partitions_.begin() + i);
 }
 
+void NodeContainer::remove_stable(std::vector<LocalIndex>& v)
+{
+    std::vector<LocalIndex> sorted_v = v;
+    std::sort(sorted_v.begin(), sorted_v.end());
+    std::reverse(sorted_v.begin(), sorted_v.end());
+    for (auto& i : sorted_v)
+    {
+        remove_stable(i);
+    }
+}
+
 void NodeContainer::swap(NodeContainer& other)
 {
     global_indices_.swap(other.global_indices_);

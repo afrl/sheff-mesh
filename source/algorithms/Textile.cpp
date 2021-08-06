@@ -543,8 +543,8 @@ VTMSTowMesh read_vtms_ctw(const std::string& file_path)
         if (find_iter == facet_indicator_to_component_map.end())
         {
             auto new_index = facet_indicator_to_component_map.size();
-            facet_indicator_to_component_map[facet_indicator] = new_index;
-            tow_surface.mesh.elements().back().component_id() = new_index;
+            facet_indicator_to_component_map[facet_indicator] = static_cast<ComponentIndex>(new_index);
+            tow_surface.mesh.elements().back().component_id() = static_cast<ComponentIndex>(new_index);
             std::cout << "Adding facet " << new_index << " for indicator " << facet_indicator
                       << std::endl;
         }
@@ -618,9 +618,8 @@ VTMSTowMesh create_tow_surface(const int material_number,
     tow_surface.surface_element_types.reserve(n_nodes_per_element.size());
     for (int i = 0; i < n_nodes_per_element.size(); i++)
     {
-        LocalIndex node_index;
         std::vector<LocalIndex> connectivity(n_nodes_per_element[i], 0);
-        for (int j = 0; j < n_nodes_per_element[i]; j++)
+        for (LocalIndex j = 0; j < n_nodes_per_element[i]; j++)
         {
             connectivity[j] = connectivities[curr_conn_offset++];
         }

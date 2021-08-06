@@ -84,7 +84,6 @@ Mesh tetrahedralize_surface(const Mesh& surface_mesh)
     in.numberoffacets  = surface_mesh.elements().size();
     in.facetlist       = new tetgen::tetgenio::facet[in.numberoffacets];
     in.facetmarkerlist = new int[in.numberoffacets];
-    for (unsigned int i = 0; i < in.numberoffacets; i++) {}
 
     // Create the facets (each will have one polygon)
     tetgen::tetgenio::facet* f;

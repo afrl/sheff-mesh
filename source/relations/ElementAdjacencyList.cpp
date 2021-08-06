@@ -188,7 +188,7 @@ std::vector<LocalIndex> ElementAdjacencyList::get_adjacent_element_indices_with_
     std::vector<LocalIndex> adjacent_elements;
     for (auto i = element_offsets_[element_index]; i < element_offsets_[element_index + 1]; i++)
     {
-        if (!skip_in_search_[i])
+        if (!skip_in_search_[adjacent_element_list_[i]])
         {
             adjacent_elements.push_back(adjacent_element_list_[i]);
         }

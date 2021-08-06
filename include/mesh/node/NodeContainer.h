@@ -77,6 +77,9 @@ class NodeContainer
     /// Removes a node by its index from the container while preserving ordering (and therefore
     /// local indices).
     void remove_stable(LocalIndex i);
+    /// Removes a list of nodes by their index from the container while preserving ordering (and
+    /// therefore local indices).
+    void remove_stable(std::vector<LocalIndex>& v);
 
     /// Swaps all data with the other container.
     void swap(NodeContainer& other);

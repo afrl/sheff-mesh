@@ -28,6 +28,9 @@ std::vector<LocalIndex> find_elements_in_box(const Mesh& mesh, const Point& min,
 /// @returns A pair of points with most negative point being first and most positive being second.
 std::pair<Point, Point> find_global_extent(const Mesh& mesh);
 
+/// @brief Finds the maximum component ID in the mesh (ignores other ranks)
+ComponentIndex find_max_component_id(const Mesh& mesh);
+
 /// @brief Finds the maximum component ID in the mesh taking into considering that the mesh may be
 /// distributed across ranks.
 ComponentIndex find_global_max_component_id(const Mesh& mesh);

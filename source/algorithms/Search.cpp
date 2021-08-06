@@ -1,3 +1,4 @@
+#include "..\..\include\mesh\algorithms\Search.h"
 #include "mesh/algorithms/Search.h"
 
 #include "mesh/basis/BasisFunctions.h"
@@ -108,7 +109,7 @@ std::pair<Point, Point> find_global_extent(const Mesh& mesh)
     return global_extent;
 }
 
-ComponentIndex find_global_max_component_id(const Mesh& mesh)
+ComponentIndex find_max_component_id(const Mesh& mesh)
 {
     mesh::ComponentIndex curr_max_id = 0;
     for (auto& element : mesh.elements())
@@ -118,7 +119,12 @@ ComponentIndex find_global_max_component_id(const Mesh& mesh)
             curr_max_id = element.component_id();
         }
     }
-    return utility::MPIUtils::max_across_ranks(curr_max_id);
+    return curr_max_id;
+}
+
+ComponentIndex find_global_max_component_id(const Mesh& mesh)
+{
+    return utility::MPIUtils::max_across_ranks(find_max_component_id(mesh));
 }
 
 BoundaryInfo extract_boundary(const Mesh& mesh)

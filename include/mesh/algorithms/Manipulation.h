@@ -7,6 +7,9 @@ namespace mesh
 /// @brief Convert a mesh of linear elements to quadratic equivalents
 void convert_to_quadratic(Mesh& mesh);
 
+/// @brief Convert a mesh of quadratic elements to linear equivalents
+void convert_to_linear(Mesh& mesh);
+
 /// @brief Given a list of nodes that should be combined into another node, performs the combination
 /// and removes the nodes that were combined.
 /// @param mesh - mesh object to modify
@@ -17,4 +20,7 @@ void combine_nodes(Mesh& mesh, std::vector<std::pair<LocalIndex, LocalIndex>> co
 
 /// @brief Removes duplicate nodes from the mesh based on the nodes' positions.
 void remove_duplicate_nodes(Mesh& mesh, const double tol = 1e-12);
+
+/// @brief Removes all nodes that are not connected to an element.
+void remove_unattached_nodes(Mesh& mesh);
 }

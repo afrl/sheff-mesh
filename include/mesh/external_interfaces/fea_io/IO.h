@@ -20,10 +20,8 @@ Mesh read_fea_io(const std::string& file_stem, const PartitionIndex partition = 
 /// avoids having to know the path of the particular mesh file and travers.
 /// @param meta_filepath - relative (to cwd) or absolute path to the meta file (include the
 ///        .x.json extension)
-/// @param time_step - the time step for which the mesh should be read
 /// @param partition - the partition to read
 Mesh read_fea_io_from_meta(const std::string& meta_filepath,
-                           const int time_step            = 0,
                            const PartitionIndex partition = 0);
 
 /// @brief Writes a mesh in the JSON/binary format using the fea_io library.

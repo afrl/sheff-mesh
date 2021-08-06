@@ -9,7 +9,7 @@ void create_groups_for_nodes_on_extent(Mesh& mesh,
                                        const std::string& name_prefix,
                                        const double& rel_tol)
 {
-    auto extent      = find_global_extent(mesh);
+    auto extent      = find_extent(mesh);
     auto& min_coord  = extent.first;
     auto& max_coord  = extent.second;
     const double tol = rel_tol * simple_math::distance(min_coord, max_coord);

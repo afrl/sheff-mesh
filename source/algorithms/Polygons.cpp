@@ -545,7 +545,7 @@ std::unordered_map<std::size_t, std::vector<LocalIndex>> refine_all_polygon_segm
         auto segment_index = 0;
         while (segment_index < n_segments)
         {
-            auto conn    = element.connectivity();
+            auto conn     = element.connectivity();
             auto& segment = segments[segment_index];
             auto p1       = mesh.nodes()[conn[segment.first]].point();
             auto p2       = mesh.nodes()[conn[segment.second]].point();
@@ -855,14 +855,15 @@ std::pair<std::vector<LocalIndex>, std::vector<LocalIndex>> triangulate_all_poly
     // Note: elements_to_remove is naturally sorted
     for (auto i : utility::range(elements_to_remove.size()))
     {
-        mesh.elements().remove_stable(elements_to_remove[i] - i);
+        mesh.elements().remove_stable(elements_to_remove[i] - static_cast<LocalIndex>(i));
     }
 
 
     std::vector<LocalIndex> new_triangle_indices;
     for (auto i : utility::range(n_new_triangles))
     {
-        new_triangle_indices.push_back(orig_n_elements + i - elements_to_remove.size());
+        new_triangle_indices.push_back(orig_n_elements + i -
+                                       static_cast<LocalIndex>(elements_to_remove.size()));
     }
     return { elements_to_remove, new_triangle_indices };
 }

@@ -457,6 +457,12 @@ Mesh read_fea_io(const std::string& file_stem, const PartitionIndex partition_id
     Mesh mesh;
     auto partition = mesh_reader.read_partition(partition_id);
 
+    if (mesh_reader.get_mesh_info().total_num_partitions > 1)
+    {
+        mesh.n_partitions() = mesh_reader.get_mesh_info().total_num_partitions;
+        mesh.partition_id() = partition_id;
+    }
+
     for (auto i : utility::indices(partition.node_global_ids))
     {
         const auto offset = mesh_info.dimensionality * i;
@@ -534,7 +540,6 @@ Mesh read_fea_io(const std::string& file_stem, const PartitionIndex partition_id
     return mesh;
 }
 Mesh read_fea_io_from_meta(const std::string& meta_filepath,
-                           const int time_step,
                            const PartitionIndex partition_id)
 {
     fea_io::MetaReader meta_reader;

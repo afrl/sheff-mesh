@@ -139,7 +139,7 @@ std::pair<std::vector<LocalIndex>, std::vector<LocalIndex>> extract_partition_in
         std::set<LocalIndex> ghost_layer_elements;
         for (auto& e_local_id : elements_to_include)
         {
-            for (auto& neighbor_index : adjacency_list.get_adjacent_element_indices(e_local_id))
+            for (auto& neighbor_index : adjacency_list.get_adjacent_element_indices_with_skips(e_local_id))
             {
                 ghost_layer_elements.insert(neighbor_index);
             }

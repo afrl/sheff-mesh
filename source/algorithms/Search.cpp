@@ -251,7 +251,7 @@ simple_math::Point find_parametric_point(const ElementConstAccessor& element,
         }
 
         BasisFunctions::derivatives(element.type(), curr_guess_p, derivatives);
-        auto jacobian = derivatives.transpose() * node_coords;
+        auto jacobian = node_coords.transpose() * derivatives;
 
         curr_guess -= jacobian.inverse() * residual;
         curr_iteration++;

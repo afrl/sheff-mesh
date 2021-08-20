@@ -20,7 +20,7 @@ NodeConstAccessor NodeContainerKDTree::closest_node(const Point& p) const
 
     index_.findNeighbors(result_set, &p[0], nanoflann::SearchParams(10));
 
-    return adapter_.nodes_[ret_index];
+    return adapter_.nodes_[static_cast<LocalIndex>(ret_index)];
 }
 
 IteratorRange<NodeSubrangeConstIterator> NodeContainerKDTree::closest_nodes(const Point& p,
@@ -38,17 +38,17 @@ IteratorRange<NodeSubrangeConstIterator> NodeContainerKDTree::closest_nodes(cons
     std::vector<mesh::LocalIndex> cast_ret_indices(num_results);
     for (auto i : utility::indices(ret_indices))
     {
-        cast_ret_indices[i] = ret_indices[i];
+        cast_ret_indices[i] = static_cast<LocalIndex>(ret_indices[i]);
     }
 
     return {
         NodeSubrangeConstIterator(adapter_.nodes_,
                                   cast_ret_indices.data(),
-                                  num_results), // begin
+                                  static_cast<LocalIndex>(num_results)), // begin
         NodeSubrangeConstIterator(adapter_.nodes_,
                                   cast_ret_indices.data(),
-                                  num_results,
-                                  num_results) // end
+                                  static_cast<LocalIndex>(num_results),
+                                  static_cast<LocalIndex>(num_results)) // end
     };
 }
 }

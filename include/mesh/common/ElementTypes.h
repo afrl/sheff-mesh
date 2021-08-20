@@ -71,6 +71,9 @@ static ConnIndex get_num_nodes_for_type(const ElementType& geom_type);
 /// the type of solid element.
 static ElementType infer_type(unsigned int dimensionality, ConnIndex num_nodes);
 
+/// For 1D elements, returns 1.  For 2D elements, returns 2. For 3D elements, returns 3.
+static unsigned int get_dimensionality(const ElementType& type);
+
 /// Given a geometry type, this function will return the linear version
 /// if one exists.  Otherwise it will return UNKNGEOM.
 static ElementType get_linearized_type(const ElementType& geom_type);
@@ -665,6 +668,24 @@ ElementType infer_type(unsigned int dimensionality, ConnIndex num_nodes)
             }
         default: throw _UTIL_MSG_EXCEPT("Invalid dimensionality.");
     }
+}
+
+unsigned int get_dimensionality(const ElementType& type)
+{
+    using utype = std::underlying_type<ElementType>::type;
+    if (static_cast<utype>(type) < 20)
+    {
+        return 1;
+    }
+    else if (static_cast<utype>(type) < 30)
+    {
+        return 2;
+    }
+    else if (static_cast<utype>(type) < 50)
+    {
+        return 3;
+    }
+    throw _UTIL_MSG_EXCEPT("Element type not accounted for in cases.");
 }
 
 ElementType get_linearized_type(const ElementType& geom_type)

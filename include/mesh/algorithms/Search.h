@@ -68,9 +68,4 @@ std::pair<bool, LocalIndex> find_element_with_point(const Mesh& mesh, const simp
 
 /// @brief Counts how many elements of each unique element type in a mesh.
 std::map<ElementType, LocalIndex> count_element_types(const Mesh& mesh);
-
-/// @brief Finds the parametric coordinate in an element that yields the given global point by
-/// iteratively solves the inverse problem using Newton's method.
-simple_math::Point find_parametric_point(const ElementConstAccessor& element,
-                                         const simple_math::Point& global_point);
 }

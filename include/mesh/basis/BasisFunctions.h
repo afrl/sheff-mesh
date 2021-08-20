@@ -87,6 +87,9 @@ class BasisFunctionsBase
 using BasisFunctions =
   BasisFunctionsBase<simple_math::Point, simple_math::GeneralVector, simple_math::GeneralMatrix>;
 
+using BasisFunctionsVec =
+  BasisFunctionsBase<simple_math::Vector3D, simple_math::GeneralVector, simple_math::GeneralMatrix>;
+
 /////////////////
 // Definitions //
 /////////////////

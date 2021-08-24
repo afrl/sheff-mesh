@@ -23,7 +23,7 @@ static bool read_next_cluster(std::ifstream& input_stream,
             n_nodes_before_prev_block = mesh.nodes().size();
 
             // Read data lines
-            getline(input_stream, line);
+            utility::get_next_line(input_stream, line);
             while (line.find("*") == std::string::npos && line != "")
             {
                 // Replace all commas with spaces so we have only whitespace delimiters
@@ -36,7 +36,7 @@ static bool read_next_cluster(std::ifstream& input_stream,
 
                 mesh.nodes().add(p);
 
-                getline(input_stream, line);
+                utility::get_next_line(input_stream, line);
             }
         }
         else if (block.block_type == OptionBlock::BlockType::ELEMENT)
@@ -50,7 +50,7 @@ static bool read_next_cluster(std::ifstream& input_stream,
             n_elements_before_prev_block = mesh.elements().size();
 
             // Read data lines
-            getline(input_stream, line);
+            utility::get_next_line(input_stream, line);
             while (line.find("*") == std::string::npos && line != "")
             {
                 // Replace all commas with spaces so we have only whitespace delimiters
@@ -68,7 +68,7 @@ static bool read_next_cluster(std::ifstream& input_stream,
                 }
 
                 mesh.elements().add(element_type, connectivity);
-                getline(input_stream, line);
+                utility::get_next_line(input_stream, line);
             }
         }
         else if (block.block_type == OptionBlock::BlockType::NODESET)
@@ -80,7 +80,7 @@ static bool read_next_cluster(std::ifstream& input_stream,
 
             if (block.has_option("GENERATE"))
             {
-                getline(input_stream, line);
+                utility::get_next_line(input_stream, line);
                 // Replace all commas with spaces so we have only whitespace delimiters
                 std::replace(line.begin(), line.end(), ',', ' ');
                 auto tokens = utility::tokenize(line);
@@ -95,12 +95,12 @@ static bool read_next_cluster(std::ifstream& input_stream,
                     auto instance_index = i - 1 + n_nodes_before_prev_block;
                     node_group.node_indices.push_back(instance_index);
                 }
-                getline(input_stream, line);
+                utility::get_next_line(input_stream, line);
             }
             else
             {
                 // Read data lines
-                getline(input_stream, line);
+                utility::get_next_line(input_stream, line);
                 while (line.find("*") == std::string::npos && line != "")
                 {
                     // Replace all commas with spaces so we have only whitespace delimiters
@@ -114,7 +114,7 @@ static bool read_next_cluster(std::ifstream& input_stream,
                         auto instance_index = atoi(i.c_str()) - 1 + n_nodes_before_prev_block;
                         node_group.node_indices.push_back(instance_index);
                     }
-                    getline(input_stream, line);
+                    utility::get_next_line(input_stream, line);
                 }
             }
         }
@@ -126,7 +126,7 @@ static bool read_next_cluster(std::ifstream& input_stream,
             auto& element_group   = mesh.elements().group(element_set_name);
 
             // Read data lines
-            getline(input_stream, line);
+            utility::get_next_line(input_stream, line);
             while (line.find("*") == std::string::npos && line != "")
             {
                 // Replace all commas with spaces so we have only whitespace delimiters
@@ -140,7 +140,7 @@ static bool read_next_cluster(std::ifstream& input_stream,
                     auto instance_index = atoi(i.c_str()) - 1 + n_elements_before_prev_block;
                     element_group.element_indices.push_back(instance_index);
                 }
-                getline(input_stream, line);
+                utility::get_next_line(input_stream, line);
             }
         }
         else if (block.block_type == OptionBlock::BlockType::ORIENTATION)
@@ -156,7 +156,7 @@ static bool read_next_cluster(std::ifstream& input_stream,
             std::vector<simple_math::Quaternion> quaternions;
 
             // Read data lines
-            getline(input_stream, line);
+            utility::get_next_line(input_stream, line);
             while (line.find("*") == std::string::npos && line != "")
             {
                 // Replace all commas with spaces so we have only whitespace delimiters
@@ -176,7 +176,7 @@ static bool read_next_cluster(std::ifstream& input_stream,
                 // It should be parsed in a different SHEFF module to set internal state variables.
                 quaternions.push_back(x_z_to_quaterion(local_x, local_z));
 
-                getline(input_stream, line);
+                utility::get_next_line(input_stream, line);
             }
 
             if (orientation_type == "ORI-ELE")
@@ -214,7 +214,7 @@ static bool read_next_cluster(std::ifstream& input_stream,
         else
         {
             // Move to next line
-            getline(input_stream, line);
+            utility::get_next_line(input_stream, line);
         }
 
         // Move on to next block

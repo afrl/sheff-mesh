@@ -9,6 +9,7 @@
 #include "simple_math/Utility.h"
 #include "utility/ASCIIStreamHelpers.h"
 #include "utility/Hash.h"
+#include "utility/StringUtils.h"
 
 #include <fstream>
 #include <iomanip>
@@ -77,7 +78,7 @@ void snap_boundary_points(VTMSTowMesh& tow_surface)
          utility::range_as<LocalIndex>(tow_surface.surface_element_types.size()))
     {
         auto element = tow_surface.mesh.elements()[element_index];
-        auto& type    = tow_surface.surface_element_types[element_index];
+        auto& type   = tow_surface.surface_element_types[element_index];
 
         if (type == VTMSTowMesh::SurfaceElementType::BOUNDARY)
         {
@@ -113,7 +114,7 @@ void snap_boundary_points(VTMSTowMesh& tow_surface)
             // Move the nodes to lie on the plane
             for (auto& node_index : element.connectivity())
             {
-                auto node              = tow_surface.mesh.nodes()[node_index];
+                auto node               = tow_surface.mesh.nodes()[node_index];
                 node.point(normal_axis) = new_value;
             }
         }
@@ -367,7 +368,7 @@ void refine_polygon_segments(VTMSTowMesh& tow_surface, double length_max)
         auto segment_index = 0;
         while (segment_index < n_segments)
         {
-            auto conn    = element.connectivity();
+            auto conn     = element.connectivity();
             auto& segment = segments[segment_index];
             auto p1       = tow_surface.mesh.nodes()[conn[segment.first]].point();
             auto p2       = tow_surface.mesh.nodes()[conn[segment.second]].point();
@@ -543,8 +544,10 @@ VTMSTowMesh read_vtms_ctw(const std::string& file_path)
         if (find_iter == facet_indicator_to_component_map.end())
         {
             auto new_index = facet_indicator_to_component_map.size();
-            facet_indicator_to_component_map[facet_indicator] = static_cast<ComponentIndex>(new_index);
-            tow_surface.mesh.elements().back().component_id() = static_cast<ComponentIndex>(new_index);
+            facet_indicator_to_component_map[facet_indicator] =
+              static_cast<ComponentIndex>(new_index);
+            tow_surface.mesh.elements().back().component_id() =
+              static_cast<ComponentIndex>(new_index);
             std::cout << "Adding facet " << new_index << " for indicator " << facet_indicator
                       << std::endl;
         }

@@ -24,7 +24,7 @@ Mesh read_abaqus(const std::string& file_path)
         if (block.block_type == OptionBlock::BlockType::NODE)
         {
             // Read data lines
-            getline(input_stream, line);
+            utility::get_next_line(input_stream, line);
             while (line.find("*") == std::string::npos && line.size() > 0)
             {
                 // Replace all commas with spaces so we have only whitespace delimiters
@@ -37,7 +37,7 @@ Mesh read_abaqus(const std::string& file_path)
 
                 mesh.nodes().add(p);
 
-                getline(input_stream, line);
+                utility::get_next_line(input_stream, line);
             }
         }
         else if (block.block_type == OptionBlock::BlockType::ELEMENT)
@@ -48,7 +48,7 @@ Mesh read_abaqus(const std::string& file_path)
             auto element_type        = convert_abaqus_type(abaqus_element_type);
 
             // Read data lines
-            getline(input_stream, line);
+            utility::get_next_line(input_stream, line);
             while (line.find("*") == std::string::npos && line != "")
             {
                 // Replace all commas with spaces so we have only whitespace delimiters
@@ -64,7 +64,7 @@ Mesh read_abaqus(const std::string& file_path)
                 }
 
                 mesh.elements().add(element_type, connectivity);
-                getline(input_stream, line);
+                utility::get_next_line(input_stream, line);
             }
         }
         else

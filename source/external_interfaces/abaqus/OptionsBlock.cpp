@@ -1,6 +1,7 @@
 #include "mesh/external_interfaces/abaqus/OptionsBlock.h"
 
 #include "utility/ASCIIStreamHelpers.h"
+#include "utility/StringUtils.h"
 
 #include <cctype>
 
@@ -54,7 +55,7 @@ OptionBlock::OptionBlock(std::istream& file, std::string line)
 
     while (ends_with_comma)
     {
-        getline(file, line);
+        utility::get_next_line(file, line);
         line.erase(std::remove_if(line.begin(), line.end(), ::isspace),
                    line.end()); // remove whitespace
         std::replace(line.begin(), line.end(), ',', ' ');

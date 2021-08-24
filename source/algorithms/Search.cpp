@@ -1,5 +1,3 @@
-#include "..\..\include\mesh\algorithms\Search.h"
-
 #include "mesh/algorithms/Search.h"
 #include "mesh/basis/BasisFunctions.h"
 #include "mesh/face/Face.h"

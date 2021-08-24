@@ -244,9 +244,9 @@ ElementAdjacencyList::get_adjacent_element_indices(const LocalIndex element_inde
 
 inline void ElementAdjacencyList::clear_skip_flags()
 {
-    for (auto& flag : skip_in_search_)
+    for (auto i : utility::range(skip_in_search_.size()))
     {
-        flag = false;
+        skip_in_search_[i] = false;
     }
 }
 }

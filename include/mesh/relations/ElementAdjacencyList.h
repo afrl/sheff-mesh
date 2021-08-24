@@ -53,9 +53,9 @@ class ElementAdjacencyList
     template<typename IndexContainer>
     inline void skip_in_neighbor_search(const IndexContainer& element_indices_to_skip)
     {
-        for (auto& flag : skip_in_search_)
+        for (auto i : utility::range(skip_in_search_.size()))
         {
-            flag = false;
+            skip_in_search_[i] = false;
         }
 
         for (auto& i : element_indices_to_skip)

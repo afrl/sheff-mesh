@@ -1,6 +1,6 @@
 #include "..\..\include\mesh\algorithms\Search.h"
-#include "mesh/algorithms/Search.h"
 
+#include "mesh/algorithms/Search.h"
 #include "mesh/basis/BasisFunctions.h"
 #include "mesh/face/Face.h"
 #include "mesh/surface/Surface.h"
@@ -109,6 +109,81 @@ std::pair<Point, Point> find_global_extent(const Mesh& mesh)
     return global_extent;
 }
 
+namespace detail
+{
+/// @brief Returns whether line segments a and b overlap in anyway
+/// Detects the following cases:
+///
+/// a: x-----x
+/// b:    x-----x
+///
+/// a:     x-----x
+/// b: x-----x
+///
+/// a: x-----------x
+/// b:    x-----x
+///
+/// a:    x-----x
+/// b: x-----------x
+bool do_segments_overlap(const double& a1, const double& a2, const double& b1, const double& b2)
+{
+    const double t = 1e-6 * std::min(a2 - a1, b2 - b1);
+    if ((a1 >= b1 - t && a1 <= b2 + t) || (a2 >= b1 - t && a2 <= b2 + t) ||
+        (b1 >= a1 - t && b1 <= a2 + t) || (b2 >= a1 - t && b2 <= a2 + t))
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+}
+
+bool mesh::do_bounding_boxes_intersect(const std::pair<Point, Point>& bb1,
+                                       const std::pair<Point, Point>& bb2)
+{
+    if (detail::do_segments_overlap(bb1.first[0], bb1.second[0], bb2.first[0], bb2.second[0]) &&
+        detail::do_segments_overlap(bb1.first[1], bb1.second[1], bb2.first[1], bb2.second[1]) &&
+        detail::do_segments_overlap(bb1.first[2], bb1.second[2], bb2.first[2], bb2.second[2]))
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+bool do_bounding_boxes_intersect(const std::array<Point, 2>& bb1,
+                                 const std::array<Point, 2>& bb2)
+{
+    if (detail::do_segments_overlap(bb1[0][0], bb1[1][0], bb2[0][0], bb2[1][0]) &&
+        detail::do_segments_overlap(bb1[0][1], bb1[1][1], bb2[0][1], bb2[1][1]) &&
+        detail::do_segments_overlap(bb1[0][2], bb1[1][2], bb2[0][2], bb2[1][2]))
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+double bounding_box_volume(const std::pair<Point, Point>& bb)
+{
+    auto bb_p1 = simple_math::point_as_vector(bb.first);
+    auto bb_p2 = simple_math::point_as_vector(bb.second);
+    return (bb_p2 - bb_p1).norm();
+}
+
+double bounding_box_volume(const std::array<Point, 2>& bb)
+{
+    auto bb_p1 = simple_math::point_as_vector(bb[0]);
+    auto bb_p2 = simple_math::point_as_vector(bb[1]);
+    return (bb_p2 - bb_p1).norm();
+}
+
 ComponentIndex find_max_component_id(const Mesh& mesh)
 {
     mesh::ComponentIndex curr_max_id = 0;
@@ -182,10 +257,10 @@ std::vector<ElementFacePair> find_faces_from_node_set(const Mesh& mesh,
         for (auto face_index : utility::indices(faces))
         {
             auto face_conn = faces[face_index].connectivity();
-            if (std::all_of(
-                  face_conn.begin(),
-                  face_conn.end(),
-                  [&node_set](const LocalIndex& i) -> bool { return node_set.count(i) != 0; }))
+            if (std::all_of(face_conn.begin(),
+                            face_conn.end(),
+                            [&node_set](const LocalIndex& i) -> bool
+                            { return node_set.count(i) != 0; }))
             {
                 faces_in_node_set.push_back({ element.local_index(), face_index });
             }

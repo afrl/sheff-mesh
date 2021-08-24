@@ -5,6 +5,9 @@
 
 namespace mesh
 {
+//////////////////////////////
+// Mapping for an element
+
 simple_math::GeneralMatrix get_nodal_global_coords(const ElementConstAccessor& element)
 {
     simple_math::GeneralMatrix node_coords(element.connectivity().size(), 3);
@@ -101,6 +104,50 @@ std::pair<bool, simple_math::Vector3D> global_to_parametric_vec(
     } while (curr_iteration < 20);
 
     return { false, curr_guess };
+}
+
+//////////////////////////////////////
+// Mappings for a surface element
+
+simple_math::GeneralMatrix get_nodal_global_coords(const SurfaceElementAccessor& element)
+{
+    simple_math::GeneralMatrix node_coords(element.connectivity().size(), 3);
+    for (auto i : utility::range(element.connectivity().size()))
+    {
+        node_coords.row(i) = element.node(i).coord();
+    }
+    return node_coords;
+}
+
+simple_math::Vector3D parametric_to_global(const SurfaceElementAccessor& element,
+                                           const simple_math::Point& parametric_point)
+{
+    auto nodal_global_coords = get_nodal_global_coords(element);
+    return parametric_to_global(element, parametric_point, nodal_global_coords);
+}
+
+simple_math::Vector3D parametric_to_global(const SurfaceElementAccessor& element,
+                                           const simple_math::Point& parametric_point,
+                                           const simple_math::GeneralMatrix& nodal_global_coords)
+{
+    simple_math::GeneralVector basis_values;
+    BasisFunctions::values(element.type(), parametric_point, basis_values);
+    return nodal_global_coords.transpose() * basis_values;
+}
+
+simple_math::GeneralMatrix quadrature_parametric_to_global(const SurfaceElementAccessor& element,
+                                                           const simple_math::Quadrature quadrature)
+{
+    BasisFunctionsCache basis_cache;
+    return quadrature_parametric_to_global(element, quadrature, basis_cache);
+}
+
+simple_math::GeneralMatrix quadrature_parametric_to_global(const SurfaceElementAccessor& element,
+                                                           const simple_math::Quadrature quadrature,
+                                                           BasisFunctionsCache& basis_cache)
+{
+    basis_cache.setup(element.type(), quadrature);
+    return basis_cache.values() * quadrature.parametric_points();
 }
 
 }

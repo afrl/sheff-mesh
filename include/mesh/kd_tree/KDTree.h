@@ -16,7 +16,7 @@ class NodeContainerAdaptor
       : nodes_(nodes)
     {
     }
-    //NodeContainerAdaptor(const NodeContainerAdaptor&)     = default;
+    // NodeContainerAdaptor(const NodeContainerAdaptor&)     = default;
     NodeContainerAdaptor(NodeContainerAdaptor&&) noexcept = default;
 
     /// Returns the number of points in the underlying dataset (NodeContainer)
@@ -63,7 +63,7 @@ class NodeContainerKDTree
 {
   public:
     NodeContainerKDTree(const NodeContainer& nodes);
-    //NodeContainerKDTree(const NodeContainerKDTree& other);
+    // NodeContainerKDTree(const NodeContainerKDTree& other);
     NodeContainerKDTree(NodeContainerKDTree&&) noexcept = default;
 
     /// Finds the closest node to the given point and returns an accessor.
@@ -71,6 +71,10 @@ class NodeContainerKDTree
 
     /// Finds the closest 'n' nodes to the given point and returns a subrange iterator.
     IteratorRange<NodeSubrangeConstIterator> closest_nodes(const Point& p, const int n) const;
+
+    /// Finds the nodes within the given distance to the given point and returns a subrange iterator.
+    IteratorRange<NodeSubrangeConstIterator> in_radius(const Point& p,
+                                                       const double& search_radius) const;
 
   private:
     using NanoflannKDType = nanoflann::KDTreeSingleIndexAdaptor<

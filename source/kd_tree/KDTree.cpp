@@ -51,4 +51,32 @@ IteratorRange<NodeSubrangeConstIterator> NodeContainerKDTree::closest_nodes(cons
                                   static_cast<LocalIndex>(num_results)) // end
     };
 }
+
+IteratorRange<NodeSubrangeConstIterator> NodeContainerKDTree::in_radius(
+  const Point& p,
+  const double& search_radius) const
+{
+    std::vector<std::pair<size_t, double>> ret_matches;
+
+    nanoflann::SearchParams params;
+    // params.sorted = false;
+
+    const size_t n_matches = index_.radiusSearch(&p[0], search_radius, ret_matches, params);
+
+    std::vector<mesh::LocalIndex> cast_ret_indices(n_matches);
+    for (auto i : utility::range(n_matches))
+    {
+        cast_ret_indices[i] = static_cast<LocalIndex>(ret_matches[i].first);
+    }
+
+    return {
+        NodeSubrangeConstIterator(adapter_.nodes_,
+                                  cast_ret_indices.data(),
+                                  static_cast<LocalIndex>(n_matches)), // begin
+        NodeSubrangeConstIterator(adapter_.nodes_,
+                                  cast_ret_indices.data(),
+                                  static_cast<LocalIndex>(n_matches),
+                                  static_cast<LocalIndex>(n_matches)) // end
+    };
+}
 }

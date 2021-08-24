@@ -138,7 +138,7 @@ bool do_segments_overlap(const double& a1, const double& a2, const double& b1, c
 }
 }
 
-bool mesh::do_bounding_boxes_intersect(const std::pair<Point, Point>& bb1,
+bool do_bounding_boxes_intersect(const std::pair<Point, Point>& bb1,
                                        const std::pair<Point, Point>& bb2)
 {
     if (detail::do_segments_overlap(bb1.first[0], bb1.second[0], bb2.first[0], bb2.second[0]) &&

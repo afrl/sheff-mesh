@@ -8,9 +8,10 @@ namespace mesh
 FaceContainer::FaceContainer(ElementConstAccessor element)
   : element_(element)
 {
-    auto face_infos = get_face_info(element.type());
+    auto& face_infos = get_face_info(element.type());
     types_.reserve(face_infos.size());
     connectivities_.reserve(face_infos.size());
+    connectivity_offsets_.reserve(face_infos.size() + 1);
     connectivity_offsets_ = { 0 };
     for (auto& face_info : face_infos)
     {

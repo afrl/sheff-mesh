@@ -28,6 +28,21 @@ std::vector<LocalIndex> find_elements_in_box(const Mesh& mesh, const Point& min,
 /// @returns A pair of points with most negative point being first and most positive being second.
 std::pair<Point, Point> find_global_extent(const Mesh& mesh);
 
+/// @brief Detects if two bounding boxes that are aligned with the coordinate axes intersect
+///
+/// The algorithm leverages the separate axis theorem.
+bool do_bounding_boxes_intersect(const std::pair<Point, Point>& bb1,
+                                 const std::pair<Point, Point>& bb2);
+
+/// @brief Detects if two bounding boxes that are aligned with the coordinate axes intersect
+///
+/// The algorithm leverages the separate axis theorem.
+bool do_bounding_boxes_intersect(const std::array<Point, 2>& bb1,
+                                 const std::array<Point, 2>& bb2);
+
+double bounding_box_volume(const std::pair<Point, Point>& bb);
+double bounding_box_volume(const std::array<Point, 2>& bb);
+
 /// @brief Finds the maximum component ID in the mesh (ignores other ranks)
 ComponentIndex find_max_component_id(const Mesh& mesh);
 

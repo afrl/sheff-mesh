@@ -1,5 +1,6 @@
 #include "mesh/algorithms/Partitioning.h"
 
+#include "mesh/relations/NodeToElementMap.h"
 #include "second_party_metis/metis.h"
 
 #include <set>
@@ -48,17 +49,37 @@ void partition_metis(Mesh& mesh, const PartitionIndex n_parts)
                             element_partitions.data(),
                             node_partitions.data());
 
-        // Set node partitions
-        for (auto& node : mesh.nodes())
-        {
-            node.parent_partition() =
-              static_cast<PartitionIndex>(node_partitions[node.global_index()]);
-        }
+
         // Set element partitions
         for (auto& element : mesh.elements())
         {
             element.parent_partition() =
               static_cast<PartitionIndex>(element_partitions[element.global_index()]);
+        }
+
+        // Loop over the nodes and ensure that the node is connected to at least one element with
+        // the same partition. For some reason, this is not a requirement of the algorithm in METIS.
+        NodeToElementMap node_to_element_map;
+        node_to_element_map.update(mesh);
+        for (auto n : mesh.nodes())
+        {
+            const auto& n_part_id = static_cast<PartitionIndex>(node_partitions[n.global_index()]);
+            bool found_matching_part_id   = false;
+            PartitionIndex last_e_part_id = n_part_id;
+            for (auto e : node_to_element_map.get_elements(n.local_index()))
+            {
+                const auto& e_part_id =
+                  static_cast<PartitionIndex>(element_partitions[e.global_index()]);
+                found_matching_part_id |= n_part_id == e_part_id;
+                last_e_part_id = e_part_id;
+            }
+            if (!found_matching_part_id) {
+                n.parent_partition() = last_e_part_id;
+            }
+            else
+            {
+                n.parent_partition() = n_part_id;
+            }
         }
 
         mesh.n_partitions() = n_parts;
@@ -139,7 +160,8 @@ std::pair<std::vector<LocalIndex>, std::vector<LocalIndex>> extract_partition_in
         std::set<LocalIndex> ghost_layer_elements;
         for (auto& e_local_id : elements_to_include)
         {
-            for (auto& neighbor_index : adjacency_list.get_adjacent_element_indices_with_skips(e_local_id))
+            for (auto& neighbor_index :
+                 adjacency_list.get_adjacent_element_indices_with_skips(e_local_id))
             {
                 ghost_layer_elements.insert(neighbor_index);
             }

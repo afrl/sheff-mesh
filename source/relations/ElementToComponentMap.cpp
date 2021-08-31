@@ -1,3 +1,5 @@
+#include "..\..\include\mesh\relations\ElementToComponentMap.h"
+
 #include "mesh/relations/ElementToComponentMap.h"
 
 namespace mesh
@@ -123,7 +125,7 @@ ElementToComponentMap::get_element_subcomponent_connectivity(const LocalIndex el
     }
 }
 
-LocalIndex ElementToComponentMap::get_n_nodes_in_subcomponent(const ComponentIndex& component) const
+LocalIndex ElementToComponentMap::get_n_nodes_in_component(const ComponentIndex& component) const
 {
     _UTIL_ASSERT_C(mesh_ptr_ != nullptr, "initialize() must be called first.");
 
@@ -135,6 +137,13 @@ LocalIndex ElementToComponentMap::get_n_nodes_in_subcomponent(const ComponentInd
         }
     }
     return 0;
+}
+
+LocalIndex ElementToComponentMap::get_n_nodes_in_subcomponent(
+  const ComponentIndex& subcomponent_index) const
+{
+    _UTIL_ASSERT_C(mesh_ptr_ != nullptr, "initialize() must be called first.");
+    return n_nodes_per_subcomponent_[subcomponent_index];
 }
 
 void ElementToComponentMap::set_mesh(const Mesh& mesh)

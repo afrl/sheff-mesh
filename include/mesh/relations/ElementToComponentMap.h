@@ -56,8 +56,11 @@ class ElementToComponentMap
     utility::Slice<const LocalIndex, ConnIndex> get_element_subcomponent_connectivity(
       const LocalIndex element_index) const;
 
+    /// Returns the number of nodes in the subcomponent, given the component id
+    LocalIndex get_n_nodes_in_component(const ComponentIndex& component) const;
+
     /// Returns the number of nodes in the subcomponent (fast access)
-    LocalIndex get_n_nodes_in_subcomponent(const ComponentIndex& component) const;
+    LocalIndex get_n_nodes_in_subcomponent(const ComponentIndex& subcomponent_index) const;
 
     template<typename SerializerType>
     void serialize(SerializerType& s) const

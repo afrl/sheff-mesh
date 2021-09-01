@@ -4,6 +4,7 @@ namespace mesh
 {
 ////////////////////////////////////////////////////
 // Declaration of template, see specializations below
+
 template<ElementType T>
 const std::vector<FaceInfo>& get_face_info_kernel();
 
@@ -149,121 +150,192 @@ const std::vector<FaceInfo>& get_face_info(const ElementType& geom_type)
     }
 }
 
+////////////////////////////////////////////////////
+// Declaration of template, see specializations below
 
+template<ElementType T>
+const std::vector<EdgeInfo>& get_edge_info_kernel();
 
-
-
-
-
-
-
-
-
-const std::vector<EdgeInfo> get_edge_info(const ElementType& geom_type)
+template<>
+const std::vector<EdgeInfo>& get_edge_info_kernel<ElementType::T2D3N>()
 {
-    std::vector<EdgeInfo> edge_info;
-    switch (geom_type)
-    {
-        // 2D Connectivities
-        case ElementType::T2D3N:
-            // Linear triangle
-            edge_info = { { EdgeType::E2N, { 0, 1 } },
-                          { EdgeType::E2N, { 1, 2 } },
-                          { EdgeType::E2N, { 2, 0 } } };
-            break;
-        case ElementType::T2D6N:
-            // Quadratic triangle
-            edge_info = { { EdgeType::E3N, { 0, 1, 2 } },
-                          { EdgeType::E3N, { 2, 3, 4 } },
-                          { EdgeType::E3N, { 4, 5, 0 } } };
-            break;
-        case ElementType::Q2D4N:
-            // Linear quadralateral
-            edge_info = { { EdgeType::E2N, { 0, 1 } },
-                          { EdgeType::E2N, { 1, 2 } },
-                          { EdgeType::E2N, { 2, 3 } },
-                          { EdgeType::E2N, { 3, 0 } } };
-            break;
-        case ElementType::Q2D8N:
-            // Quadratric quadralateral
-            edge_info = { { EdgeType::E3N, { 0, 1, 2 } },
-                          { EdgeType::E3N, { 2, 3, 4 } },
-                          { EdgeType::E3N, { 4, 5, 6 } },
-                          { EdgeType::E3N, { 6, 7, 0 } } };
-            break;
-        case ElementType::C2D4N:
-            // Linear 2D cohesive element
-            edge_info = { { EdgeType::E2N, { 0, 1 } }, { EdgeType::E2N, { 2, 3 } } };
-            break;
-        case ElementType::C2D6N:
-            // Quadratic 2D cohesive element
-            edge_info = { { EdgeType::E2N, { 0, 1, 2 } }, { EdgeType::E2N, { 5, 4, 3 } } };
-            break;
-        // 3D Connectivities
-        case ElementType::T3D4N:
-            // Linear tetrahedral
-            edge_info = { { EdgeType::E2N, { 0, 1 } }, { EdgeType::E2N, { 0, 2 } },
-                          { EdgeType::E2N, { 0, 3 } }, { EdgeType::E2N, { 1, 2 } },
-                          { EdgeType::E2N, { 1, 3 } }, { EdgeType::E2N, { 2, 3 } } };
-            break;
-        case ElementType::P3D5N:
-            // Linear pyramid
-            edge_info = { { EdgeType::E2N, { 0, 1 } }, { EdgeType::E2N, { 1, 2 } },
-                          { EdgeType::E2N, { 2, 3 } }, { EdgeType::E2N, { 3, 0 } },
-                          { EdgeType::E2N, { 0, 4 } }, { EdgeType::E2N, { 1, 4 } },
-                          { EdgeType::E2N, { 2, 4 } }, { EdgeType::E2N, { 3, 4 } } };
-            break;
-        case ElementType::W3D6N:
-            // Linear wedge
-            edge_info = { { EdgeType::E2N, { 0, 1 } }, { EdgeType::E2N, { 1, 2 } },
-                          { EdgeType::E2N, { 2, 0 } }, { EdgeType::E2N, { 0, 3 } },
-                          { EdgeType::E2N, { 1, 4 } }, { EdgeType::E2N, { 2, 5 } },
-                          { EdgeType::E2N, { 3, 4 } }, { EdgeType::E2N, { 4, 5 } },
-                          { EdgeType::E2N, { 5, 3 } } };
-            break;
-        case ElementType::H3D8N:
-            // Linear hexahedral
-            edge_info = { { EdgeType::E2N, { 0, 1 } }, { EdgeType::E2N, { 1, 2 } },
-                          { EdgeType::E2N, { 2, 3 } }, { EdgeType::E2N, { 3, 0 } },
-                          { EdgeType::E2N, { 0, 4 } }, { EdgeType::E2N, { 1, 5 } },
-                          { EdgeType::E2N, { 2, 6 } }, { EdgeType::E2N, { 3, 7 } },
-                          { EdgeType::E2N, { 4, 5 } }, { EdgeType::E2N, { 5, 6 } },
-                          { EdgeType::E2N, { 6, 7 } }, { EdgeType::E2N, { 7, 4 } } };
-            break;
-        case ElementType::T3D10N:
-            // Quadratic tetrahedral
-            edge_info = { { EdgeType::E3N, { 0, 4, 1 } }, { EdgeType::E3N, { 0, 6, 2 } },
-                          { EdgeType::E3N, { 0, 7, 3 } }, { EdgeType::E3N, { 1, 5, 2 } },
-                          { EdgeType::E3N, { 1, 8, 3 } }, { EdgeType::E3N, { 2, 9, 3 } } };
-            break;
-        case ElementType::P3D13N:
-            // Quadratic Pyramid
-            edge_info = {
-                { EdgeType::E3N, { 0, 5, 1 } },  { EdgeType::E3N, { 1, 6, 2 } },
-                { EdgeType::E3N, { 2, 7, 3 } },  { EdgeType::E3N, { 3, 8, 0 } },
-                { EdgeType::E3N, { 0, 9, 4 } },  { EdgeType::E3N, { 1, 10, 4 } },
-                { EdgeType::E3N, { 2, 11, 4 } }, { EdgeType::E3N, { 3, 12, 4 } },
-            };
-            break;
-        case ElementType::W3D15N:
-            // Quadratic wedge
-            edge_info = { { EdgeType::E3N, { 0, 1, 2 } },   { EdgeType::E3N, { 2, 3, 4 } },
-                          { EdgeType::E3N, { 4, 5, 6 } },   { EdgeType::E3N, { 0, 6, 9 } },
-                          { EdgeType::E3N, { 2, 7, 11 } },  { EdgeType::E3N, { 4, 8, 13 } },
-                          { EdgeType::E3N, { 9, 10, 11 } }, { EdgeType::E3N, { 11, 12, 13 } },
-                          { EdgeType::E3N, { 13, 14, 9 } } };
-            break;
-        case ElementType::H3D20N:
-            // Quadratic hexahedral
-            edge_info = { { EdgeType::E3N, { 0, 1, 2 } },    { EdgeType::E3N, { 2, 3, 4 } },
-                          { EdgeType::E3N, { 4, 5, 6 } },    { EdgeType::E3N, { 6, 7, 0 } },
-                          { EdgeType::E3N, { 0, 8, 12 } },   { EdgeType::E3N, { 2, 9, 14 } },
-                          { EdgeType::E3N, { 4, 10, 16 } },  { EdgeType::E3N, { 6, 11, 18 } },
-                          { EdgeType::E3N, { 12, 13, 14 } }, { EdgeType::E3N, { 14, 15, 16 } },
-                          { EdgeType::E3N, { 16, 17, 18 } }, { EdgeType::E3N, { 18, 19, 12 } } };
-            break;
-        default: throw _UTIL_MSG_EXCEPT("Edge connectivity not implemented.");
-    }
+    static std::vector<EdgeInfo> edge_info = { { EdgeType::E2N, { 0, 1 } },
+                                               { EdgeType::E2N, { 1, 2 } },
+                                               { EdgeType::E2N, { 2, 0 } } };
     return edge_info;
 }
+
+template<>
+const std::vector<EdgeInfo>& get_edge_info_kernel<ElementType::T2D6N>()
+{
+    static std::vector<EdgeInfo> edge_info = { { EdgeType::E3N, { 0, 1, 2 } },
+                                               { EdgeType::E3N, { 2, 3, 4 } },
+                                               { EdgeType::E3N, { 4, 5, 0 } } };
+    return edge_info;
+}
+
+template<>
+const std::vector<EdgeInfo>& get_edge_info_kernel<ElementType::Q2D4N>()
+{
+    static std::vector<EdgeInfo> edge_info = { { EdgeType::E2N, { 0, 1 } },
+                                               { EdgeType::E2N, { 1, 2 } },
+                                               { EdgeType::E2N, { 2, 3 } },
+                                               { EdgeType::E2N, { 3, 0 } } };
+    return edge_info;
+}
+
+template<>
+const std::vector<EdgeInfo>& get_edge_info_kernel<ElementType::Q2D8N>()
+{
+    static std::vector<EdgeInfo> edge_info = { { EdgeType::E3N, { 0, 1, 2 } },
+                                               { EdgeType::E3N, { 2, 3, 4 } },
+                                               { EdgeType::E3N, { 4, 5, 6 } },
+                                               { EdgeType::E3N, { 6, 7, 0 } } };
+    return edge_info;
+}
+
+template<>
+const std::vector<EdgeInfo>& get_edge_info_kernel<ElementType::C2D4N>()
+{
+    static std::vector<EdgeInfo> edge_info = { { EdgeType::E2N, { 0, 1 } },
+                                               { EdgeType::E2N, { 2, 3 } } };
+    return edge_info;
+}
+
+template<>
+const std::vector<EdgeInfo>& get_edge_info_kernel<ElementType::C2D6N>()
+{
+    static std::vector<EdgeInfo> edge_info = { { EdgeType::E2N, { 0, 1, 2 } },
+                                               { EdgeType::E2N, { 5, 4, 3 } } };
+    return edge_info;
+}
+
+template<>
+const std::vector<EdgeInfo>& get_edge_info_kernel<ElementType::T3D4N>()
+{
+    static std::vector<EdgeInfo> edge_info = {
+        { EdgeType::E2N, { 0, 1 } }, { EdgeType::E2N, { 0, 2 } }, { EdgeType::E2N, { 0, 3 } },
+        { EdgeType::E2N, { 1, 2 } }, { EdgeType::E2N, { 1, 3 } }, { EdgeType::E2N, { 2, 3 } }
+    };
+    return edge_info;
+}
+
+template<>
+const std::vector<EdgeInfo>& get_edge_info_kernel<ElementType::P3D5N>()
+{
+    static std::vector<EdgeInfo> edge_info = {
+        { EdgeType::E2N, { 0, 1 } }, { EdgeType::E2N, { 1, 2 } }, { EdgeType::E2N, { 2, 3 } },
+        { EdgeType::E2N, { 3, 0 } }, { EdgeType::E2N, { 0, 4 } }, { EdgeType::E2N, { 1, 4 } },
+        { EdgeType::E2N, { 2, 4 } }, { EdgeType::E2N, { 3, 4 } }
+    };
+    return edge_info;
+}
+
+template<>
+const std::vector<EdgeInfo>& get_edge_info_kernel<ElementType::W3D6N>()
+{
+    static std::vector<EdgeInfo> edge_info = {
+        { EdgeType::E2N, { 0, 1 } }, { EdgeType::E2N, { 1, 2 } }, { EdgeType::E2N, { 2, 0 } },
+        { EdgeType::E2N, { 0, 3 } }, { EdgeType::E2N, { 1, 4 } }, { EdgeType::E2N, { 2, 5 } },
+        { EdgeType::E2N, { 3, 4 } }, { EdgeType::E2N, { 4, 5 } }, { EdgeType::E2N, { 5, 3 } }
+    };
+    return edge_info;
+}
+
+template<>
+const std::vector<EdgeInfo>& get_edge_info_kernel<ElementType::H3D8N>()
+{
+    static std::vector<EdgeInfo> edge_info = {
+        { EdgeType::E2N, { 0, 1 } }, { EdgeType::E2N, { 1, 2 } }, { EdgeType::E2N, { 2, 3 } },
+        { EdgeType::E2N, { 3, 0 } }, { EdgeType::E2N, { 0, 4 } }, { EdgeType::E2N, { 1, 5 } },
+        { EdgeType::E2N, { 2, 6 } }, { EdgeType::E2N, { 3, 7 } }, { EdgeType::E2N, { 4, 5 } },
+        { EdgeType::E2N, { 5, 6 } }, { EdgeType::E2N, { 6, 7 } }, { EdgeType::E2N, { 7, 4 } }
+    };
+    return edge_info;
+}
+
+template<>
+const std::vector<EdgeInfo>& get_edge_info_kernel<ElementType::T3D10N>()
+{
+    static std::vector<EdgeInfo> edge_info = {
+        { EdgeType::E3N, { 0, 4, 1 } }, { EdgeType::E3N, { 0, 6, 2 } },
+        { EdgeType::E3N, { 0, 7, 3 } }, { EdgeType::E3N, { 1, 5, 2 } },
+        { EdgeType::E3N, { 1, 8, 3 } }, { EdgeType::E3N, { 2, 9, 3 } }
+    };
+    return edge_info;
+}
+
+template<>
+const std::vector<EdgeInfo>& get_edge_info_kernel<ElementType::P3D13N>()
+{
+    static std::vector<EdgeInfo> edge_info = {
+        { EdgeType::E3N, { 0, 5, 1 } },  { EdgeType::E3N, { 1, 6, 2 } },
+        { EdgeType::E3N, { 2, 7, 3 } },  { EdgeType::E3N, { 3, 8, 0 } },
+        { EdgeType::E3N, { 0, 9, 4 } },  { EdgeType::E3N, { 1, 10, 4 } },
+        { EdgeType::E3N, { 2, 11, 4 } }, { EdgeType::E3N, { 3, 12, 4 } },
+    };
+    return edge_info;
+}
+
+template<>
+const std::vector<EdgeInfo>& get_edge_info_kernel<ElementType::W3D15N>()
+{
+    static std::vector<EdgeInfo> edge_info = {
+        { EdgeType::E3N, { 0, 1, 2 } },   { EdgeType::E3N, { 2, 3, 4 } },
+        { EdgeType::E3N, { 4, 5, 6 } },   { EdgeType::E3N, { 0, 6, 9 } },
+        { EdgeType::E3N, { 2, 7, 11 } },  { EdgeType::E3N, { 4, 8, 13 } },
+        { EdgeType::E3N, { 9, 10, 11 } }, { EdgeType::E3N, { 11, 12, 13 } },
+        { EdgeType::E3N, { 13, 14, 9 } }
+    };
+    return edge_info;
+}
+
+template<>
+const std::vector<EdgeInfo>& get_edge_info_kernel<ElementType::H3D20N>()
+{
+    static std::vector<EdgeInfo> edge_info = {
+        { EdgeType::E3N, { 0, 1, 2 } },    { EdgeType::E3N, { 2, 3, 4 } },
+        { EdgeType::E3N, { 4, 5, 6 } },    { EdgeType::E3N, { 6, 7, 0 } },
+        { EdgeType::E3N, { 0, 8, 12 } },   { EdgeType::E3N, { 2, 9, 14 } },
+        { EdgeType::E3N, { 4, 10, 16 } },  { EdgeType::E3N, { 6, 11, 18 } },
+        { EdgeType::E3N, { 12, 13, 14 } }, { EdgeType::E3N, { 14, 15, 16 } },
+        { EdgeType::E3N, { 16, 17, 18 } }, { EdgeType::E3N, { 18, 19, 12 } }
+    };
+    return edge_info;
+}
+
+// End get_edge_info_kernel specializations
+////////////////////////////////////////////////////
+
+const std::vector<EdgeInfo>& get_edge_info(const ElementType& geom_type)
+{
+    // All the different face definitions
+    // Faces defined CCW from outside element and starting at a corner
+
+    // Faces for solid elements
+    // 2D Connectivities
+    switch (geom_type)
+    {
+        case ElementType::T2D3N:
+        case ElementType::T2D6N:
+        case ElementType::Q2D4N:
+        case ElementType::Q2D8N:
+        case ElementType::C2D4N:
+        case ElementType::C2D6N:
+            throw _UTIL_MSG_EXCEPT("Faces do not exist for 2D elements, only edges.");
+        // 3D Connectivitives
+        case ElementType::T3D4N: return get_edge_info_kernel<ElementType::T3D4N>();
+        case ElementType::P3D5N: return get_edge_info_kernel<ElementType::P3D5N>();
+        case ElementType::W3D6N: return get_edge_info_kernel<ElementType::W3D6N>();
+        case ElementType::H3D8N: return get_edge_info_kernel<ElementType::H3D8N>();
+        case ElementType::T3D10N: return get_edge_info_kernel<ElementType::T3D10N>();
+        case ElementType::P3D13N: return get_edge_info_kernel<ElementType::P3D13N>();
+        case ElementType::W3D15N: return get_edge_info_kernel<ElementType::W3D15N>();
+        case ElementType::H3D20N: return get_edge_info_kernel<ElementType::H3D20N>();
+        case ElementType::C3D8N:
+        case ElementType::C3D16N:
+        default: throw _UTIL_MSG_EXCEPT("Edge connectivity not implemented.");
+    }
+}
+
 }

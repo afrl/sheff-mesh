@@ -109,7 +109,7 @@ static void get_quadratic_indices_of_midside_nodes(
   std::vector<std::pair<ConnIndex, ConnIndex>>& linear_node_pair_indices);
 
 /// Given an element geometry type, returns the edges of the element
-const std::vector<EdgeInfo> get_edge_info(const ElementType& geom_type);
+const std::vector<EdgeInfo>& get_edge_info(const ElementType& geom_type);
 /// Given an element geometry type, returns the faces of the element
 const std::vector<FaceInfo>& get_face_info(const ElementType& geom_type);
 /// Given an element geometry type, returns the faces of the element as if each

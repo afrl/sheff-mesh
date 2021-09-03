@@ -20,7 +20,7 @@ Mesh::Mesh(const Mesh& other)
   : Mesh()
 {
     copy(other);
-    n_partitions_ = other.n_partitions_;
+    n_partitions_      = other.n_partitions_;
     this_partition_id_ = other.this_partition_id_;
 }
 
@@ -269,6 +269,18 @@ void Mesh::copy(const Mesh& other)
     }
 }
 
+void Mesh::move(Mesh&& other)
+{
+    if (nodes().size() == 0 && elements().size() == 0)
+    {
+        *this = std::move(other);
+    }
+    else
+    {
+        copy(other);
+    }
+}
+
 void Mesh::sort()
 {
     // Local variables to bind in lambdas
@@ -281,7 +293,8 @@ void Mesh::sort()
     std::sort(
       backward_node_permutation.begin(),
       backward_node_permutation.end(),
-      [nodes](LocalIndex lhs_index, LocalIndex rhs_index) -> bool {
+      [nodes](LocalIndex lhs_index, LocalIndex rhs_index) -> bool
+      {
           return nodes[lhs_index].parent_partition() < nodes[rhs_index].parent_partition() ||
                  (nodes[lhs_index].parent_partition() == nodes[rhs_index].parent_partition() &&
                   nodes[lhs_index].global_index() < nodes[rhs_index].global_index());
@@ -298,7 +311,8 @@ void Mesh::sort()
     std::iota(backward_element_permutation.begin(), backward_element_permutation.end(), 0);
     std::sort(backward_element_permutation.begin(),
               backward_element_permutation.end(),
-              [elements, &this_partition](LocalIndex lhs_index, LocalIndex rhs_index) -> bool {
+              [elements, &this_partition](LocalIndex lhs_index, LocalIndex rhs_index) -> bool
+              {
                   auto lhs_element = elements[lhs_index];
                   auto rhs_element = elements[rhs_index];
                   if (lhs_element.parent_partition() == rhs_element.parent_partition())

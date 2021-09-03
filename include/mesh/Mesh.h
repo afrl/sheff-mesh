@@ -94,6 +94,10 @@ class Mesh
     /// nodes/elements.
     void copy(const Mesh& other);
 
+    /// Same the copy method, but this may consume the mesh if this mesh is empty (which is
+    /// faster than a deep copy).
+    void move(Mesh&& other);
+
     /// Sorts nodes by global number and sorts elements to arrange the owned elements first,
     /// followed by ghost elements sorted by partition.
     /// Note: this_partition_id_ determines which partitions elements gets put at the front.

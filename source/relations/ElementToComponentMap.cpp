@@ -1,5 +1,3 @@
-#include "..\..\include\mesh\relations\ElementToComponentMap.h"
-
 #include "mesh/relations/ElementToComponentMap.h"
 
 namespace mesh

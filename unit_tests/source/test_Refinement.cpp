@@ -7,42 +7,47 @@
 
 using namespace mesh;
 
+struct RefinementCase
+{
+    ElementType element_type;
+    int n_faces;
+    int refine_factor;
+};
+
 int main()
 {
-    Mesh linear_block = get_unit_element(ElementType::T3D4N);
-    assert(extract_boundary(linear_block).surface.size() == 4);
-
-    refine_uniform(linear_block);
-    assert(extract_boundary(linear_block).surface.size() == 4 * 4);
-
-    refine_uniform(linear_block);
-    assert(extract_boundary(linear_block).surface.size() == 4 * 4 * 4);
-
-
-    Mesh quadratic_block                         = get_unit_element(ElementType::T3D10N);
-    quadratic_block.elements()[0].component_id() = 1;
-    auto& group                                   = quadratic_block.elements().group("test");
-    group.element_indices.push_back(0);
-    assert(extract_boundary(quadratic_block).surface.size() == 4);
-
-    refine_uniform(quadratic_block);
-    assert(extract_boundary(quadratic_block).surface.size() == 4 * 4);
-    for (auto e : quadratic_block.elements())
+    std::vector<RefinementCase> refine_cases = { { ElementType::T3D4N, 4, 4 },
+                                                 { ElementType::T3D10N, 4, 4 },
+                                                 { ElementType::H3D8N, 6, 4 } };
+    for (auto& refine_case : refine_cases)
     {
-        assert(e.component_id() == 1);
-        assert(std::find(group.element_indices.begin(),
-                         group.element_indices.end(),
-                         e.local_index()) != group.element_indices.end());
-    }
+        Mesh unit_element_mesh                         = get_unit_element(refine_case.element_type);
+        unit_element_mesh.elements()[0].component_id() = 1;
+        auto& group                                    = unit_element_mesh.elements().group("test");
+        group.element_indices.push_back(0);
+        assert(extract_boundary(unit_element_mesh).surface.size() == refine_case.n_faces);
 
-    refine_uniform(quadratic_block);
-    assert(extract_boundary(quadratic_block).surface.size() == 4 * 4 * 4);
-    for (auto e : quadratic_block.elements())
-    {
-        assert(e.component_id() == 1);
-        assert(std::find(group.element_indices.begin(),
-                         group.element_indices.end(),
-                         e.local_index()) != group.element_indices.end());
+        refine_uniform(unit_element_mesh);
+        assert(extract_boundary(unit_element_mesh).surface.size() ==
+               refine_case.n_faces * refine_case.refine_factor);
+        for (auto e : unit_element_mesh.elements())
+        {
+            assert(e.component_id() == 1);
+            assert(std::find(group.element_indices.begin(),
+                             group.element_indices.end(),
+                             e.local_index()) != group.element_indices.end());
+        }
+
+        refine_uniform(unit_element_mesh);
+        assert(extract_boundary(unit_element_mesh).surface.size() ==
+               refine_case.n_faces * refine_case.refine_factor * refine_case.refine_factor);
+        for (auto e : unit_element_mesh.elements())
+        {
+            assert(e.component_id() == 1);
+            assert(std::find(group.element_indices.begin(),
+                             group.element_indices.end(),
+                             e.local_index()) != group.element_indices.end());
+        }
     }
 
     return 0;

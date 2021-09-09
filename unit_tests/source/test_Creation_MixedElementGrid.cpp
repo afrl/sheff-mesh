@@ -21,9 +21,9 @@ int main()
     assert(type_counts[ElementType::H3D8N] == 12 * n_blocks);
 
     // Make sure there are no extra unmatched faces internally
-    auto surface = extract_boundary(mixed_grid);
-    write_vtk(surface.mesh(), "mixed_grid_surface.vtk", false);
-    assert(surface.size() == 3 * 18 * 9);
+    auto boundary_info = extract_boundary(mixed_grid);
+    write_vtk(boundary_info.surface.mesh(), "mixed_grid_surface.vtk", false);
+    assert(boundary_info.surface.size() == 3 * 18 * 9);
 
     return 0;
 }

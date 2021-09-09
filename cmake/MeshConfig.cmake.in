@@ -1,29 +1,36 @@
 # Make sure we have public dependencies available
 if(NOT RapidJSON_FOUND)
     message(STATUS "SecondPartyMath did not already exist, finding package.")
-    find_package(RapidJSON 1.1.0 CONFIG REQUIRED HINTS
+    find_package(RapidJSON 1.1.0 CONFIG REQUIRED NO_CMAKE_SYSTEM_PACKAGE_REGISTRY HINTS
                  "${PROJECT_SOURCE_DIR}/../../third_party/rapidjson_install_dir")
 endif()
 if(NOT TARGET SecondPartyMesh::SecondPartyMesh)
     message(STATUS "SecondPartyMesh did not already exist, finding package.")
-    find_package(SecondPartyMesh CONFIG REQUIRED HINTS "${PROJECT_SOURCE_DIR}/../../second_party/second_party_mesh/build")
+    find_package(SecondPartyMesh CONFIG REQUIRED NO_CMAKE_SYSTEM_PACKAGE_REGISTRY HINTS
+                 "${PROJECT_SOURCE_DIR}/../../second_party/second_party_mesh/build")
 endif()
 if(NOT TARGET SecondPartyMetis::SecondPartyMetis)
     message(STATUS "SecondPartyMetis did not already exist, finding package.")
-    find_package(SecondPartyMetis CONFIG REQUIRED HINTS "${PROJECT_SOURCE_DIR}/../../second_party/second_party_metis/build")
+    find_package(SecondPartyMetis CONFIG REQUIRED NO_CMAKE_SYSTEM_PACKAGE_REGISTRY HINTS
+                 "${PROJECT_SOURCE_DIR}/../../second_party/second_party_metis/build")
 endif()
 if(NOT TARGET SimpleMath::SimpleMath)
     message(STATUS "SimpleMath did not already exist, finding package.")
-    find_package(SimpleMath CONFIG REQUIRED HINTS "${PROJECT_SOURCE_DIR}/../../first_party/simple_math/build")
+    find_package(SimpleMath CONFIG REQUIRED NO_CMAKE_SYSTEM_PACKAGE_REGISTRY HINTS
+        "${PROJECT_SOURCE_DIR}/../../first_party/simple_math/build")
 endif()
 if(NOT TARGET Utility::Utility)
     message(STATUS "Utility did not already exist, finding package.")
-    find_package(Utility CONFIG REQUIRED HINTS "${PROJECT_SOURCE_DIR}/../../first_party/utility/build")
+    find_package(Utility CONFIG REQUIRED NO_CMAKE_SYSTEM_PACKAGE_REGISTRY HINTS
+                "${PROJECT_SOURCE_DIR}/../../first_party/utility/build")
 endif()
 
-if(@MESH_USE_FEAIO@)
-  find_package(FeaIo CONFIG REQUIRED HINTS 
-    "${CMAKE_SOURCE_DIR}/../fea_io/install_dir" "${CMAKE_SOURCE_DIR}/../../fea_io/install_dir" "${CMAKE_SOURCE_DIR}/modules/fea_io/install_dir")
+if(@SHEFF_USE_FEAIO@)
+    if(NOT TARGET FeaIo::FeaIo)
+        message(STATUS "FeaIo did not already exist, finding package.")
+        find_package(FeaIo CONFIG REQUIRED NO_CMAKE_SYSTEM_PACKAGE_REGISTRY HINTS 
+                    "${CMAKE_SOURCE_DIR}/../../first_party/fea_io/build")
+    endif()
 endif()
 
 if(NOT TARGET Mesh::Mesh)

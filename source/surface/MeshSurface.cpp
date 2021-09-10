@@ -22,6 +22,7 @@ MeshSurface::MeshSurface(MeshSurface&& other) noexcept
     types_.swap(other.types_);
     connectivities_.swap(other.connectivities_);
     connectivity_offsets_.swap(other.connectivity_offsets_);
+    markers_.swap(other.markers_);
 }
 
 MeshSurface::SurfaceElementIterator MeshSurface::begin() const
@@ -62,7 +63,7 @@ SurfaceMeshWithMaps MeshSurface::mesh_with_map() const
 
     LocalIndex count = 0;
     std::vector<LocalIndex> vol_to_surf_node_map(volume_mesh_.nodes().size(),
-                                                  std::numeric_limits<LocalIndex>::max());
+                                                 std::numeric_limits<LocalIndex>::max());
     std::vector<LocalIndex> surf_to_vol_node_map;
     for (auto& surf_element : *this)
     {
@@ -86,7 +87,7 @@ SurfaceMeshWithMaps MeshSurface::mesh_with_map() const
         {
             i = vol_to_surf_node_map[i];
         }
-        mesh.elements().add(surf_element.type(), conn);
+        mesh.elements().add(surf_element.type(), conn, 0, surf_element.marker());
     }
 
     return { mesh, vol_to_surf_node_map, surf_to_vol_node_map };
@@ -102,9 +103,12 @@ void MeshSurface::add(const FaceConstAccessor& face)
         connectivities_.push_back(conn[i]);
     }
     connectivity_offsets_.push_back(connectivities_.size());
+    markers_.push_back(face.parent_element().component_id());
 }
 
-void MeshSurface::add(const ElementType& type, const utility::Slice<const LocalIndex>& conn)
+void MeshSurface::add(const ElementType& type,
+                      const utility::Slice<const LocalIndex>& conn,
+                      const LocalIndex marker)
 {
     types_.push_back(type);
     for (auto& i : conn)
@@ -112,9 +116,12 @@ void MeshSurface::add(const ElementType& type, const utility::Slice<const LocalI
         connectivities_.push_back(i);
     }
     connectivity_offsets_.push_back(connectivities_.size());
+    markers_.push_back(marker);
 }
 
-void MeshSurface::add(const ElementType& type, const utility::Slice<const LocalIndex, ConnIndex>& conn)
+void MeshSurface::add(const ElementType& type,
+                      const utility::Slice<const LocalIndex, ConnIndex>& conn,
+                      const LocalIndex marker)
 {
     types_.push_back(type);
     for (auto& i : conn)
@@ -122,6 +129,7 @@ void MeshSurface::add(const ElementType& type, const utility::Slice<const LocalI
         connectivities_.push_back(i);
     }
     connectivity_offsets_.push_back(connectivities_.size());
+    markers_.push_back(marker);
 }
 
 MeshSurface MeshSurface::operator-(const MeshSurface& other) const
@@ -147,7 +155,9 @@ MeshSurface MeshSurface::operator-(const MeshSurface& other) const
     for (auto& p : hash_to_this_surf_elem_map)
     {
         auto surf_elem_to_copy = (*this)[p.second];
-        diff.add(surf_elem_to_copy.type(), surf_elem_to_copy.connectivity());
+        diff.add(surf_elem_to_copy.type(),
+                 surf_elem_to_copy.connectivity(),
+                 surf_elem_to_copy.marker());
     }
 
     return diff;
@@ -168,7 +178,7 @@ MeshSurface& MeshSurface::operator+=(const MeshSurface& other)
         auto find_iter = hash_to_this_surf_elem_map.find(hash);
         if (find_iter == hash_to_this_surf_elem_map.end())
         {
-            this->add(surf_elem.type(), surf_elem.connectivity());
+            this->add(surf_elem.type(), surf_elem.connectivity(), surf_elem.marker());
         }
     }
 

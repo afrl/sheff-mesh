@@ -6,6 +6,7 @@
 #include "mesh/node/NodeIterator.h"
 
 #include <set>
+#include <unordered_map>
 
 namespace mesh
 {
@@ -42,14 +43,14 @@ class Mesh
     }
 
     /// Indicates if this instance contains the nodes/elements for the entire global mesh or just a
-    /// partition.
+    /// partition of a distributed mesh.
     bool contains_all_partitions() const;
 
     /// Const access to the number of partitions
     const PartitionIndex& n_partitions() const;
 
-    /// Const access to the partition that this instance represents.  Note: if this instance
-    /// represents all partitions, then the returned value will be
+    /// Const access to the partition that this instance represents.
+    /// @important If this instance represents all partitions, then the returned value will be
     /// numeric_limits<PartitionIndex>::max(), but contains_all_partitions provides a more
     /// convenient test for this case.
     const PartitionIndex& partition_id() const;
@@ -65,33 +66,40 @@ class Mesh
 
     /// Copies a subset of elements from another mesh and adds them to the end of this container and
     /// also copies any nodes that appear in the element connectivies being copied.
+    ///
     /// @important No checks are performed to see if a node already exists, so duplicate nodes could
     /// be created.
-    /// @important Calling this will invalidate n_global_nodes_ and n_global_elements_.  Be sure to
-    /// call update_global_counts after modifications to the mesh to restore the correct # of
-    /// nodes/elements.
-    void copy(const Mesh& other, const std::vector<LocalIndex> element_indices_to_copy);
+    ///
+    /// @return A node index map from the numbering in @param other to the indices of the new nodes
+    /// added to this.
+    std::unordered_map<LocalIndex, LocalIndex> copy(
+      const Mesh& other,
+      const std::vector<LocalIndex> element_indices_to_copy);
 
     /// Copies a subset of elements from another mesh and adds them to the end of this container and
     /// also copies any nodes that appear in the element connectivies being copied.
+    ///
     /// @important No checks are performed to see if a node already exists, so duplicate nodes could
     /// be created.
-    /// @important Calling this will invalidate n_global_nodes_ and n_global_elements_.  Be sure to
-    /// call update_global_counts after modifications to the mesh to restore the correct # of
-    /// nodes/elements.
-    void copy(const Mesh& other, const std::set<LocalIndex> element_indices_to_copy);
+    ///
+    /// @return A node index map from the numbering in @param other to the indices of the new nodes
+    /// added to this.
+    std::unordered_map<LocalIndex, LocalIndex> copy(
+      const Mesh& other,
+      const std::set<LocalIndex> element_indices_to_copy);
 
     /// Copies an element from another mesh.  See other versions of this method for more
     /// information.
-    void copy(const Mesh& other, const LocalIndex& element_index_to_copy);
+    ///
+    /// @return A node index map from the numbering in @param other to the indices of the new nodes
+    /// added to this.
+    std::unordered_map<LocalIndex, LocalIndex> copy(const Mesh& other,
+                                                    const LocalIndex& element_index_to_copy);
 
     /// Copies all elements and nodes from another mesh and adds them to the end of this container
     /// and also copies any nodes that appear in the element connectivies being copied.
     /// @important No checks are performed to see if a node already exists, so duplicate nodes could
     /// be created.
-    /// @important Calling this will invalidate n_global_nodes_ and n_global_elements_.  Be sure to
-    /// call update_global_counts after modifications to the mesh to restore the correct # of
-    /// nodes/elements.
     void copy(const Mesh& other);
 
     /// Same the copy method, but this may consume the mesh if this mesh is empty (which is
@@ -103,20 +111,10 @@ class Mesh
     /// Note: this_partition_id_ determines which partitions elements gets put at the front.
     void sort();
 
-    /// @important If distributed, calling this will only clear this rank's mesh and n_global_nodes_
-    /// and n_global_elements_ will be incorrect.  Be sure to call update_global_counts after
-    /// modifications to the mesh to restore the correct # of nodes/elements.
+    /// Clears a mesh of all information
     void clear();
 
-    /// @important If distributed, calling this will only affect this rank's mesh and
-    /// n_global_nodes_ and n_global_elements_ will be incorrect.  Be sure to call
-    /// update_global_counts after modifications to the mesh to restore the correct # of
-    /// nodes/elements.
     Mesh& operator=(const Mesh& other);
-    /// @important If distributed, calling this will only affect this rank's mesh and
-    /// n_global_nodes_ and n_global_elements_ will be incorrect.  Be sure to call
-    /// update_global_counts after modifications to the mesh to restore the correct # of
-    /// nodes/elements.
     Mesh& operator=(Mesh&& other) noexcept;
 
     /// Mutable access to the number of partitions (can be used to update this if the mesh is be
@@ -124,9 +122,11 @@ class Mesh
     PartitionIndex& n_partitions();
 
     /// Mutable access to the partition that this instance represents (can be used to update this if
-    /// the mesh is be partitioned).  Note: if this instance represents all partitions, then the
-    /// returned value will be numeric_limits<PartitionIndex>::max(), but contains_all_partitions
-    /// provides a more convenient test for this case.
+    /// the mesh is be partitioned).
+    ///
+    /// @important If this instance represents all partitions, then the returned value will be
+    /// numeric_limits<PartitionIndex>::max(), but contains_all_partitions provides a more
+    /// convenient test for this case.
     PartitionIndex& partition_id();
 
     //////////////////////////////////////////////////////////////////////////////////////////////

@@ -121,6 +121,9 @@ static const std::vector<Point> get_node_parametric_coordinates(const ElementTyp
 /// Returns the element type that is equivalent to the given face type.  Throws if the face cannot
 /// be converted.
 static ElementType element_equivalent_for_face(const FaceType& face_type);
+/// Returns the element type that is equivalent to the given edge type.  Throws if the edge cannot
+/// be converted.
+static ElementType element_equivalent_for_edge(const EdgeType& edge_type);
 
 /////////////
 // Helpers //
@@ -291,6 +294,17 @@ ElementType element_equivalent_for_face(const FaceType& face_type)
         case FaceType::Q3D8N: return ElementType::Q2D8N;
     }
     throw _UTIL_MSG_EXCEPT("There is no element equivalent for the given face type.");
+}
+
+
+ElementType element_equivalent_for_edge(const EdgeType& edge_type)
+{
+    switch (edge_type)
+    {
+        case EdgeType::E2N: return ElementType::L1D2N;
+        case EdgeType::E3N: return ElementType::L1D3N;
+    }
+    throw _UTIL_MSG_EXCEPT("There is no element equivalent for the given edge type.");
 }
 
 std::vector<std::vector<ConnIndex>> connectivity_helper(const ConnIndex num_faces,

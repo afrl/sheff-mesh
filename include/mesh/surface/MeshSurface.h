@@ -64,13 +64,18 @@ class MeshSurface
     /// @param face
 
     /// @brief Adds the given face to this surface (reversing orientation to point outward instead
-    /// of inward)
+    /// of inward) and sets the marker for the surface element to the volume element's component ID
+    /// from which the face came.
     void add(const FaceConstAccessor& face);
     /// @brief Adds a new surface element given the type and connectivity directly.
     /// @param conn - connectivity relative to the referenced volume mesh (assumed to be ordered to
     /// point outward).
-    void add(const ElementType& type, const utility::Slice<const LocalIndex>& conn);
-    void add(const ElementType& type, const utility::Slice<const LocalIndex, ConnIndex>& conn);
+    void add(const ElementType& type,
+             const utility::Slice<const LocalIndex>& conn,
+             const LocalIndex marker = 0);
+    void add(const ElementType& type,
+             const utility::Slice<const LocalIndex, ConnIndex>& conn,
+             const LocalIndex marker = 0);
 
     // Yeilds a temporary object that holds the difference (boolean) of this and the other surface.
     MeshSurface operator-(const MeshSurface& other) const;
@@ -86,5 +91,7 @@ class MeshSurface
     std::vector<LocalIndex> connectivities_;
     /// Offsets for connectivities_ for all of the surface elements
     std::vector<std::size_t> connectivity_offsets_;
+    /// Stores a marker for each surface element.
+    std::vector<LocalIndex> markers_;
 };
 }

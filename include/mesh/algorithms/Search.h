@@ -66,6 +66,26 @@ BoundaryInfo extract_boundary(const Mesh& mesh);
 /// @param elements_to_search
 BoundaryInfo extract_boundary(const Mesh& mesh, const std::vector<LocalIndex>& elements_to_search);
 
+/// @brief Extracts a submesh for a single component from a mesh that may contain multiple
+/// components.
+///
+/// Note that this is different from extract_boundary, which extracts the boundary a given set of
+/// elements.  This simply returns a mesh containing the elements that have the corresponding
+/// component ID (and only the nodes connected to the respective elements).
+Mesh extract_component(const Mesh& mesh, const ComponentIndex& component_id);
+
+/// @brief Simple struct to hold result of a call to find_unmatched_edges
+/// @see find_unmatched_edges
+struct UnmatchedEdgeInfo
+{
+    std::vector<LocalIndex> parent_element_indices;
+    std::vector<EdgeType> edge_types;
+    std::vector<std::vector<LocalIndex>> edge_connectivities;
+};
+
+/// Finds all edges that appear in a single element and returns information about them.
+UnmatchedEdgeInfo find_unmatched_edges(const Mesh& mesh);
+
 /// A helper struct for find_faces_from_node_set
 struct ElementFacePair
 {

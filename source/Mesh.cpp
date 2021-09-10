@@ -69,59 +69,9 @@ const PartitionIndex& Mesh::n_partitions() const
     return n_partitions_;
 }
 
-void Mesh::copy(const Mesh& other, const std::vector<LocalIndex> element_indices_to_copy)
-{
-    // Determine which nodes should be kept
-    std::set<LocalIndex> node_indices_to_copy;
-    for (auto& element_index : element_indices_to_copy)
-    {
-        for (auto& node : other.elements()[element_index].nodes())
-        {
-            node_indices_to_copy.insert(node.local_index());
-        }
-    }
-
-    std::unordered_map<LocalIndex, LocalIndex> other_to_this_node_index_map;
-    for (auto i : node_indices_to_copy)
-    {
-        auto other_node      = other.nodes()[i];
-        simple_math::Point p = { other_node.x(), other_node.y(), other_node.z() };
-        nodes_.add(p, other_node.global_index(), other_node.parent_partition());
-        other_to_this_node_index_map[other_node.local_index()] = nodes_.size() - 1;
-    }
-
-    for (auto i : element_indices_to_copy)
-    {
-        auto new_element = elements_.add_copy(other.elements()[i]);
-
-        // Remap connectivity to the indices used in this mesh
-        // Note: be careful with polyhedron elements
-        if (new_element.type() == ElementType::POLYHEDRON)
-        {
-            auto conn                       = new_element.connectivity();
-            mesh::ConnIndex curr_conn_index = 0;
-            const auto& n_facets            = conn[curr_conn_index++];
-            for (auto facet_index : utility::range(n_facets))
-            {
-                const auto& n_points_in_facet = conn[curr_conn_index++];
-                for (auto point_index_in_facet : utility::range(n_points_in_facet))
-                {
-                    conn[curr_conn_index] = other_to_this_node_index_map[conn[curr_conn_index]];
-                    curr_conn_index++;
-                }
-            }
-        }
-        else
-        {
-            for (auto& c : new_element.connectivity())
-            {
-                c = other_to_this_node_index_map[c];
-            }
-        }
-    }
-}
-
-void Mesh::copy(const Mesh& other, const std::set<LocalIndex> element_indices_to_copy)
+std::unordered_map<LocalIndex, LocalIndex> Mesh::copy(
+  const Mesh& other,
+  const std::vector<LocalIndex> element_indices_to_copy)
 {
     // Determine which nodes should be kept
     std::set<LocalIndex> node_indices_to_copy;
@@ -202,11 +152,101 @@ void Mesh::copy(const Mesh& other, const std::set<LocalIndex> element_indices_to
             }
         }
     }
+
+    return other_to_this_node_index_map;
 }
 
-void Mesh::copy(const Mesh& other, const LocalIndex& element_index_to_copy)
+std::unordered_map<LocalIndex, LocalIndex> Mesh::copy(
+  const Mesh& other,
+  const std::set<LocalIndex> element_indices_to_copy)
 {
-    copy(other, std::vector<LocalIndex>({ element_index_to_copy }));
+    // Determine which nodes should be kept
+    std::set<LocalIndex> node_indices_to_copy;
+    for (auto& element_index : element_indices_to_copy)
+    {
+        for (auto& node : other.elements()[element_index].nodes())
+        {
+            node_indices_to_copy.insert(node.local_index());
+        }
+    }
+
+    LocalIndex node_offset = nodes_.size();
+    std::unordered_map<LocalIndex, LocalIndex> other_to_this_node_index_map;
+    for (auto i : node_indices_to_copy)
+    {
+        auto other_node      = other.nodes()[i];
+        simple_math::Point p = { other_node.x(), other_node.y(), other_node.z() };
+        nodes_.add(p, other_node.global_index(), other_node.parent_partition());
+        other_to_this_node_index_map[other_node.local_index()] = nodes_.size() - 1;
+    }
+
+    for (auto& other_group : other.nodes().groups())
+    {
+        auto& this_group = nodes().group(other_group.name);
+        for (auto& i : other_group.node_indices)
+        {
+            if (other_to_this_node_index_map.count(i) > 0)
+            {
+                this_group.node_indices.push_back(i + node_offset);
+            }
+        }
+    }
+
+    LocalIndex element_offset = elements_.size();
+    for (auto i : element_indices_to_copy)
+    {
+        auto new_element = elements_.add_copy(other.elements()[i]);
+
+        // Remap connectivity to the indices used in this mesh
+        // Note: be careful with polyhedron elements
+        if (new_element.type() == ElementType::POLYHEDRON)
+        {
+            auto conn                       = new_element.connectivity();
+            mesh::ConnIndex curr_conn_index = 0;
+            const auto& n_facets            = conn[curr_conn_index++];
+            for (auto facet_index : utility::range(n_facets))
+            {
+                const auto& n_points_in_facet = conn[curr_conn_index++];
+                for (auto point_index_in_facet : utility::range(n_points_in_facet))
+                {
+                    conn[curr_conn_index] = other_to_this_node_index_map[conn[curr_conn_index]];
+                    curr_conn_index++;
+                }
+            }
+        }
+        else
+        {
+            for (auto& c : new_element.connectivity())
+            {
+                c = other_to_this_node_index_map[c];
+            }
+        }
+    }
+
+    if (other.elements().groups().size() > 0)
+    {
+        std::set<mesh::LocalIndex> element_indices_to_copy_set(element_indices_to_copy.begin(),
+                                                               element_indices_to_copy.end());
+        for (auto& other_group : other.elements().groups())
+        {
+            auto& this_group = elements().group(other_group.name);
+            for (auto& i : other_group.element_indices)
+            {
+                if (element_indices_to_copy_set.count(i) > 0)
+                {
+                    this_group.element_indices.push_back(i + element_offset);
+                }
+            }
+        }
+    }
+
+    return other_to_this_node_index_map;
+}
+
+std::unordered_map<LocalIndex, LocalIndex> Mesh::copy(const Mesh& other,
+                                                      const LocalIndex& element_index_to_copy)
+{
+    return copy(other, std::vector<LocalIndex>({ element_index_to_copy }));
 }
 
 void Mesh::copy(const Mesh& other)

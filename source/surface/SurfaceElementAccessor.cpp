@@ -57,6 +57,11 @@ IteratorRange<NodeSubrangeConstIterator> SurfaceElementAccessor::nodes() const
     };
 }
 
+const LocalIndex& SurfaceElementAccessor::marker() const
+{
+    return surf_mesh_.markers_[curr_index_];
+}
+
 bool SurfaceElementAccessor::operator==(const SurfaceElementAccessor& other) const
 {
     return &surf_mesh_ == &other.surf_mesh_ && curr_index_ == other.curr_index_;

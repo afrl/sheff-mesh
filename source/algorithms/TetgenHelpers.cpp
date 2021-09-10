@@ -61,7 +61,7 @@ Mesh get_mesh_from_tetgen_output(tetgen::tetgenio& out)
     return mesh;
 }
 
-Mesh tetrahedralize_surface(const Mesh& surface_mesh)
+Mesh tetrahedralize_surface(const Mesh& surface_mesh, const bool delaunay)
 {
     tetgen::tetgenio in;
     // Indicate indices should be zero-based
@@ -114,7 +114,6 @@ Mesh tetrahedralize_surface(const Mesh& surface_mesh)
 
     // Create tetrahedral mesh structure
     tetgen::tetgenbehavior flags;
-    // Switches
     flags.plc           = 1;
     flags.object        = tetgen::tetgenbehavior::POLY;
     flags.nobisect      = 1;
@@ -122,6 +121,11 @@ Mesh tetrahedralize_surface(const Mesh& surface_mesh)
     flags.nomergefacet  = 1;
     flags.nomergevertex = 1;
     flags.quiet         = 0;
+
+    if (delaunay)
+    {
+        flags.steinerleft = 0;
+    }
 
     // Parameters
     /*

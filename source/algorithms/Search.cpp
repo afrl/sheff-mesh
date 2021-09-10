@@ -245,6 +245,69 @@ BoundaryInfo extract_boundary(const Mesh& mesh, const std::vector<LocalIndex>& e
     }
     return boundary_info;
 }
+
+Mesh extract_component(const Mesh& mesh, const ComponentIndex& component_id)
+{
+    std::vector<LocalIndex> elements_in_component;
+    for (auto e : mesh.elements())
+    {
+        elements_in_component.push_back(e.local_index());
+    }
+
+    Mesh component_mesh;
+    component_mesh.copy(mesh, elements_in_component);
+    return component_mesh;
+}
+
+UnmatchedEdgeInfo find_unmatched_edges(const Mesh& mesh)
+{
+    // Will store the connectivity of an edge in terms of the node numbering in the mesh
+    std::vector<LocalIndex> edge_conn;
+    // A map from the hash of an edge's sorted connectivity to the number of elements that contain
+    // the edge, the first element that contained it (based on local element numbering), the type of
+    // edge, and the connectivity of the edge.
+    std::unordered_map<std::size_t, std::tuple<int, LocalIndex, EdgeType, std::vector<LocalIndex>>>
+      edge_hash_to_count_and_info;
+    for (auto e : mesh.elements())
+    {
+        auto e_conn = e.connectivity();
+        for (auto& edge : get_edge_info(e.type()))
+        {
+            edge_conn.resize(edge.connectivity.size());
+            for (auto i : utility::indices(edge.connectivity))
+            {
+                edge_conn[i] = e_conn[edge.connectivity[i]];
+            }
+            auto edge_hash = utility::hash_sorted(edge_conn);
+            auto find_iter = edge_hash_to_count_and_info.find(edge_hash);
+            if (find_iter == edge_hash_to_count_and_info.end())
+            {
+                edge_hash_to_count_and_info[edge_hash] = { 1,
+                                                           e.local_index(),
+                                                           edge.type,
+                                                           edge_conn };
+            }
+            else
+            {
+                std::get<0>(find_iter->second)++;
+            }
+        }
+    }
+
+    UnmatchedEdgeInfo unmatched_info;
+    for (auto& key_pair : edge_hash_to_count_and_info)
+    {
+        // The unmatched edges only appear in one element
+        if (std::get<0>(key_pair.second) == 1)
+        {
+            unmatched_info.parent_element_indices.push_back(std::get<1>(key_pair.second));
+            unmatched_info.edge_types.push_back(std::get<2>(key_pair.second));
+            unmatched_info.edge_connectivities.push_back(std::get<3>(key_pair.second));
+        }
+    }
+    return unmatched_info;
+}
+
 std::vector<ElementFacePair> find_faces_from_node_set(const Mesh& mesh,
                                                       const std::set<LocalIndex>& node_set)
 {
@@ -296,4 +359,39 @@ std::map<ElementType, LocalIndex> count_element_types(const Mesh& mesh)
     }
     return type_count_map;
 }
+
+simple_math::Point find_parametric_point(const ElementConstAccessor& element,
+                                         const simple_math::Point& global_point)
+{
+    auto global_coord = simple_math::point_as_vector(global_point);
+    simple_math::GeneralMatrix node_coords(element.connectivity().size(), 3);
+    for (auto i : utility::range(element.connectivity().size()))
+    {
+        node_coords.row(i) = element.node(i).coord();
+    }
+
+    simple_math::GeneralVector values;
+    simple_math::GeneralMatrix derivatives;
+    simple_math::Vector3D curr_guess = simple_math::Vector3D::Zero();
+    simple_math::Point curr_guess_p;
+    int curr_iteration = 0;
+
+    do
+    {
+        curr_guess_p = simple_math::to_point(curr_guess);
+        BasisFunctions::values(element.type(), curr_guess_p, values);
+        auto residual = node_coords.transpose() * values - global_coord;
+        if (residual.norm() < 1e-8)
+        {
+            return curr_guess_p;
+        }
+
+        BasisFunctions::derivatives(element.type(), curr_guess_p, derivatives);
+        auto jacobian = derivatives.transpose() * node_coords;
+
+        curr_guess -= jacobian.inverse() * residual;
+        curr_iteration++;
+    } while (curr_iteration < 20);
+
+    throw _UTIL_MSG_EXCEPT("Inverse problem to find parametric coordinate did not converge.");
 }

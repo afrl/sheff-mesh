@@ -35,6 +35,9 @@ class SurfaceElementAccessor
     /// order will match the indices returned by connectivity().
     IteratorRange<NodeSubrangeConstIterator> nodes() const;
 
+    /// Returns the marker for the surface element
+    const LocalIndex& marker() const;
+
     bool operator==(const SurfaceElementAccessor& other) const;
 
     bool operator!=(const SurfaceElementAccessor& other) const;

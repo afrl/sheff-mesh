@@ -162,6 +162,73 @@ Mesh make_uniform_linear_grid(const Point& min,
     return make_linear_grid(x_coords, y_coords, z_coords);
 }
 
+Mesh make_uniform_linear_tet_grid(const Point& min,
+                                  const Point& max,
+                                  const std::array<int, 3>& n_edges_along_axis)
+{
+    auto x_coords = simple_math::linspace(min[0], max[0], n_edges_along_axis[0]);
+    auto y_coords = simple_math::linspace(min[1], max[1], n_edges_along_axis[1]);
+    auto z_coords = simple_math::linspace(min[2], max[2], n_edges_along_axis[2]);
+
+    Mesh mesh;
+
+    // Create nodes
+    for (auto k : utility::indices(z_coords))
+    {
+        for (auto j : utility::indices(y_coords))
+        {
+            for (auto i : utility::indices(x_coords))
+            {
+                mesh.nodes().add({ x_coords[i], y_coords[j], z_coords[k] });
+            }
+        }
+    }
+
+    // Create elements
+    auto n_nodes_x = static_cast<LocalIndex>(x_coords.size());
+    auto n_nodes_y = static_cast<LocalIndex>(y_coords.size());
+    auto n_nodes_z = static_cast<LocalIndex>(z_coords.size());
+    std::vector<LocalIndex> conn(4);
+    for (auto k : utility::range<LocalIndex>(z_coords.size() - 1))
+    {
+        for (auto j : utility::range<LocalIndex>(y_coords.size() - 1))
+        {
+            for (auto i : utility::range<LocalIndex>(x_coords.size() - 1))
+            {
+                //      y
+                //      |
+                //      2-----3
+                //     /|    /|
+                //    / |   / |
+                //   /  0--/--1 --> x
+                //  6-----7  /
+                //  | /   | /
+                //  |/    |/
+                //  4-----5
+                // /
+                // z
+                const auto n_0 = i + j * n_nodes_x + k * n_nodes_x * n_nodes_y;
+                const auto n_1 = (i + 1) + j * n_nodes_x + k * n_nodes_x * n_nodes_y;
+                const auto n_2 = i + (j + 1) * n_nodes_x + k * n_nodes_x * n_nodes_y;
+                const auto n_3 = (i + 1) + (j + 1) * n_nodes_x + k * n_nodes_x * n_nodes_y;
+                const auto n_4 = i + j * n_nodes_x + (k + 1) * n_nodes_x * n_nodes_y;
+                const auto n_5 = (i + 1) + j * n_nodes_x + (k + 1) * n_nodes_x * n_nodes_y;
+                const auto n_6 = i + (j + 1) * n_nodes_x + (k + 1) * n_nodes_x * n_nodes_y;
+                const auto n_7 = (i + 1) + (j + 1) * n_nodes_x + (k + 1) * n_nodes_x * n_nodes_y;
+
+                mesh.elements().add(ElementType::T3D4N, { n_0, n_1, n_3, n_4 });
+                mesh.elements().add(ElementType::T3D4N, { n_0, n_3, n_2, n_6 });
+                mesh.elements().add(ElementType::T3D4N, { n_0, n_6, n_4, n_3 });
+                mesh.elements().add(ElementType::T3D4N, { n_1, n_5, n_7, n_4 });
+                mesh.elements().add(ElementType::T3D4N, { n_6, n_4, n_3, n_7 });
+                mesh.elements().add(ElementType::T3D4N, { n_3, n_4, n_1, n_7 });
+            }
+        }
+    }
+
+    return mesh;
+}
+
 Mesh make_quadratic_grid(const std::vector<double>& x_coordinates,
                          const std::vector<double>& y_coordinates)
 {

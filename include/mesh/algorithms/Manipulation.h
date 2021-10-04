@@ -10,6 +10,10 @@ void convert_to_quadratic(Mesh& mesh);
 /// @brief Convert a mesh of quadratic elements to linear equivalents
 void convert_to_linear(Mesh& mesh);
 
+/// @brief Look for errors in element connectivities and try to fix them (throws if an error is
+/// found that cannot be fixed)
+void find_and_fix_errors(Mesh& mesh);
+
 /// @brief Given a list of nodes that should be combined into another node, performs the combination
 /// and removes the nodes that were combined.
 /// @param mesh - mesh object to modify

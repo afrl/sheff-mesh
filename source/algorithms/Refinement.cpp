@@ -73,56 +73,31 @@ void refine_linear_tetrahedron(
     //      3
     //     /|\
     //    / | \
-    //  7/  |8 \9
+    //  6/  |8 \9
     //  /   |   \
     // 0----1----2
     //   4  6  5
     //
     // View of bottom face:
-    //      6
+    //      5
     // 0---------2
     //  \       /
     //   \     /
-    //   4\   /5
+    //   4\   /7
     //     \ /
     //      1
 
+    static const std::vector<std::vector<ConnIndex>> split_nodes = {
+        { 0, 1 }, // 4
+        { 0, 2 }, // 5
+        { 0, 3 }, // 6
+        { 1, 2 }, // 7
+        { 1 ,3 }, // 8
+        { 2, 3 }, // 9
+    };
 
-    auto orig_conn = element.connectivity();
-    auto edge_info = get_edge_info(element.type());
-
-    // Find or create new midside nodes (4-9 in the figure above)
     std::vector<mesh::LocalIndex> c =
-      std::vector<mesh::LocalIndex>(orig_conn.begin(), orig_conn.end());
-    for (auto& edge : edge_info)
-    {
-        assert(edge.type == EdgeType::E2N);
-
-        std::vector<LocalIndex> edge_conn;
-        edge_conn.reserve(edge.connectivity.size());
-        for (auto& c : edge.connectivity)
-        {
-            edge_conn.push_back(element.connectivity()[c]);
-        }
-        auto edge_hash = utility::hash_sorted(edge_conn);
-
-        auto find_iter = edge_face_hash_to_new_node_map.find(edge_hash);
-        if (find_iter == edge_face_hash_to_new_node_map.end())
-        { // If it doesn't exist, add a midside node
-            auto new_coord =
-              (mesh.nodes()[edge_conn[1]].coord() + mesh.nodes()[edge_conn[0]].coord()) / 2.0;
-            mesh.nodes().add(simple_math::to_point(new_coord));
-            edge_face_hash_to_new_node_map[edge_hash] = { { edge_conn[0], edge_conn[1] },
-                                                          mesh.nodes().size() - 1 };
-            c.push_back(mesh.nodes().size() - 1);
-        }
-        else
-        {
-            c.push_back(find_iter->second.new_node);
-        }
-    }
-
-
+      create_new_nodes(element, split_nodes, mesh, edge_face_hash_to_new_node_map);
 
     // Create the new tetrahedra
     // See https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.308.2549&rep=rep1&type=pdf
@@ -135,8 +110,8 @@ void refine_linear_tetrahedron(
     mesh.elements().add(ElementType::T3D4N, { c[4], c[1], c[7], c[8] });
     mesh.elements().add(ElementType::T3D4N, { c[5], c[7], c[2], c[9] });
     mesh.elements().add(ElementType::T3D4N, { c[6], c[8], c[9], c[3] });
-    mesh.elements().add(ElementType::T3D4N, { c[4], c[8], c[6], c[5] });
-    mesh.elements().add(ElementType::T3D4N, { c[4], c[7], c[8], c[5] });
+    mesh.elements().add(ElementType::T3D4N, { c[4], c[6], c[8], c[5] });
+    mesh.elements().add(ElementType::T3D4N, { c[4], c[8], c[7], c[5] });
     mesh.elements().add(ElementType::T3D4N, { c[9], c[5], c[7], c[8] });
     mesh.elements().add(ElementType::T3D4N, { c[9], c[6], c[5], c[8] });
     for (auto i : utility::range(4))

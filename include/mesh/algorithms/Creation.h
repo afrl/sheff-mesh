@@ -18,10 +18,15 @@ Mesh make_linear_grid(const std::vector<double>& x_coordinates,
                       const std::vector<double>& y_coordinates,
                       const std::vector<double>& z_coordinates);
 
-/// Generates a 3D uniform grid in the bounding box
+/// Generates a 3D uniform grid in the bounding box with linear hexhedron elements
 Mesh make_uniform_linear_grid(const Point& min,
                               const Point& max,
                               const std::array<int, 3>& n_elements);
+
+/// Generates a 3D uniform grid in the bounding box with linear tetrahedron elements
+Mesh make_uniform_linear_tet_grid(const Point& min,
+                                  const Point& max,
+                                  const std::array<int, 3>& n_edges_along_axis);
 
 /// Generate a 2D rectangular mesh with a uniform grid
 /// @param x_coordinates - coordinates of the corners of the grid cells along x-axis

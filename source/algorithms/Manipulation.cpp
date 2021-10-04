@@ -162,6 +162,36 @@ void convert_to_linear(Mesh& mesh)
     remove_unattached_nodes(mesh);
 }
 
+void find_and_fix_errors(Mesh& mesh)
+{
+    bool unchecked_elements = false;
+    for (auto e : mesh.elements())
+    {
+        if (e.type() == ElementType::T3D4N)
+        {
+            auto v0 = e.node(1).coord() - e.node(0).coord();
+            auto v1 = e.node(2).coord() - e.node(0).coord();
+            auto v2 = e.node(3).coord() - e.node(0).coord();
+            if (v0.cross(v1).dot(v2) < 0.0)
+            {
+                std::cout << "Fixing element " << e.global_index() << std::endl;
+                std::swap(e.connectivity()[1], e.connectivity()[2]);
+            }
+        }
+        else
+        {
+            unchecked_elements = true;
+        }
+    }
+    if (unchecked_elements)
+    {
+        std::cout
+          << "Warning: some elements were not checked for errors because a case has not been "
+             "implemented for them."
+          << std::endl;
+    }
+}
+
 void combine_nodes(Mesh& mesh, std::vector<std::pair<LocalIndex, LocalIndex>> combinations)
 {
     std::sort(combinations.begin(),
@@ -198,7 +228,8 @@ void remove_duplicate_nodes(Mesh& mesh, const double tol)
 {
     // A lambda comparator that ensure no two nodes with approximately the same position will
     // appear in the set.
-    auto cmp = [&mesh, &tol](const LocalIndex& a, const LocalIndex& b) {
+    auto cmp = [&mesh, &tol](const LocalIndex& a, const LocalIndex& b)
+    {
         const auto& A = mesh.nodes()[a];
         const auto& B = mesh.nodes()[b];
         return (A.x() < B.x() - tol) || ((A.y() < B.y() - tol) && fabs(A.x() - B.x()) < tol) ||

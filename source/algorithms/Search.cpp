@@ -1,4 +1,5 @@
 #include "mesh/algorithms/Search.h"
+
 #include "mesh/basis/BasisFunctions.h"
 #include "mesh/face/Face.h"
 #include "mesh/surface/Surface.h"
@@ -7,6 +8,7 @@
 #include "utility/MPIUtils.h"
 
 #include <unordered_map>
+
 
 namespace mesh
 {
@@ -139,7 +141,7 @@ bool do_segments_overlap(const double& a1, const double& a2, const double& b1, c
 }
 
 bool do_bounding_boxes_intersect(const std::pair<Point, Point>& bb1,
-                                       const std::pair<Point, Point>& bb2)
+                                 const std::pair<Point, Point>& bb2)
 {
     if (detail::do_segments_overlap(bb1.first[0], bb1.second[0], bb2.first[0], bb2.second[0]) &&
         detail::do_segments_overlap(bb1.first[1], bb1.second[1], bb2.first[1], bb2.second[1]) &&
@@ -153,8 +155,7 @@ bool do_bounding_boxes_intersect(const std::pair<Point, Point>& bb1,
     }
 }
 
-bool do_bounding_boxes_intersect(const std::array<Point, 2>& bb1,
-                                 const std::array<Point, 2>& bb2)
+bool do_bounding_boxes_intersect(const std::array<Point, 2>& bb1, const std::array<Point, 2>& bb2)
 {
     if (detail::do_segments_overlap(bb1[0][0], bb1[1][0], bb2[0][0], bb2[1][0]) &&
         detail::do_segments_overlap(bb1[0][1], bb1[1][1], bb2[0][1], bb2[1][1]) &&
@@ -394,4 +395,5 @@ simple_math::Point find_parametric_point(const ElementConstAccessor& element,
     } while (curr_iteration < 20);
 
     throw _UTIL_MSG_EXCEPT("Inverse problem to find parametric coordinate did not converge.");
+}
 }

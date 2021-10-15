@@ -42,9 +42,6 @@ class NodeSubrangeIteratorBase
                              LocalIndex starting_subrange_index = 0)
       : accessor_(nodes)
     {
-        assert(nodes_to_visit != nullptr);
-        assert(n_nodes_to_visit != 0);
-
         nodes_to_visit_.resize(n_nodes_to_visit + 1, 0);
         for (LocalIndex i = 0; i < n_nodes_to_visit; i++)
         {

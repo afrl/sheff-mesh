@@ -147,7 +147,8 @@ simple_math::GeneralMatrix quadrature_parametric_to_global(const SurfaceElementA
                                                            BasisFunctionsCache& basis_cache)
 {
     basis_cache.setup(element.type(), quadrature);
-    return basis_cache.values() * quadrature.parametric_points();
+	auto nodal_global_coords = get_nodal_global_coords(element);
+    return basis_cache.values() * nodal_global_coords;
 }
 
 }

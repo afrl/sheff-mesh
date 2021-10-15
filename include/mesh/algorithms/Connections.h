@@ -28,9 +28,16 @@ struct SurfaceQuadratureInfo
 
 /// @brief Finds the Gauss quadrature points and other relevant information for all surface elements
 /// whose nodes are a subset of the given node indices.
-SurfaceQuadratureInfo find_surface_quadrature(const Mesh& mesh,
-                                              const BoundaryInfo& boundary_info,
-                                              const std::vector<LocalIndex>& surface_node_indices);
+///
+/// @param extra_quadrature_order - the quadrature is automatically selected to integrate
+///        a constant function over the face.   This indicates how many extra orders or add.
+///        For a linear 4-node quad, only 1 quad point is needed, so if extra_quadrature_order
+///        is 1, then you will end up with a 2nd order quadrature (2x2).
+SurfaceQuadratureInfo find_surface_quadrature(
+  const Mesh& mesh,
+  const BoundaryInfo& boundary_info,
+  const std::vector<LocalIndex>& surface_node_indices,
+  const simple_math::QuadratureOrder& extra_quadrature_order = 0);
 
 /// @brief A simple struct to hold the result of a call to find_connections
 struct ConnectionResult

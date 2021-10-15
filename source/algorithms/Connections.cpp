@@ -1,21 +1,24 @@
 #include "mesh/algorithms/Connections.h"
 
+#include "mesh/algorithms/IO.h"
 #include "mesh/algorithms/IsoparametricMappingUtils.h"
 #include "mesh/basis/BasisFunctionsCache.h"
 #include "mesh/common/QuadratureHelpers.h"
 #include "simple_math/Utility.h"
-#include "simple_math/quadrature//Quadrature.h"
+#include "simple_math/quadrature/Quadrature.h"
 
 #include <unordered_set>
 
 namespace mesh
 {
-SurfaceQuadratureInfo find_surface_quadrature(const Mesh& mesh,
-                                              const BoundaryInfo& boundary_info,
-                                              const std::vector<LocalIndex>& surface_node_indices)
+SurfaceQuadratureInfo find_surface_quadrature(
+  const Mesh& mesh,
+  const BoundaryInfo& boundary_info,
+  const std::vector<LocalIndex>& surface_node_indices,
+  const simple_math::QuadratureOrder& extra_quadrature_order)
 {
     // Build a set to identify the surface elements more quickly
-    std::unordered_set<LocalIndex> surface_nodes;
+    std::set<LocalIndex> surface_nodes;
     for (auto& i : surface_node_indices)
     {
         surface_nodes.insert(i);
@@ -41,6 +44,8 @@ SurfaceQuadratureInfo find_surface_quadrature(const Mesh& mesh,
         }
     }
 
+    // mesh::write_vtk(boundary_info.surface.mesh(), "surface.vtk", false);
+
     SurfaceQuadratureInfo result;
     // Simply a good guess at how many might be needed (typically needs one reallocation at most).
     result.global_coordinates.reserve(4 * surface_elements.size());
@@ -56,6 +61,7 @@ SurfaceQuadratureInfo find_surface_quadrature(const Mesh& mesh,
         auto surface_e     = boundary_info.surface[surface_e_id];
 
         auto surface_e_quadrature_scheme = select_gauss_quadrature_scheme(surface_e.type());
+        surface_e_quadrature_scheme.integration_order += extra_quadrature_order;
         simple_math::Quadrature quadrature(surface_e_quadrature_scheme, nullptr);
         basis_cache.setup(surface_e.type(), quadrature);
         auto& quad_to_basis_values_map      = basis_cache.values();
@@ -116,6 +122,8 @@ ConnectionResult find_connections(const Mesh& mesh,
                                   const double search_radius,
                                   const double search_tolerance)
 {
+    // mesh::write_vtk(mesh, "mesh.vtk", false);
+
     ConnectionResult result;
     result.n_connected_elements_by_point.resize(points_to_connect.size(), 0);
     result.connected_elements.reserve(points_to_connect.size());
@@ -127,9 +135,9 @@ ConnectionResult find_connections(const Mesh& mesh,
 
         // Find elements that the point lies in or the closest element within the tolerance
         auto closest_element_centroids = element_centroids_kd_tree.in_radius(p, search_radius);
-        bool found_element            = false;
-        LocalIndex closest_element_id = 0;
-        double closest_distance       = std::numeric_limits<double>::max();
+        bool found_element             = false;
+        LocalIndex closest_element_id  = 0;
+        double closest_distance        = std::numeric_limits<double>::max();
         for (auto e_centroid : closest_element_centroids)
         {
             auto e               = mesh.elements()[e_centroid.local_index()];
@@ -137,7 +145,7 @@ ConnectionResult find_connections(const Mesh& mesh,
 
             if (contains_result.first) // contains the point
             {
-                result.n_connected_elements_by_point[i] = 1;
+                result.n_connected_elements_by_point[i] += 1;
                 result.connected_elements.push_back(e_centroid.local_index());
 
                 auto param_result = global_to_parametric(e, p);

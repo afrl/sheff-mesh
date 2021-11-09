@@ -103,7 +103,8 @@ SurfaceQuadratureInfo find_surface_quadrature(
             result.parent_volume_elements.push_back(volume_e_id);
             auto volume_e = mesh.elements()[volume_e_id];
 
-            auto param_result = global_to_parametric(volume_e, quadrature.parametric_point(q));
+            auto param_result =
+              global_to_parametric(volume_e, simple_math::to_point(quad_global_coords.row(q)));
             // Since this is finding the parametric coordinate of a point on the surface of the
             // element, the search should always be succeessful
             assert(param_result.first);

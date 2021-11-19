@@ -1,5 +1,8 @@
 #include "mesh/external_interfaces/pfec/IO.h"
 
+#include "mesh/Defines.h"
+#include "mesh/relations/ElementToComponentMap.h"
+
 //#include "pfec/PFECNativeLibInterface.h"
 #include "lib/pfecDataReader.h"
 #include "lib/pfecGroupReader.h"
@@ -8,7 +11,9 @@
 
 namespace mesh
 {
-static ElementType convert_element_type(const PFECNativeInterface::ElemGeomType& geomType)
+namespace detail
+{
+ElementType convert_element_type(const PFECNativeInterface::ElemGeomType& geomType)
 {
     // 1D
     if (geomType == PFECNativeInterface::L1D2N)
@@ -53,15 +58,14 @@ static ElementType convert_element_type(const PFECNativeInterface::ElemGeomType&
         return ElementType::UNKNGEOM;
 }
 
-Mesh read_pfec(const std::string& meta_file_path, const PartitionIndex partition)
+Mesh read_pfec_mesh_kernel(PFECNativeInterface::MetaReader& meta_reader,
+                           const PartitionIndex partition,
+                           const int time_step_id)
 {
     Mesh mesh;
 
-    PFECNativeInterface::MetaReader meta_reader;
-    meta_reader.read_meta_file(meta_file_path);
-
     // Read the mesh for the given time step
-    auto mesh_reader = meta_reader.get_mesh_reader(0);
+    auto mesh_reader = meta_reader.get_mesh_reader(time_step_id);
     {
         std::vector<PFECNativeInterface::PFEC_IND> global_numbers;
         std::vector<PFECNativeInterface::PFEC_INT> partitions;
@@ -97,7 +101,7 @@ Mesh read_pfec(const std::string& meta_file_path, const PartitionIndex partition
             {
                 connectivity[j] = local_connectivities[i][j];
             }
-            mesh.elements().add(convert_element_type(element_types[i]),
+            mesh.elements().add(detail::convert_element_type(element_types[i]),
                                 connectivity,
                                 static_cast<GlobalIndex>(global_numbers[i]),
                                 static_cast<PartitionIndex>(partitions[i]),
@@ -126,7 +130,7 @@ Mesh read_pfec(const std::string& meta_file_path, const PartitionIndex partition
 
     // Read the orientation data
     {
-        auto orient_reader = meta_reader.get_orient_reader(0);
+        auto orient_reader = meta_reader.get_orient_reader(time_step_id);
         if (orient_reader)
         {
             std::vector<std::vector<std::array<double, 4>>> quaterions;
@@ -166,7 +170,7 @@ Mesh read_pfec(const std::string& meta_file_path, const PartitionIndex partition
 
     // Read the group information
     {
-        auto group_paths = meta_reader.get_group_file_paths(0);
+        auto group_paths = meta_reader.get_group_file_paths(time_step_id);
 
         for (std::string group_path : group_paths)
         {
@@ -231,5 +235,620 @@ Mesh read_pfec(const std::string& meta_file_path, const PartitionIndex partition
     }
 
     return mesh;
+}
+
+
+MeshAssociatedData read_pfec_data_kernel(PFECNativeInterface::DataReader& data_reader,
+                                         const PartitionIndex partition)
+{
+    MeshAssociatedData data;
+    auto data_infos = data_reader.get_data_info();
+    for (auto& data_info : data_infos)
+    {
+        simple_math::GeneralMatrix extracted_data;
+
+        if (data_info.type == PFECNativeInterface::DataType::Nodal)
+        {
+            std::vector<std::vector<double>> pfec_data;
+            data_reader.read_part_unique_data(partition, data_info.id, pfec_data);
+
+            extracted_data =
+              simple_math::GeneralMatrix::Zero(pfec_data.size(), data_info.num_comps);
+            for (auto i : utility::indices(pfec_data))
+            {
+                assert(pfec_data[i].size() == extracted_data.cols());
+                for (auto j : utility::indices(pfec_data[i]))
+                {
+                    extracted_data(i, j) = pfec_data[i][j];
+                }
+            }
+
+            data.node_data.push_back(
+              { data_info.name, data_info.comp_names, std::move(extracted_data) });
+        }
+        else if (data_info.type == PFECNativeInterface::DataType::Element)
+        {
+            std::vector<std::vector<double>> pfec_data;
+            data_reader.read_part_unique_data(partition, data_info.id, pfec_data);
+
+            extracted_data =
+              simple_math::GeneralMatrix::Zero(pfec_data.size(), data_info.num_comps);
+            for (auto i : utility::indices(pfec_data))
+            {
+                assert(pfec_data[i].size() == extracted_data.cols());
+                for (auto j : utility::indices(pfec_data[i]))
+                {
+                    extracted_data(i, j) = pfec_data[i][j];
+                }
+            }
+
+            data.element_data.push_back(
+              { data_info.name, data_info.comp_names, std::move(extracted_data) });
+        }
+        else if (data_info.type == PFECNativeInterface::DataType::NodalByElement)
+        {
+            std::vector<std::vector<std::vector<double>>> pfec_data;
+            data_reader.read_part_by_elem_data(partition, data_info.id, pfec_data);
+
+            if (data.node_by_element_offsets.size() == 0)
+            {
+                data.node_by_element_offsets.resize(pfec_data.size());
+                data.node_by_element_offsets[0] = 0;
+                for (auto i : utility::indices(pfec_data))
+                {
+                    data.node_by_element_offsets[i + 1] =
+                      data.node_by_element_offsets[i] + pfec_data[i].size();
+                }
+            }
+
+            extracted_data =
+              simple_math::GeneralMatrix::Zero(data.node_by_element_offsets.back() - 1,
+                                               data_info.num_comps);
+            std::size_t curr_row = 0;
+            for (auto i : utility::indices(pfec_data))
+            {
+                for (auto j : utility::indices(pfec_data[i]))
+                {
+                    for (auto k : utility::indices(pfec_data[i][j]))
+                    {
+                        extracted_data(curr_row, j) = pfec_data[i][j][k];
+                    }
+                    curr_row++;
+                }
+            }
+
+            data.node_by_element_data.push_back(
+              { data_info.name, data_info.comp_names, std::move(extracted_data) });
+        }
+        else if (data_info.type == PFECNativeInterface::DataType::QuadPoint)
+        {
+            std::vector<std::vector<std::vector<double>>> pfec_data;
+            data_reader.read_part_by_elem_data(partition, data_info.id, pfec_data);
+
+            if (data.quad_point_offsets.size() == 0)
+            {
+                data.quad_point_offsets.resize(pfec_data.size());
+                data.quad_point_offsets[0] = 0;
+                for (auto i : utility::indices(pfec_data))
+                {
+                    data.quad_point_offsets[i + 1] =
+                      data.quad_point_offsets[i] + pfec_data[i].size();
+                }
+            }
+
+            extracted_data = simple_math::GeneralMatrix::Zero(data.quad_point_offsets.back() - 1,
+                                                              data_info.num_comps);
+            std::size_t curr_row = 0;
+            for (auto i : utility::indices(pfec_data))
+            {
+                for (auto j : utility::indices(pfec_data[i]))
+                {
+                    for (auto k : utility::indices(pfec_data[i][j]))
+                    {
+                        extracted_data(curr_row, j) = pfec_data[i][j][k];
+                    }
+                    curr_row++;
+                }
+            }
+
+            data.quad_point_data.push_back(
+              { data_info.name, data_info.comp_names, std::move(extracted_data) });
+        }
+    }
+
+    return data;
+}
+
+std::pair<Mesh, MeshAssociatedData> read_pfec_all_parts_kernel(
+  PFECNativeInterface::MetaReader& meta_reader,
+  const int time_step_id,
+  const bool convert_node_data_to_element_data)
+{
+    Mesh mesh;
+
+    // Read the mesh for the given time step
+    auto mesh_reader = meta_reader.get_mesh_reader(time_step_id);
+    auto partitions  = mesh_reader->get_parts_in_file();
+
+    auto n_total_nodes    = mesh_reader->get_num_global_nodes();
+    auto n_total_elements = mesh_reader->get_num_global_elems();
+    auto orient_reader    = meta_reader.get_orient_reader(time_step_id);
+    auto group_paths      = meta_reader.get_group_file_paths(time_step_id);
+    std::vector<PFECNativeInterface::GroupReader> group_readers;
+    for (std::string group_path : group_paths)
+    {
+        group_readers.push_back(PFECNativeInterface::GroupReader());
+        group_readers.back().open(group_path);
+    }
+
+    // Node data
+    std::vector<PFECNativeInterface::PFEC_IND> n_global_numbers(n_total_nodes);
+    std::iota(n_global_numbers.begin(), n_global_numbers.end(), 0);
+    std::vector<PFECNativeInterface::PFEC_INT> n_partitions(n_total_nodes);
+    std::vector<std::vector<double>> n_coordinates(n_total_nodes);
+
+    // Element data
+    std::vector<PFECNativeInterface::PFEC_IND> e_global_numbers(n_total_elements);
+    std::iota(e_global_numbers.begin(), e_global_numbers.end(), 0);
+    std::vector<PFECNativeInterface::PFEC_INT> e_partitions(n_total_elements);
+    std::vector<PFECNativeInterface::PFEC_INT> e_domains(n_total_elements);
+    std::vector<PFECNativeInterface::ElemGeomType> e_element_types(n_total_elements);
+    std::vector<std::vector<PFECNativeInterface::PFEC_INT>> e_connectivities(n_total_elements);
+    std::vector<std::vector<std::array<double, 4>>> e_quaterions(n_total_elements);
+
+    std::vector<std::vector<PFECNativeInterface::PFEC_IND>> parts_n_local_to_global_map;
+    parts_n_local_to_global_map.reserve(partitions.size());
+    std::vector<std::vector<PFECNativeInterface::PFEC_IND>> parts_e_local_to_global_map;
+    parts_e_local_to_global_map.reserve(partitions.size());
+    std::vector<std::vector<std::vector<PFECNativeInterface::PFEC_INT>>>
+      parts_e_local_connectivities;
+    parts_e_local_connectivities.reserve(partitions.size());
+
+    for (auto& partition : partitions)
+    {
+        std::vector<PFECNativeInterface::PFEC_IND> part_n_global_numbers;
+        std::vector<PFECNativeInterface::PFEC_INT> part_n_partitions;
+        std::vector<std::vector<double>> part_n_coordinates;
+
+        mesh_reader->read_part_nodal(partition,
+                                     part_n_global_numbers,
+                                     part_n_partitions,
+                                     part_n_coordinates);
+
+        parts_n_local_to_global_map.push_back(part_n_global_numbers);
+
+        for (auto i = 0; i < part_n_global_numbers.size(); i++)
+        {
+            assert(part_n_coordinates[i].size() == 3);
+
+            auto& global_id          = part_n_global_numbers[i];
+            n_partitions[global_id]  = part_n_partitions[i];
+            n_coordinates[global_id] = part_n_coordinates[i];
+        }
+
+        std::vector<PFECNativeInterface::PFEC_IND> part_e_global_numbers;
+        std::vector<PFECNativeInterface::PFEC_INT> part_e_partitions;
+        std::vector<PFECNativeInterface::PFEC_INT> part_e_domains;
+        std::vector<PFECNativeInterface::ElemGeomType> part_e_element_types;
+        std::vector<std::vector<PFECNativeInterface::PFEC_INT>> part_e_local_connectivities;
+
+        mesh_reader->read_part_element(partition,
+                                       part_e_global_numbers,
+                                       part_e_partitions,
+                                       part_e_domains,
+                                       part_e_element_types,
+                                       part_e_local_connectivities);
+
+        parts_e_local_to_global_map.push_back(part_e_global_numbers);
+        parts_e_local_connectivities.push_back(part_e_local_connectivities);
+
+        for (auto i = 0; i < part_e_global_numbers.size(); i++)
+        {
+            auto& global_id            = part_e_global_numbers[i];
+            e_partitions[global_id]    = part_e_partitions[i];
+            e_domains[global_id]       = part_e_domains[i];
+            e_element_types[global_id] = part_e_element_types[i];
+            // Remap the connectivity to global node indices
+            for (auto& c : part_e_local_connectivities[i])
+            {
+                c = part_n_global_numbers[c];
+            }
+            e_connectivities[global_id] = part_e_local_connectivities[i];
+        }
+
+        if (orient_reader)
+        {
+            std::vector<std::vector<std::array<double, 4>>> part_e_quaterions;
+            orient_reader->read_part_orientation_data(partition, 0, part_e_quaterions);
+            for (auto i = 0; i < part_e_global_numbers.size(); i++)
+            {
+                auto& global_id         = part_e_global_numbers[i];
+                e_quaterions[global_id] = part_e_quaterions[i];
+            }
+        }
+
+        for (auto& group_reader : group_readers)
+        {
+            std::vector<std::string> node_group_names;
+            std::vector<std::string> element_group_names;
+            group_reader.get_group_info(node_group_names, element_group_names);
+
+            // Read node groups for this file
+            for (auto& node_group_name : node_group_names)
+            {
+                auto& group = mesh.nodes().group(node_group_name);
+
+                std::vector<PFECNativeInterface::PFEC_IND> local_indices;
+                bool uses_local_numbering;
+                group_reader.get_part_node_group(partition,
+                                                 node_group_name,
+                                                 local_indices,
+                                                 uses_local_numbering);
+                if (uses_local_numbering)
+                {
+                    for (auto local_index : local_indices)
+                    {
+                        group.node_indices.push_back(part_n_global_numbers[local_index]);
+                    }
+                }
+                else
+                {
+                    throw _UTIL_MSG_EXCEPT("Reading group info that uses global numbering has not "
+                                           "been implemented yet.");
+                }
+            }
+
+            // Read element groups for this file
+            for (std::string element_group_name : element_group_names)
+            {
+                auto& group = mesh.elements().group(element_group_name);
+
+                std::vector<PFECNativeInterface::PFEC_IND> local_indices;
+                bool uses_local_numbering;
+                group_reader.get_part_elem_group(partition,
+                                                 element_group_name,
+                                                 local_indices,
+                                                 uses_local_numbering);
+                if (uses_local_numbering)
+                {
+                    for (auto local_index : local_indices)
+                    {
+                        group.element_indices.push_back(part_e_global_numbers[local_index]);
+                    }
+                }
+                else
+                {
+                    throw _UTIL_MSG_EXCEPT("Reading group info that uses global numbering has not "
+                                           "been implemented yet.");
+                }
+            }
+        }
+    }
+
+    // Add nodes to the mesh
+    // Note: an index map must be created because the mesh may only be a subset (clipped down), and
+    // thus not every global index will be in this mesh.
+    std::vector<GlobalIndex> n_global_to_new_local(n_total_nodes, NOT_SET_GlobalIndex);
+    GlobalIndex next_new_local_index = 0;
+    for (auto i : utility::range(n_total_nodes))
+    {
+        if (!n_coordinates[i].empty())
+        {
+            n_global_to_new_local[i] = next_new_local_index++;
+            Point p = { n_coordinates[i][0], n_coordinates[i][1], n_coordinates[i][2] };
+            mesh.nodes().add(p,
+                             static_cast<GlobalIndex>(n_global_numbers[i]),
+                             static_cast<PartitionIndex>(n_partitions[i]));
+        }
+    }
+    // Permute the node indices in the groups
+    for (auto& group : mesh.nodes().groups())
+    {
+        for (auto& n : group.node_indices)
+        {
+            n = n_global_to_new_local[n];
+        }
+    }
+
+    // Add elements to the mesh
+    std::vector<GlobalIndex> e_global_to_new_local(n_total_elements, NOT_SET_GlobalIndex);
+    next_new_local_index = 0;
+    std::vector<LocalIndex> connectivity;
+    for (auto i : utility::range(n_total_elements))
+    {
+        if (!e_connectivities[i].empty())
+        {
+            e_global_to_new_local[i] = next_new_local_index++;
+
+            connectivity.resize(e_connectivities[i].size());
+            for (auto j : utility::indices(e_connectivities[i]))
+            {
+                connectivity[j] = n_global_to_new_local[e_connectivities[i][j]];
+            }
+            mesh.elements().add(detail::convert_element_type(e_element_types[i]),
+                                connectivity,
+                                static_cast<GlobalIndex>(e_global_numbers[i]),
+                                static_cast<PartitionIndex>(e_partitions[i]),
+                                static_cast<ComponentIndex>(e_domains[i]));
+
+            auto n_quaterions_in_element = e_quaterions[i].size();
+            if (n_quaterions_in_element > 0)
+            {
+                auto& lcs = mesh.elements().back().local_coord_sys();
+
+                if (n_quaterions_in_element == 1)
+                {
+                    lcs.initialize(LCSAssignmentType::Element,
+                                   static_cast<ConnIndex>(connectivity.size()));
+                }
+                else if (n_quaterions_in_element > 1)
+                {
+                    lcs.initialize(LCSAssignmentType::Node,
+                                   static_cast<ConnIndex>(connectivity.size()));
+                }
+
+                for (auto j = 0; j < n_quaterions_in_element; ++j)
+                {
+                    auto& w = e_quaterions[i][j][0];
+                    auto& x = e_quaterions[i][j][1];
+                    auto& y = e_quaterions[i][j][2];
+                    auto& z = e_quaterions[i][j][3];
+                    auto q  = simple_math::Quaternion(w, x, y, z);
+                    lcs.set(j, q.inverse());
+                }
+            }
+        }
+    }
+    // Permute the node indices in the groups
+    for (auto& group : mesh.elements().groups())
+    {
+        for (auto& n : group.element_indices)
+        {
+            n = e_global_to_new_local[n];
+        }
+    }
+
+
+    // Create a group for the domains
+    for (auto& domain_id : mesh_reader->get_domain_ids())
+    {
+        mesh.elements().group("Component" + std::to_string(domain_id));
+    }
+    std::map<int, ElementGroup*> domain_to_group;
+    for (auto& domain_id : mesh_reader->get_domain_ids())
+    {
+        domain_to_group[domain_id] =
+          &mesh.elements().group("Component" + std::to_string(domain_id));
+    }
+    for (auto e : mesh.elements())
+    {
+        domain_to_group[e.component_id()]->element_indices.push_back(e.local_index());
+    }
+
+    mesh_reader->close();
+    if (orient_reader)
+    {
+        orient_reader->close();
+    }
+    for (auto& group_reader : group_readers)
+    {
+        group_reader.close();
+    }
+
+
+    // Note: to read NodalByElement data, it is complicated.  For now, just average the
+    // NodalByElement data to create equivalent element data (which is coarser of course).
+    MeshAssociatedData data;
+    auto data_reader = meta_reader.get_data_reader(time_step_id);
+    if (data_reader)
+    {
+        auto data_infos = data_reader->get_data_info();
+        for (auto& data_info : data_infos)
+        {
+            if (data_info.type == PFECNativeInterface::DataType::Element)
+            {
+                data.element_data.push_back(
+                  { data_info.name,
+                    data_info.comp_names,
+                    simple_math::GeneralMatrix::Zero(mesh.elements().size(),
+                                                     data_info.num_comps) });
+            }
+        }
+        for (auto& data_info : data_infos)
+        {
+            if (data_info.type == PFECNativeInterface::DataType::Nodal)
+            {
+                if (!convert_node_data_to_element_data)
+                {
+                    data.node_data.push_back(
+                      { data_info.name,
+                        data_info.comp_names,
+                        simple_math::GeneralMatrix::Zero(mesh.nodes().size(),
+                                                         data_info.num_comps) });
+                }
+                else
+                {
+                    data.element_data.push_back(
+                      { data_info.name,
+                        data_info.comp_names,
+                        simple_math::GeneralMatrix::Zero(mesh.elements().size(),
+                                                         data_info.num_comps) });
+                }
+            }
+        }
+        for (auto& data_info : data_infos)
+        {
+            if (data_info.type == PFECNativeInterface::DataType::NodalByElement)
+            {
+                data.element_data.push_back(
+                  { data_info.name,
+                    data_info.comp_names,
+                    simple_math::GeneralMatrix::Zero(mesh.elements().size(),
+                                                     data_info.num_comps) });
+            }
+            else if (data_info.type == PFECNativeInterface::DataType::QuadPoint)
+            {
+                throw _UTIL_MSG_EXCEPT("QuadPoint not implemented when reading all parts.");
+            }
+        }
+
+        std::set<LocalIndex> debug_visited_elems;
+        for (auto i : utility::indices(partitions))
+        {
+            auto& partition             = partitions[i];
+            auto& n_local_to_global_map = parts_n_local_to_global_map[i];
+            auto& e_local_to_global_map = parts_e_local_to_global_map[i];
+            auto part_data              = read_pfec_data_kernel(*data_reader, partition);
+
+            for (auto j : utility::indices(part_data.element_data))
+            {
+                auto& part_element_data  = part_data.element_data[j].data;
+                auto& total_element_data = data.element_data[j].data;
+
+                for (auto part_e_local_id : utility::indices(e_local_to_global_map))
+                {
+                    auto& new_local_id =
+                      e_global_to_new_local[e_local_to_global_map[part_e_local_id]];
+
+                    total_element_data.row(new_local_id) = part_element_data.row(part_e_local_id);
+                    debug_visited_elems.insert(new_local_id);
+                }
+            }
+            
+            for (auto j : utility::indices(part_data.node_data))
+            {
+                auto& part_node_data = part_data.node_data[j].data;
+
+                if (convert_node_data_to_element_data)
+                {
+                    auto& total_element_data =
+                      data.element_data[j + part_data.element_data.size()].data;
+                    auto& part_e_local_connectivities = parts_e_local_connectivities[i];
+
+                    for (auto part_e_local_id : utility::indices(e_local_to_global_map))
+                    {
+                        auto& new_local_id =
+                          e_global_to_new_local[e_local_to_global_map[part_e_local_id]];
+                        auto& local_conn = part_e_local_connectivities[part_e_local_id];
+
+                        total_element_data.row(new_local_id).setZero();
+                        for (auto& c : local_conn)
+                        {
+
+                            total_element_data.row(new_local_id) += part_node_data.row(c);
+                        }
+                        total_element_data.row(new_local_id) /= local_conn.size();
+                    }
+                }
+                else
+                {
+                    auto& total_node_data = data.node_data[j].data;
+
+                    for (auto part_n_local_id : utility::indices(n_local_to_global_map))
+                    {
+                        auto& new_local_id =
+                          n_global_to_new_local[n_local_to_global_map[part_n_local_id]];
+
+                        total_node_data.row(new_local_id) = part_node_data.row(part_n_local_id);
+                    }
+                }
+            }
+
+            int offset = 0;
+            if (convert_node_data_to_element_data)
+            {
+                offset += part_data.node_data.size() + part_data.element_data.size();
+            }
+            else
+            {
+                offset += part_data.element_data.size();
+            }
+
+            for (auto j : utility::indices(part_data.node_by_element_data))
+            {
+                auto& part_node_by_element_data = part_data.node_by_element_data[j].data;
+                auto& part_offsets              = part_data.node_by_element_offsets;
+                auto& total_element_data        = data.element_data[j + offset].data;
+
+                for (auto part_e_local_id : utility::indices(e_local_to_global_map))
+                {
+                    auto& new_local_id =
+                      e_global_to_new_local[e_local_to_global_map[part_e_local_id]];
+
+                    total_element_data.row(new_local_id).setZero();
+                    for (auto k : utility::range(part_offsets[part_e_local_id],
+                                                 part_offsets[part_e_local_id + 1]))
+                    {
+
+                        total_element_data.row(new_local_id) += part_node_by_element_data.row(k);
+                    }
+                    total_element_data.row(new_local_id) /=
+                      part_offsets[part_e_local_id + 1] - part_offsets[part_e_local_id];
+                }
+            }
+        }
+
+        data_reader->close();
+    }
+
+    return { mesh, data };
+}
+
+} // end namespace detail
+
+std::pair<Mesh, MeshAssociatedData> read_pfec_all_parts(const std::string& meta_file_path,
+  const int time_step_id,
+  const bool convert_node_data_to_element_data)
+{
+    PFECNativeInterface::MetaReader meta_reader;
+    meta_reader.read_meta_file(meta_file_path);
+
+    return detail::read_pfec_all_parts_kernel(meta_reader,
+                                              time_step_id,
+                                              convert_node_data_to_element_data);
+}
+
+std::pair<Mesh, MeshAssociatedData> read_pfec(const std::string& meta_file_path,
+                                              const PartitionIndex partition,
+                                              const int time_step_id)
+{
+    return { read_pfec_mesh(meta_file_path, partition, time_step_id),
+             read_pfec_data(meta_file_path, partition, time_step_id) };
+}
+
+Mesh read_pfec_mesh(const std::string& meta_file_path,
+                    const PartitionIndex partition,
+                    const int time_step_id)
+{
+    PFECNativeInterface::MetaReader meta_reader;
+    meta_reader.read_meta_file(meta_file_path);
+
+    return detail::read_pfec_mesh_kernel(meta_reader, partition, time_step_id);
+}
+
+MeshAssociatedData read_pfec_data(const std::string& meta_file_path,
+                                  const PartitionIndex partition,
+                                  const int time_step_id)
+{
+    PFECNativeInterface::MetaReader meta_reader;
+    meta_reader.read_meta_file(meta_file_path);
+    auto data_reader = meta_reader.get_data_reader(time_step_id);
+    return detail::read_pfec_data_kernel(*data_reader, partition);
+}
+
+
+
+void convert_pfec_to_fea_io(const std::string& pfec_meta_file_path,
+                            const std::string& fea_io_path_stem)
+{
+    PFECNativeInterface::MetaReader meta_reader;
+    meta_reader.read_meta_file(pfec_meta_file_path);
+
+    auto n_time_steps = meta_reader.get_num_time_steps();
+
+    // Read the mesh for the given time step
+    auto mesh_reader = meta_reader.get_mesh_reader(0);
+
+    throw _UTIL_MSG_EXCEPT("TODO: Implementation not complete.");
 }
 }

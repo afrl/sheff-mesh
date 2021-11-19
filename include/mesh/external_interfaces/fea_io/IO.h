@@ -2,6 +2,7 @@
 
 #include "mesh/Mesh.h"
 #include "mesh/common/ElementTypes.h"
+#include "mesh/common/MeshAssociatedData.h"
 
 #include <string>
 #include <vector>
@@ -14,21 +15,21 @@ namespace mesh
 /// @param file_stem - stem for the relative (to cwd) or absolute path (this is basically the file
 ///        path excluding the .m.json or .m.bin extension)
 /// @param partition - the partition to read
-Mesh read_fea_io(const std::string& file_stem, const PartitionIndex partition = 0);
+Mesh read_fea_io_mesh(const std::string& file_stem, const PartitionIndex partition = 0);
 
 /// Reads a fea_io JSON/binary files given the relevant meta information and populates a mesh.  This
 /// avoids having to know the path of the particular mesh file and travers.
 /// @param meta_filepath - relative (to cwd) or absolute path to the meta file (include the
 ///        .x.json extension)
 /// @param partition - the partition to read
-Mesh read_fea_io_from_meta(const std::string& meta_filepath,
-                           const PartitionIndex partition = 0);
+Mesh read_fea_io_mesh_from_meta(const std::string& meta_filepath,
+                                const PartitionIndex partition = 0);
 
 /// @brief Writes a mesh in the JSON/binary format using the fea_io library.
-/// 
+///
 /// This works for centralized/distributed meshes and partitioned/unpartitioned meshes.  However,
 /// there is the assumption that if it is distributed that each rank possesses a single partition.
-/// 
+///
 /// @important This method should be used when a single rank holds the entire mesh.  See
 ///            write_distributed_fea_io() if the mesh is distributed across several ranks.
 /// @param mesh - mesh to write to the file. If the mesh is partitioned, ghost elements will
@@ -46,10 +47,18 @@ Mesh read_fea_io_from_meta(const std::string& meta_filepath,
 /// @param component_names (optional) - only used if element_to_component_map is included.  Assigns
 ///        a name to each component, which may make post-processing easier by keeping track of which
 ///        material corresponds to a given component ID.
-void write_fea_io(Mesh& mesh,
+void write_fea_io(const Mesh& mesh,
                   const std::string& base_directory,
                   const std::string& mesh_name,
-                  const std::string meta_file_name                     = "");
+                  const std::string meta_file_name = "");
+
+/// @brief Same as the other definition, but floating-point data associated with the mesh
+/// (vector-valued for nodes, elements, node by element, etc.) is also written.
+void write_fea_io(const Mesh& mesh,
+                  const MeshAssociatedData& data,
+                  const std::string& base_directory,
+                  const std::string& mesh_name,
+                  const std::string meta_file_name = "");
 
 #endif
 }

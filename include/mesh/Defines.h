@@ -5,6 +5,7 @@
 
 #include <array>
 #include <cinttypes>
+#include <limits>
 
 namespace mesh
 {
@@ -16,6 +17,8 @@ using ComponentIndex = uint16_t;
 using FloatType      = simple_math::FloatType;
 using Point          = simple_math::Point;
 using Vector3D       = simple_math::Vector3D;
+
+constexpr GlobalIndex NOT_SET_GlobalIndex = std::numeric_limits<GlobalIndex>::max();
 
 enum class TopologyType
 {

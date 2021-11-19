@@ -29,7 +29,8 @@ namespace mesh
 static std::string write_meta_file(const std::string& base_directory,
                                    const std::string& mesh_name,
                                    const std::string meta_file_name,
-                                   bool include_groups)
+                                   bool include_groups,
+                                   bool include_data)
 {
     if (meta_file_name != "")
     {
@@ -49,7 +50,12 @@ static std::string write_meta_file(const std::string& base_directory,
         {
             mesh_object.group_paths.push_back(mesh_name);
         }
+        if (include_data)
+        {
+            mesh_object.data_paths.push_back(mesh_name);
+        }
         lod.mesh_objects.push_back(mesh_object);
+
         meta_writer.get_analysis_meta().input_info.levels_of_detail.push_back(lod);
     }
 
@@ -106,7 +112,7 @@ static std::array<FloatType, 3> max_coord(const NodeContainer& nodes)
 }
 
 /// Extract group information for writing to the fea_io format
-std::vector<fea_io::GroupInfo> get_group_infos(Mesh& mesh)
+std::vector<fea_io::GroupInfo> get_group_infos(const Mesh& mesh)
 {
     std::vector<fea_io::GroupInfo> infos;
     for (auto& group : mesh.nodes().groups())
@@ -190,10 +196,10 @@ static fea_io::Partition<GlobalIndex, LocalIndex, FloatType> get_fea_io_partitio
             assert(mesh_to_partition_node_map[v] != std::numeric_limits<LocalIndex>::max());
             local_connectivity.push_back(mesh_to_partition_node_map[v]);
         }
-        assert(std::all_of(
-          local_connectivity.begin(),
-          local_connectivity.end(),
-          [node_size = local_num](const LocalIndex& i) -> bool { return i < node_size; }));
+        assert(std::all_of(local_connectivity.begin(),
+                           local_connectivity.end(),
+                           [node_size = local_num](const LocalIndex& i) -> bool
+                           { return i < node_size; }));
 
         partition.element_connectivities.push_back(local_connectivity);
     }
@@ -282,7 +288,76 @@ static fea_io::Partition<GlobalIndex, LocalIndex, FloatType> get_fea_io_partitio
     return partition;
 }
 
-static void write_serial_single_partition(Mesh& mesh, const std::string file_stem)
+void initialize_data_writer(
+  const MeshAssociatedData& data,
+  const std::string& file_stem,
+  const fea_io::MeshInfo<GlobalIndex, LocalIndex, FloatType>& mesh_info,
+  const fea_io::PartitionInfo<GlobalIndex, LocalIndex, FloatType>& partition_info,
+  fea_io::DataWriter<GlobalIndex, LocalIndex, FloatType>& data_writer)
+{
+    mesh::GlobalIndex n_quads_in_partition = 0;
+    if (!data.quad_point_data.empty())
+    {
+        n_quads_in_partition = data.quad_point_data.front().data.rows();
+    }
+
+    std::vector<fea_io::ArrayInfo> data_infos;
+    for (auto& d : data.node_data)
+    {
+        fea_io::ArrayInfo info;
+        info.initialize<double>(d.name, fea_io::ArrayType::Node, d.data.cols(), d.component_names);
+        data_infos.push_back(info);
+    }
+    for (auto& d : data.element_data)
+    {
+        fea_io::ArrayInfo info;
+        info.initialize<double>(d.name,
+                                fea_io::ArrayType::Element,
+                                d.data.cols(),
+                                d.component_names);
+        data_infos.push_back(info);
+    }
+    for (auto& d : data.node_by_component_data)
+    {
+        fea_io::ArrayInfo info;
+        info.initialize<double>(d.name,
+                                fea_io::ArrayType::NodeByComponent,
+                                d.data.cols(),
+                                d.component_names);
+        data_infos.push_back(info);
+    }
+    for (auto& d : data.node_by_element_data)
+    {
+        fea_io::ArrayInfo info;
+        info.initialize<double>(d.name,
+                                fea_io::ArrayType::NodeByElement,
+                                d.data.cols(),
+                                d.component_names);
+        data_infos.push_back(info);
+    }
+    for (auto& d : data.quad_point_data)
+    {
+        fea_io::ArrayInfo info;
+        info.initialize<double>(d.name,
+                                fea_io::ArrayType::QuadPointByElement,
+                                d.data.cols(),
+                                d.component_names);
+        data_infos.push_back(info);
+    }
+
+    if (data_infos.size() > 0)
+    {
+        data_writer.initialize(file_stem,
+                               mesh_info,
+                               partition_info,
+                               n_quads_in_partition,
+                               data_infos);
+    }
+}
+
+static void write_serial_single_partition(const Mesh& mesh,
+                                          const MeshAssociatedData& data,
+                                          const std::string file_stem)
 {
     // This method treats the mesh as a single partition.
     const PartitionIndex n_partitions = 1;
@@ -342,9 +417,46 @@ static void write_serial_single_partition(Mesh& mesh, const std::string file_ste
         }
         group_writer.close();
     }
+
+
+    fea_io::DataWriter<GlobalIndex, LocalIndex, FloatType> data_writer;
+    initialize_data_writer(data,
+                           file_stem,
+                           mesh_info,
+                           get_fea_io_partition_info(mesh, mesh_info),
+                           data_writer);
+
+    int array_id = 0;
+    for (auto& d : data.node_data)
+    {
+        data_writer.write(0, array_id++, d.data.data(), d.data.rows());
+    }
+    for (auto& d : data.element_data)
+    {
+        data_writer.write(0, array_id++, d.data.data(), d.data.rows());
+    }
+    for (auto& d : data.node_by_component_data)
+    {
+        data_writer.write(0, array_id++, d.data.data(), d.data.rows());
+    }
+    for (auto& d : data.node_by_element_data)
+    {
+        data_writer.write(0, array_id++, d.data.data(), d.data.rows());
+    }
+    for (auto& d : data.quad_point_data)
+    {
+        data_writer.write(0, array_id++, d.data.data(), d.data.rows());
+    }
+
+    if (!data.empty())
+    {
+        data_writer.close();
+    }
 }
 
-static void write_serial_multi_partition(Mesh& mesh, const std::string file_stem)
+static void write_serial_multi_partition(const Mesh& mesh,
+                                         const MeshAssociatedData& data,
+                                         const std::string file_stem)
 {
     fea_io::MeshWriter<GlobalIndex, LocalIndex, FloatType> mesh_writer;
     auto mesh_info = get_fea_io_mesh_info(mesh);
@@ -439,12 +551,85 @@ static void write_serial_multi_partition(Mesh& mesh, const std::string file_stem
     {
         group_writer.close();
     }
+
+    if (!data.empty())
+    {
+        throw _UTIL_MSG_EXCEPT(
+          "Writing data for centralized partitioned meshes is not implemented yet.");
+    }
+}
+
+static void write_distributed_multi_partition(const Mesh& mesh,
+                                              const MeshAssociatedData& data,
+                                              const std::string file_stem)
+{
+    fea_io::MeshParWriter<GlobalIndex, LocalIndex, FloatType> mesh_writer;
+    auto mesh_info = get_fea_io_mesh_info(mesh);
+    mesh_writer.initialize(file_stem, mesh_info);
+
+    auto partition_info = get_fea_io_partition_info(mesh, mesh_info);
+    mesh_writer.queue_partition_for_write(partition_info);
+
+    mesh_writer.start_parallel_write_phase();
+
+    // Get the nodes and elements that should appear in the partition corresponding to
+    // partition_id, which is all of them.
+    std::vector<LocalIndex> node_indices(mesh.nodes().size());
+    std::iota(node_indices.begin(), node_indices.end(), 0);
+    std::vector<LocalIndex> element_indices(mesh.nodes().size());
+    std::iota(element_indices.begin(), element_indices.end(), 0);
+
+    // For a serial write, we do not need to queue up all of the partitions for writing, since
+    // the file does not have to be preallocated for serial writing.
+    auto partition =
+      get_fea_io_partition(mesh, mesh.partition_id(), node_indices, element_indices, mesh_info);
+
+    mesh_writer.write_partition(partition);
+
+    auto group_infos = get_group_infos(mesh);
+    if (group_infos.size() > 0)
+    {
+        throw _UTIL_MSG_EXCEPT("Writing groups in parallel is not implemented yet.");
+    }
+
+    mesh_writer.close();
+
+
+    fea_io::DataWriter<GlobalIndex, LocalIndex, FloatType> data_writer;
+    initialize_data_writer(data, file_stem, mesh_info, partition_info, data_writer);
+
+    int array_id = 0;
+    for (auto& d : data.node_data)
+    {
+        data_writer.write(mesh.partition_id(), array_id++, d.data.data(), d.data.rows());
+    }
+    for (auto& d : data.element_data)
+    {
+        data_writer.write(mesh.partition_id(), array_id++, d.data.data(), d.data.rows());
+    }
+    for (auto& d : data.node_by_component_data)
+    {
+        data_writer.write(mesh.partition_id(), array_id++, d.data.data(), d.data.rows());
+    }
+    for (auto& d : data.node_by_element_data)
+    {
+        data_writer.write(mesh.partition_id(), array_id++, d.data.data(), d.data.rows());
+    }
+    for (auto& d : data.quad_point_data)
+    {
+        data_writer.write(mesh.partition_id(), array_id++, d.data.data(), d.data.rows());
+    }
+
+    if (!data.empty())
+    {
+        data_writer.close();
+    }
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // Header defines
 
-Mesh read_fea_io(const std::string& file_stem, const PartitionIndex partition_id)
+Mesh read_fea_io_mesh(const std::string& file_stem, const PartitionIndex partition_id)
 {
     fea_io::MeshReader<GlobalIndex, LocalIndex, double> mesh_reader(file_stem);
     auto mesh_info = mesh_reader.get_mesh_info();
@@ -491,8 +676,8 @@ Mesh read_fea_io(const std::string& file_stem, const PartitionIndex partition_id
         auto find_iter =
           std::find_if(std::begin(mesh_info.components),
                        std::end(mesh_info.components),
-                       [id = subcomponent.component_id](
-                         const fea_io::ComponentInfo<LocalIndex>& c) { return c.id == id; });
+                       [id = subcomponent.component_id](const fea_io::ComponentInfo<LocalIndex>& c)
+                       { return c.id == id; });
 
         if (find_iter == std::end(mesh_info.components))
         {
@@ -539,8 +724,8 @@ Mesh read_fea_io(const std::string& file_stem, const PartitionIndex partition_id
 
     return mesh;
 }
-Mesh read_fea_io_from_meta(const std::string& meta_filepath,
-                           const PartitionIndex partition_id)
+
+Mesh read_fea_io_mesh_from_meta(const std::string& meta_filepath, const PartitionIndex partition_id)
 {
     fea_io::MetaReader meta_reader;
     meta_reader.open(meta_filepath);
@@ -549,7 +734,7 @@ Mesh read_fea_io_from_meta(const std::string& meta_filepath,
       analysis_meta_info.input_info.levels_of_detail[0].mesh_objects[0].mesh_path;
     auto mesh_path = (fs::path(meta_filepath).parent_path() / mesh_relative_path).generic_string();
 
-    Mesh mesh = read_fea_io(mesh_path, partition_id);
+    Mesh mesh = read_fea_io_mesh(mesh_path, partition_id);
 
     for (auto group_relative_path :
          analysis_meta_info.input_info.levels_of_detail[0].mesh_objects[0].group_paths)
@@ -578,10 +763,20 @@ Mesh read_fea_io_from_meta(const std::string& meta_filepath,
         }
     }
 
-    return std::move(mesh);
+    return mesh;
 }
 
-void write_fea_io(Mesh& mesh,
+void write_fea_io(const Mesh& mesh,
+                  const std::string& base_directory,
+                  const std::string& mesh_name,
+                  const std::string meta_file_name)
+{
+    MeshAssociatedData data;
+    write_fea_io(mesh, data, base_directory, mesh_name, meta_file_name);
+}
+
+void write_fea_io(const Mesh& mesh,
+                  const MeshAssociatedData& data,
                   const std::string& base_directory,
                   const std::string& mesh_name,
                   const std::string meta_file_name)
@@ -589,51 +784,23 @@ void write_fea_io(Mesh& mesh,
     if (mesh.contains_all_partitions())
     { // Centralized mesh case
         bool has_groups = mesh.nodes().groups().size() > 0 || mesh.elements().groups().size();
-        auto file_stem  = write_meta_file(base_directory, mesh_name, meta_file_name, has_groups);
+        auto file_stem =
+          write_meta_file(base_directory, mesh_name, meta_file_name, has_groups, !data.empty());
         if (mesh.n_partitions() == 1)
         {
-            write_serial_single_partition(mesh, file_stem);
+            write_serial_single_partition(mesh, data, file_stem);
         }
         else
         {
-            write_serial_multi_partition(mesh, file_stem);
+            write_serial_multi_partition(mesh, data, file_stem);
         }
     }
     else
     { // Distributed mesh case
         // This method treats the mesh as a single partition.
-        auto file_stem = write_meta_file(base_directory, mesh_name, meta_file_name, false);
-
-        fea_io::MeshParWriter<GlobalIndex, LocalIndex, FloatType> mesh_writer;
-        auto mesh_info = get_fea_io_mesh_info(mesh);
-        mesh_writer.initialize(file_stem, mesh_info);
-
-        auto partition_info = get_fea_io_partition_info(mesh, mesh_info);
-        mesh_writer.queue_partition_for_write(partition_info);
-
-        mesh_writer.start_parallel_write_phase();
-
-        // Get the nodes and elements that should appear in the partition corresponding to
-        // partition_id, which is all of them.
-        std::vector<LocalIndex> node_indices(mesh.nodes().size());
-        std::iota(node_indices.begin(), node_indices.end(), 0);
-        std::vector<LocalIndex> element_indices(mesh.nodes().size());
-        std::iota(element_indices.begin(), element_indices.end(), 0);
-
-        // For a serial write, we do not need to queue up all of the partitions for writing, since
-        // the file does not have to be preallocated for serial writing.
-        auto partition =
-          get_fea_io_partition(mesh, mesh.partition_id(), node_indices, element_indices, mesh_info);
-
-        mesh_writer.write_partition(partition);
-
-        auto group_infos = get_group_infos(mesh);
-        if (group_infos.size() > 0)
-        {
-            throw _UTIL_MSG_EXCEPT("Writing groups in parallel is not implemented yet.");
-        }
-
-        mesh_writer.close();
+        auto file_stem =
+          write_meta_file(base_directory, mesh_name, meta_file_name, false, !data.empty());
+        write_distributed_multi_partition(mesh, data, file_stem);
     }
 }
 }

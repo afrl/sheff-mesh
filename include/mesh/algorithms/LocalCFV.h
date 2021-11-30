@@ -30,6 +30,6 @@ LocalCFVResult calculate_local_cfv(
   const double& V_0,
   const double& alpha,
   const double& stopping_probability,
-  const double& local_searh_stopping_criteria_max_volume,
-  const double& local_searh_stopping_criteria_n_neg_grad_samples);
+  const double& local_search_stopping_criteria_max_volume,
+  const double& local_search_stopping_criteria_failure_index_ratio);
 }

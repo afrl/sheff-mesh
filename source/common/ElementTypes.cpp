@@ -128,22 +128,14 @@ const std::vector<FaceInfo>& get_face_info(const ElementType& geom_type)
         case ElementType::C2D6N:
             throw _UTIL_MSG_EXCEPT("Faces do not exist for 2D elements, only edges.");
         // 3D Connectivitives
-        case ElementType::T3D4N:
-            return get_face_info_kernel<ElementType::T3D4N>();
-        case ElementType::P3D5N:
-            return get_face_info_kernel<ElementType::P3D5N>();
-        case ElementType::W3D6N:
-            return get_face_info_kernel<ElementType::W3D6N>();
-        case ElementType::H3D8N:
-            return get_face_info_kernel<ElementType::H3D8N>();
-        case ElementType::T3D10N:
-            return get_face_info_kernel<ElementType::T3D10N>();
-        case ElementType::P3D13N:
-            return get_face_info_kernel<ElementType::P3D13N>();
-        case ElementType::W3D15N:
-            return get_face_info_kernel<ElementType::W3D15N>();
-        case ElementType::H3D20N:
-            return get_face_info_kernel<ElementType::H3D20N>();
+        case ElementType::T3D4N: return get_face_info_kernel<ElementType::T3D4N>();
+        case ElementType::P3D5N: return get_face_info_kernel<ElementType::P3D5N>();
+        case ElementType::W3D6N: return get_face_info_kernel<ElementType::W3D6N>();
+        case ElementType::H3D8N: return get_face_info_kernel<ElementType::H3D8N>();
+        case ElementType::T3D10N: return get_face_info_kernel<ElementType::T3D10N>();
+        case ElementType::P3D13N: return get_face_info_kernel<ElementType::P3D13N>();
+        case ElementType::W3D15N: return get_face_info_kernel<ElementType::W3D15N>();
+        case ElementType::H3D20N: return get_face_info_kernel<ElementType::H3D20N>();
         case ElementType::C3D8N:
         case ElementType::C3D16N:
         default: throw _UTIL_MSG_EXCEPT("Face connectivity not implemented.");
@@ -316,13 +308,12 @@ const std::vector<EdgeInfo>& get_edge_info(const ElementType& geom_type)
     // 2D Connectivities
     switch (geom_type)
     {
-        case ElementType::T2D3N:
-        case ElementType::T2D6N:
-        case ElementType::Q2D4N:
-        case ElementType::Q2D8N:
-        case ElementType::C2D4N:
-        case ElementType::C2D6N:
-            throw _UTIL_MSG_EXCEPT("Faces do not exist for 2D elements, only edges.");
+        case ElementType::T2D3N: return get_edge_info_kernel<ElementType::T2D3N>();
+        case ElementType::T2D6N: return get_edge_info_kernel<ElementType::T2D6N>();
+        case ElementType::Q2D4N: return get_edge_info_kernel<ElementType::Q2D4N>();
+        case ElementType::Q2D8N: return get_edge_info_kernel<ElementType::Q2D8N>();
+        case ElementType::C2D4N: return get_edge_info_kernel<ElementType::C2D4N>();
+        case ElementType::C2D6N: return get_edge_info_kernel<ElementType::C2D6N>();
         // 3D Connectivitives
         case ElementType::T3D4N: return get_edge_info_kernel<ElementType::T3D4N>();
         case ElementType::P3D5N: return get_edge_info_kernel<ElementType::P3D5N>();

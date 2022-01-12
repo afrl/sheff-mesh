@@ -1,5 +1,7 @@
 #include "mesh/algorithms/LocalCFV.h"
 
+//#include "mesh/algorithms/IO.h"
+
 #include <fstream>
 
 namespace mesh
@@ -224,7 +226,7 @@ LocalCFVResult calculate_local_cfv(
 
         if (curr_sorted_start_index == element_indices_sorted_by_failure_index.size() ||
             failure_index_by_element
-              [element_indices_sorted_by_failure_index[curr_sorted_start_index]] < 1.0)
+                [element_indices_sorted_by_failure_index[curr_sorted_start_index]] < 1.0)
         {
             break;
         }
@@ -245,6 +247,38 @@ LocalCFVResult calculate_local_cfv(
 
         auto& local_search_state = search_state.cfv_region_states.back();
         detail::identify_cfv(failure_index_by_element, min_cfv, V_0, alpha, local_search_state);
+
+        /*
+        // Debug: write sequence of volumes
+        if (curr_region_index == 3)
+        {
+            mesh::Mesh curr_v;
+            std::vector<double> sigma_lb;
+            int spacing = local_search_state.volume_by_local_sample.size() / 240;
+            std::cout << "spacing = " << spacing << std::endl;
+            int counter = 0;
+            for (auto i : utility::range(local_search_state.volume_by_local_sample.size()))
+            {
+                auto& new_element = local_search_state.element_index_by_sample[i];
+                curr_v.copy(mesh, new_element);
+
+                if (i % spacing == 0)
+                {
+                    sigma_lb.resize(i + 1);
+                    auto& fi = local_search_state.min_failure_index_by_local_sample[i];
+                    std::fill(sigma_lb.begin(), sigma_lb.end(), fi * 2.41e9);
+                    mesh::write_vtk(curr_v,
+                                    "region_" + std::to_string(curr_region_index) + "_v2_" +
+                                      std::to_string(counter) + ".vtk",
+                                    false,
+                                    {},
+                                    sigma_lb);
+                    counter++;
+                }
+            }
+            std::cout << "Finished debug output" << std::endl;
+        }
+        */
 
         const auto cfv_sample_index = local_search_state.sample_index_corresponding_to_cfv;
         const auto& critical_failure_probability =

@@ -13,7 +13,7 @@ int main()
 {
     auto fiber_matrix_mesh = read_pfec(get_test_data_filepath("FiberMatrixRVE.pfecx"));
 
-    write_vtk(fiber_matrix_mesh, "FiberMatrixRVE.vtk");
+    write_vtk(fiber_matrix_mesh.first, "FiberMatrixRVE.vtk");
 
     return 0;
 }

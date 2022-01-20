@@ -295,52 +295,52 @@ void initialize_data_writer(
   const fea_io::PartitionInfo<GlobalIndex, LocalIndex, FloatType>& partition_info,
   fea_io::DataWriter<GlobalIndex, LocalIndex, FloatType>& data_writer)
 {
-    mesh::GlobalIndex n_quads_in_partition = 0;
-    if (!data.quad_point_data.empty())
+    GlobalIndex n_quads_in_partition = 0;
+    if (!data.get<DataFieldType::QUAD, double>().empty())
     {
-        n_quads_in_partition = data.quad_point_data.front().data.rows();
+        n_quads_in_partition = data.get<DataFieldType::QUAD, double>().front().data().rows();
     }
 
     std::vector<fea_io::ArrayInfo> data_infos;
-    for (auto& d : data.node_data)
+    for (auto& d : data.get<DataFieldType::NODE, double>())
     {
         fea_io::ArrayInfo info;
-        info.initialize<double>(d.name, fea_io::ArrayType::Node, d.data.cols(), d.component_names);
+        info.initialize<double>(d.name, fea_io::ArrayType::Node, d.data().cols(), d.component_names);
         data_infos.push_back(info);
     }
-    for (auto& d : data.element_data)
+    for (auto& d : data.get<DataFieldType::ELEMENT, double>())
     {
         fea_io::ArrayInfo info;
         info.initialize<double>(d.name,
                                 fea_io::ArrayType::Element,
-                                d.data.cols(),
+                                d.data().cols(),
                                 d.component_names);
         data_infos.push_back(info);
     }
-    for (auto& d : data.node_by_component_data)
+    for (auto& d : data.get<DataFieldType::NODE_BY_COMPONENT, double>())
     {
         fea_io::ArrayInfo info;
         info.initialize<double>(d.name,
                                 fea_io::ArrayType::NodeByComponent,
-                                d.data.cols(),
+                                d.data().cols(),
                                 d.component_names);
         data_infos.push_back(info);
     }
-    for (auto& d : data.node_by_element_data)
+    for (auto& d : data.get<DataFieldType::NODE_BY_ELEMENT, double>())
     {
         fea_io::ArrayInfo info;
         info.initialize<double>(d.name,
                                 fea_io::ArrayType::NodeByElement,
-                                d.data.cols(),
+                                d.data().cols(),
                                 d.component_names);
         data_infos.push_back(info);
     }
-    for (auto& d : data.quad_point_data)
+    for (auto& d : data.get<DataFieldType::QUAD, double>())
     {
         fea_io::ArrayInfo info;
         info.initialize<double>(d.name,
                                 fea_io::ArrayType::QuadPointByElement,
-                                d.data.cols(),
+                                d.data().cols(),
                                 d.component_names);
         data_infos.push_back(info);
     }
@@ -427,25 +427,25 @@ static void write_serial_single_partition(const Mesh& mesh,
                            data_writer);
 
     int array_id = 0;
-    for (auto& d : data.node_data)
+    for (auto& d : data.get<DataFieldType::NODE, double>())
     {
-        data_writer.write(0, array_id++, d.data.data(), d.data.rows());
+        data_writer.write(0, array_id++, d.data().data(), d.data().rows());
     }
-    for (auto& d : data.element_data)
+    for (auto& d : data.get<DataFieldType::ELEMENT, double>())
     {
-        data_writer.write(0, array_id++, d.data.data(), d.data.rows());
+        data_writer.write(0, array_id++, d.data().data(), d.data().rows());
     }
-    for (auto& d : data.node_by_component_data)
+    for (auto& d : data.get<DataFieldType::NODE_BY_COMPONENT, double>())
     {
-        data_writer.write(0, array_id++, d.data.data(), d.data.rows());
+        data_writer.write(0, array_id++, d.data().data(), d.data().rows());
     }
-    for (auto& d : data.node_by_element_data)
+    for (auto& d : data.get<DataFieldType::NODE_BY_ELEMENT, double>())
     {
-        data_writer.write(0, array_id++, d.data.data(), d.data.rows());
+        data_writer.write(0, array_id++, d.data().data(), d.data().rows());
     }
-    for (auto& d : data.quad_point_data)
+    for (auto& d : data.get<DataFieldType::QUAD, double>())
     {
-        data_writer.write(0, array_id++, d.data.data(), d.data.rows());
+        data_writer.write(0, array_id++, d.data().data(), d.data().rows());
     }
 
     if (!data.empty())
@@ -599,25 +599,25 @@ static void write_distributed_multi_partition(const Mesh& mesh,
     initialize_data_writer(data, file_stem, mesh_info, partition_info, data_writer);
 
     int array_id = 0;
-    for (auto& d : data.node_data)
+    for (auto& d : data.get<DataFieldType::NODE, double>())
     {
-        data_writer.write(mesh.partition_id(), array_id++, d.data.data(), d.data.rows());
+        data_writer.write(mesh.partition_id(), array_id++, d.data().data(), d.data().rows());
     }
-    for (auto& d : data.element_data)
+    for (auto& d : data.get<DataFieldType::ELEMENT, double>())
     {
-        data_writer.write(mesh.partition_id(), array_id++, d.data.data(), d.data.rows());
+        data_writer.write(mesh.partition_id(), array_id++, d.data().data(), d.data().rows());
     }
-    for (auto& d : data.node_by_component_data)
+    for (auto& d : data.get<DataFieldType::NODE_BY_COMPONENT, double>())
     {
-        data_writer.write(mesh.partition_id(), array_id++, d.data.data(), d.data.rows());
+        data_writer.write(mesh.partition_id(), array_id++, d.data().data(), d.data().rows());
     }
-    for (auto& d : data.node_by_element_data)
+    for (auto& d : data.get<DataFieldType::NODE_BY_ELEMENT, double>())
     {
-        data_writer.write(mesh.partition_id(), array_id++, d.data.data(), d.data.rows());
+        data_writer.write(mesh.partition_id(), array_id++, d.data().data(), d.data().rows());
     }
-    for (auto& d : data.quad_point_data)
+    for (auto& d : data.get<DataFieldType::QUAD, double>())
     {
-        data_writer.write(mesh.partition_id(), array_id++, d.data.data(), d.data.rows());
+        data_writer.write(mesh.partition_id(), array_id++, d.data().data(), d.data().rows());
     }
 
     if (!data.empty())

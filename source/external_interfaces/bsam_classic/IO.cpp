@@ -183,7 +183,7 @@ static bool read_next_cluster(std::ifstream& input_stream,
             {
                 assert(quaternions.size() == mesh.elements().size());
 
-                for (auto i : utility::range(quaternions.size()))
+                for (auto i : utility::range_as<mesh::LocalIndex>(quaternions.size()))
                 {
                     mesh.elements()[i].local_coord_sys().initialize(LCSAssignmentType::Element);
                     for (auto& q : mesh.elements()[i].local_coord_sys())

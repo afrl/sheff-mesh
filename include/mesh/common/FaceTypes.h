@@ -39,7 +39,7 @@ static FaceType get_linearized_type(const FaceType& geom_type);
 /// Returns the permuation vector to go from the quadratic connectivity
 /// to the linear connectivity.  If the type is already linear, then
 /// an empty vector is returned.  Will throw for unrecognized types.
-static std::vector<ConnIndex> get_linearized_permutation(const FaceType& geom_type);
+//static std::vector<ConnIndex> get_linearized_permutation(const FaceType& geom_type);
 /// Returns a bool indicating if the geometry type is linear or not
 static bool is_type_linear(const FaceType& geom_type);
 /// Returns the permutation for flipping an element's connectivity (reversing outward normal).

@@ -2,7 +2,7 @@
 
 #include "mesh/Mesh.h"
 #include "mesh/common/ElementTypes.h"
-#include "mesh/common/MeshAssociatedData.h"
+#include "mesh/data/MeshAssociatedData.h"
 
 #include <string>
 #include <vector>

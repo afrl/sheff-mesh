@@ -189,11 +189,11 @@ Mesh make_uniform_linear_tet_grid(const Point& min,
     auto n_nodes_y = static_cast<LocalIndex>(y_coords.size());
     auto n_nodes_z = static_cast<LocalIndex>(z_coords.size());
     std::vector<LocalIndex> conn(4);
-    for (auto k : utility::range<LocalIndex>(z_coords.size() - 1))
+    for (auto k : utility::range_as<LocalIndex>(z_coords.size() - 1))
     {
-        for (auto j : utility::range<LocalIndex>(y_coords.size() - 1))
+        for (auto j : utility::range_as<LocalIndex>(y_coords.size() - 1))
         {
-            for (auto i : utility::range<LocalIndex>(x_coords.size() - 1))
+            for (auto i : utility::range_as<LocalIndex>(x_coords.size() - 1))
             {
                 //      y
                 //      |

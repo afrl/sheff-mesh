@@ -5,6 +5,7 @@ project(MESH VERSION 1.0.0 LANGUAGES CXX)
 
 # Options
 option(SHEFF_BuildTests "Build the unit tests." OFF)
+option(SHEFF_BuildPython "Build Python SWIG module" OFF)
 option(SHEFF_USE_FEAIO "Indicates if the build will support the fea_io file format, requiring the library." ON)
 
 # For debugging, print generator, compiler, and options
@@ -117,6 +118,17 @@ if(SHEFF_BuildTests)
     include(CTest)
     enable_testing()
     add_subdirectory(unit_tests)
+endif()
+
+#######################
+# Add Python wrappers #
+#######################
+
+if(SHEFF_BuildPython)
+    find_package(SWIG REQUIRED)
+    include(${SWIG_USE_FILE})
+
+    add_subdirectory(bindings/python)
 endif()
 
 ################

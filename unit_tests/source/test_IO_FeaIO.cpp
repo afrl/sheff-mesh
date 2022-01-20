@@ -17,7 +17,7 @@ int main(int argc, char** argv)
     // Test read and write with no meta file
     {
         write_fea_io(mesh, ".", "grid_mesh_no_meta");
-        auto grid_mesh = read_fea_io("./grid_mesh_no_meta", 0);
+        auto grid_mesh = read_fea_io_mesh("./grid_mesh_no_meta", 0);
         assert(grid_mesh.nodes().size() == mesh.nodes().size());
         assert(grid_mesh.elements().size() == mesh.elements().size());
     }
@@ -25,7 +25,7 @@ int main(int argc, char** argv)
     // Test read and write with a meta file
     {
         write_fea_io(mesh, ".", "grid_mesh", "grid_mesh");
-        auto grid_mesh = read_fea_io_from_meta("./grid_mesh.x.json", 0);
+        auto grid_mesh = read_fea_io_mesh_from_meta("./grid_mesh.x.json", 0);
         assert(grid_mesh.nodes().size() == mesh.nodes().size());
         assert(grid_mesh.elements().size() == mesh.elements().size());
     }
@@ -35,7 +35,7 @@ int main(int argc, char** argv)
     // Test read and write of partitioned mesh with no meta file
     {
         write_fea_io(mesh, ".", "grid_mesh_partitioned_no_meta");
-        auto grid_mesh = read_fea_io("./grid_mesh_partitioned_no_meta", 0);
+        auto grid_mesh = read_fea_io_mesh("./grid_mesh_partitioned_no_meta", 0);
         assert(grid_mesh.nodes().size() == 99);
         assert(grid_mesh.elements().size() == 47);
     }
@@ -43,7 +43,7 @@ int main(int argc, char** argv)
     // Test read and write of partitioned mesh with no meta file
     {
         write_fea_io(mesh, ".", "grid_mesh_partitioned", "grid_mesh_partitioned");
-        auto grid_mesh = read_fea_io_from_meta("./grid_mesh_partitioned.x.json", 0);
+        auto grid_mesh = read_fea_io_mesh_from_meta("./grid_mesh_partitioned.x.json", 0);
         assert(grid_mesh.nodes().size() == 99);
         assert(grid_mesh.elements().size() == 47);
     }

@@ -207,7 +207,7 @@ void refine_quadratic_tetrahedron(
                         { c[6], c[5], c[9], c[8], c[23], c[28], c[33], c[34], c[30], c[29] });
     mesh.elements().add(ElementType::T3D10N,
                         { c[9], c[7], c[6], c[8], c[32], c[31], c[33], c[29], c[26], c[34] });
-    for (auto i : utility::range(t0_conn.size()))
+    for (auto i : utility::range_as<mesh::ConnIndex>(t0_conn.size()))
     {
         element.connectivity()[i] = t0_conn[i];
     }
@@ -290,7 +290,7 @@ void refine_linear_hexahedron(
                         { c[21], c[18], c[15], c[19], c[26], c[23], c[6], c[24] });
     mesh.elements().add(ElementType::H3D8N,
                         { c[20], c[21], c[19], c[16], c[25], c[26], c[24], c[7] });
-    for (auto i : utility::range(replacement_0_conn.size()))
+    for (auto i : utility::range_as<mesh::ConnIndex>(replacement_0_conn.size()))
     {
         element.connectivity()[i] = replacement_0_conn[i];
     }
@@ -497,7 +497,7 @@ void refine_quadratic_hexahedron(
     mesh.elements().add(ElementType::H3D20N,
                         { c[36], c[49], c[37], c[48], c[35], c[43], c[11], c[44], c[79], c[80],
                           c[77], c[78], c[19], c[71], c[67], c[70], c[17], c[64], c[18], c[65] });
-    for (auto i : utility::range(replacement_0_conn.size()))
+    for (auto i : utility::range_as<mesh::ConnIndex>(replacement_0_conn.size()))
     {
         element.connectivity()[i] = replacement_0_conn[i];
     }

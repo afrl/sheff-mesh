@@ -15,6 +15,13 @@ class NodeAccessorBase
 {
   public:
     using NodeContainerType = NC;
+    using GlobalIndexType =
+      typename std::conditional<std::is_const<NC>::value, const GlobalIndex, GlobalIndex>::type;
+    using FloatTypeType =
+      typename std::conditional<std::is_const<NC>::value, const FloatType, FloatType>::type;
+    using PointType = typename std::conditional<std::is_const<NC>::value, const Point, Point>::type;
+    using PartitionIndexType = typename std::
+      conditional<std::is_const<NC>::value, const PartitionIndex, PartitionIndex>::type;
     using MapCoordType = typename std::
       conditional<std::is_const<NC>::value, const Eigen::Vector3d, Eigen::Vector3d>::type;
 
@@ -31,37 +38,37 @@ class NodeAccessorBase
     }
 
     /// Returns the globally unique index for the current node.
-    inline auto& global_index() const
+    inline GlobalIndexType& global_index() const
     {
         return nodes_.global_indices_[curr_index_];
     }
 
     /// Returns the first component of the coordinate (in the global coordinate system)
-    inline auto& x() const
+    inline FloatTypeType& x() const
     {
         return nodes_.points_[curr_index_][0];
     }
 
     /// Returns the second component of the coordinate (in the global coordinate system)
-    inline auto& y() const
+    inline FloatTypeType& y() const
     {
         return nodes_.points_[curr_index_][1];
     }
 
     /// Returns the third component of the coordinate (in the global coordinate system)
-    inline auto& z() const
+    inline FloatTypeType& z() const
     {
         return nodes_.points_[curr_index_][2];
     }
 
     /// Returns point of node
-    inline Point point() const
+    inline PointType& point() const
     {
         return nodes_.points_[curr_index_];
     }
 
     /// Returns a component of the point by reference
-    inline auto& point(int8_t coordinate_axis) const
+    inline FloatTypeType& point(int8_t coordinate_axis) const
     {
         return nodes_.points_[curr_index_][coordinate_axis];
     }
@@ -74,7 +81,7 @@ class NodeAccessorBase
     }
 
     /// Returns the parent partition of the current node
-    inline auto& parent_partition() const
+    inline PartitionIndexType& parent_partition() const
     {
         assert(!nodes_.parent_partitions_.empty());
         return nodes_.parent_partitions_[curr_index_];
@@ -111,6 +118,12 @@ class NodeAccessorBase
 
     // Note: omitted deserialize because an accessor is not stored (it only provides a view)
 
+    std::string str() const
+    {
+        return std::string(utility::demangle(typeid(*this).name())) + ": { " +
+               std::to_string(curr_index_) + " }";
+    }
+
     /// Allow friend access to other NodeAccessor types for comparison operators
     template<typename NC2>
     friend class NodeAccessorBase;
@@ -125,15 +138,24 @@ class NodeAccessorBase
     NC& nodes_;
     LocalIndex curr_index_;
 
-    /// Moves accessor to the next node in the container (based on local index).
+    // Methods to help the implementation of iterators
+
+    /// @brief Moves accessor to the next node in the container (based on local index).
     inline void next()
     {
         curr_index_++;
     }
-    /// Moves accessor to the given node (does not check if index is valid).
+
+    /// @brief Moves accessor to the given node (does not check if index is valid).
     inline void go_to(LocalIndex i)
     {
         curr_index_ = i;
+    }
+
+    /// @brief Returns true if the accessor is at the last node in the container already
+    inline bool is_end() const
+    {
+        return curr_index_ == nodes_.size();
     }
 };
 

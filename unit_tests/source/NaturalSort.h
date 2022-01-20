@@ -308,7 +308,7 @@ Algorithm". If the objects are no std::string, they must
 implement "std::ostream operator<< (std::ostream&, const Ty&)".
 */
 template<class Ty>
-struct alphanum_less : public std::binary_function<Ty, Ty, bool>
+struct alphanum_less
 {
     bool operator()(const Ty& left, const Ty& right) const
     {

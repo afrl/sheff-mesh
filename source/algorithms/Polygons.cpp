@@ -152,7 +152,7 @@ triangulateio triangle_polygon_kernel(
         tri_arg_stream << "a" << std::fixed << max_triangle_area;
     }
     char args[50];
-    strcpy(args, tri_arg_stream.str().c_str());
+    strcpy_s(args, 50, tri_arg_stream.str().c_str());
 
     triangulate(args, &in, &output, (struct triangulateio*)NULL);
 

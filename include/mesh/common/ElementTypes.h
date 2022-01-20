@@ -80,7 +80,7 @@ static ElementType get_linearized_type(const ElementType& geom_type);
 /// Returns the permuation vector to go from the quadratic connectivity
 /// to the linear connectivity.  If the type is already linear, then
 /// an empty vector is returned.  Will throw for unrecognized types.
-static std::vector<ConnIndex> get_linearized_permutation(const ElementType& geom_type);
+//static std::vector<ConnIndex> get_linearized_permutation(const ElementType& geom_type);
 /// Returns a bool indicating if the geometry type is linear or not
 static bool is_type_linear(const ElementType& geom_type);
 /// Returns the element order (1 - linear, 2 - quadratic, etc.)

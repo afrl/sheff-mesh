@@ -18,6 +18,16 @@ class ElementAccessorBase
     using ElementContainerType = EC;
     using ConnectivityType =
       typename std::conditional<std::is_const<NC>::value, const LocalIndex, LocalIndex>::type;
+    using GlobalIndexType =
+      typename std::conditional<std::is_const<NC>::value, const GlobalIndex, GlobalIndex>::type;
+    using ElementTypeType =
+      typename std::conditional<std::is_const<NC>::value, const ElementType, ElementType>::type;
+    using PartitionIndexType = typename std::
+      conditional<std::is_const<NC>::value, const PartitionIndex, PartitionIndex>::type;
+    using ComponentIndexType = typename std::
+      conditional<std::is_const<NC>::value, const ComponentIndex, ComponentIndex>::type;
+    using LCSType = typename std::
+      conditional<std::is_const<NC>::value, const QuaternionContainer, QuaternionContainer>::type;
 
     ElementAccessorBase(NC& nodes, EC& elements, LocalIndex starting_index = 0)
       : nodes_(nodes)
@@ -47,13 +57,13 @@ class ElementAccessorBase
     }
 
     /// Returns the globally unique index for the current element.
-    inline auto& global_index() const
+    inline GlobalIndexType& global_index() const
     {
         return elements_.global_indices_[curr_index_];
     }
 
     /// Returns the type of element (in terms of topology), see ElementType
-    inline auto& type() const
+    inline ElementTypeType& type() const
     {
         return elements_.types_[curr_index_];
     }
@@ -101,26 +111,26 @@ class ElementAccessorBase
     }
 
     /// Returns the partition that owns this element.
-    inline auto& parent_partition() const
+    inline PartitionIndexType& parent_partition() const
     {
         return elements_.parent_partitions_[curr_index_];
     }
 
     /// Returns the component that this element belongs to.
-    inline auto& component_id() const
+    inline ComponentIndexType& component_id() const
     {
         return elements_.component_ids_[curr_index_];
     }
 
     /// Returns the object that contains the local coordinate systems throughout the element.
-    inline auto& local_coord_sys() const
+    inline LCSType& local_coord_sys() const
     {
         assert(!elements_.lcs_.empty());
         return elements_.lcs_[curr_index_];
     }
 
     /// Returns a reference to the underlying NodeContainer that this accessor refers to.
-    inline auto& node_container() const
+    inline NodeContainerType& node_container() const
     {
         return nodes_;
     }

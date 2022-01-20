@@ -90,6 +90,20 @@ class NodeSubrangeIteratorBase
     {
         return accessor_;
     }
+    
+    // Iterator like methods
+
+    /// @brief Moves accessor to the next node in the subrange
+    inline void next()
+    {
+        (*this)++;
+    }
+
+    /// @brief Moves accessor to the given node (does not check if index is valid).
+    inline void go_to(LocalIndex i)
+    {
+        curr_index_ = i;
+    }
 
   protected:
     NodeAccessorType accessor_;

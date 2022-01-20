@@ -263,8 +263,10 @@ MeshAssociatedData read_pfec_data_kernel(PFECNativeInterface::DataReader& data_r
                 }
             }
 
-            data.node_data.push_back(
-              { data_info.name, data_info.comp_names, std::move(extracted_data) });
+            data.add<DataFieldType::NODE, double>(
+              DataField<double>::copy(data_info.name,
+                                      data_info.comp_names,
+                                      std::move(extracted_data)));
         }
         else if (data_info.type == PFECNativeInterface::DataType::Element)
         {
@@ -282,8 +284,10 @@ MeshAssociatedData read_pfec_data_kernel(PFECNativeInterface::DataReader& data_r
                 }
             }
 
-            data.element_data.push_back(
-              { data_info.name, data_info.comp_names, std::move(extracted_data) });
+            data.add<DataFieldType::ELEMENT, double>(
+              DataField<double>::copy(data_info.name,
+                                      data_info.comp_names,
+                                      std::move(extracted_data)));
         }
         else if (data_info.type == PFECNativeInterface::DataType::NodalByElement)
         {
@@ -317,8 +321,10 @@ MeshAssociatedData read_pfec_data_kernel(PFECNativeInterface::DataReader& data_r
                 }
             }
 
-            data.node_by_element_data.push_back(
-              { data_info.name, data_info.comp_names, std::move(extracted_data) });
+            data.add<DataFieldType::NODE_BY_ELEMENT, double>(
+              DataField<double>::copy(data_info.name,
+                                      data_info.comp_names,
+                                      std::move(extracted_data)));
         }
         else if (data_info.type == PFECNativeInterface::DataType::QuadPoint)
         {
@@ -351,8 +357,10 @@ MeshAssociatedData read_pfec_data_kernel(PFECNativeInterface::DataReader& data_r
                 }
             }
 
-            data.quad_point_data.push_back(
-              { data_info.name, data_info.comp_names, std::move(extracted_data) });
+            data.add<DataFieldType::QUAD, double>(
+              DataField<double>::copy(data_info.name,
+                                      data_info.comp_names,
+                                      std::move(extracted_data)));
         }
     }
 
@@ -647,11 +655,10 @@ std::pair<Mesh, MeshAssociatedData> read_pfec_all_parts_kernel(
         {
             if (data_info.type == PFECNativeInterface::DataType::Element)
             {
-                data.element_data.push_back(
-                  { data_info.name,
-                    data_info.comp_names,
-                    simple_math::GeneralMatrix::Zero(mesh.elements().size(),
-                                                     data_info.num_comps) });
+                data.add<DataFieldType::ELEMENT, double>(DataField<double>::copy(
+                  data_info.name,
+                  data_info.comp_names,
+                  simple_math::GeneralMatrix::Zero(mesh.elements().size(), data_info.num_comps)));
             }
         }
         for (auto& data_info : data_infos)
@@ -660,19 +667,18 @@ std::pair<Mesh, MeshAssociatedData> read_pfec_all_parts_kernel(
             {
                 if (!convert_node_data_to_element_data)
                 {
-                    data.node_data.push_back(
-                      { data_info.name,
-                        data_info.comp_names,
-                        simple_math::GeneralMatrix::Zero(mesh.nodes().size(),
-                                                         data_info.num_comps) });
+                    data.add<DataFieldType::NODE, double>(DataField<double>::copy(
+                      data_info.name,
+                      data_info.comp_names,
+                      simple_math::GeneralMatrix::Zero(mesh.nodes().size(), data_info.num_comps)));
                 }
                 else
                 {
-                    data.element_data.push_back(
-                      { data_info.name,
-                        data_info.comp_names,
-                        simple_math::GeneralMatrix::Zero(mesh.elements().size(),
-                                                         data_info.num_comps) });
+                    data.add<DataFieldType::ELEMENT, double>(DataField<double>::copy(
+                      data_info.name,
+                      data_info.comp_names,
+                      simple_math::GeneralMatrix::Zero(mesh.elements().size(),
+                                                       data_info.num_comps)));
                 }
             }
         }
@@ -680,11 +686,10 @@ std::pair<Mesh, MeshAssociatedData> read_pfec_all_parts_kernel(
         {
             if (data_info.type == PFECNativeInterface::DataType::NodalByElement)
             {
-                data.element_data.push_back(
-                  { data_info.name,
-                    data_info.comp_names,
-                    simple_math::GeneralMatrix::Zero(mesh.elements().size(),
-                                                     data_info.num_comps) });
+                data.add<DataFieldType::ELEMENT, double>(DataField<double>::copy(
+                  data_info.name,
+                  data_info.comp_names,
+                  simple_math::GeneralMatrix::Zero(mesh.elements().size(), data_info.num_comps)));
             }
             else if (data_info.type == PFECNativeInterface::DataType::QuadPoint)
             {
@@ -700,10 +705,12 @@ std::pair<Mesh, MeshAssociatedData> read_pfec_all_parts_kernel(
             auto& e_local_to_global_map = parts_e_local_to_global_map[i];
             auto part_data              = read_pfec_data_kernel(*data_reader, partition);
 
-            for (auto j : utility::indices(part_data.element_data))
+            const auto& part_element_datas = part_data.get<DataFieldType::ELEMENT, double>();
+            auto& total_element_datas      = data.get<DataFieldType::ELEMENT, double>();
+            for (auto j : utility::indices(part_element_datas))
             {
-                auto& part_element_data  = part_data.element_data[j].data;
-                auto& total_element_data = data.element_data[j].data;
+                auto& part_element_data = part_element_datas[j].data();
+                auto total_element_data = total_element_datas[j].data_mutable();
 
                 for (auto part_e_local_id : utility::indices(e_local_to_global_map))
                 {
@@ -714,15 +721,17 @@ std::pair<Mesh, MeshAssociatedData> read_pfec_all_parts_kernel(
                     debug_visited_elems.insert(new_local_id);
                 }
             }
-            
-            for (auto j : utility::indices(part_data.node_data))
+
+            const auto& part_node_datas = part_data.get<DataFieldType::NODE, double>();
+            auto& total_node_datas      = data.get<DataFieldType::NODE, double>();
+            for (auto j : utility::indices(part_node_datas))
             {
-                auto& part_node_data = part_data.node_data[j].data;
+                auto& part_node_data = part_node_datas[j].data();
 
                 if (convert_node_data_to_element_data)
                 {
-                    auto& total_element_data =
-                      data.element_data[j + part_data.element_data.size()].data;
+                    auto total_element_data =
+                      total_element_datas[j + part_element_datas.size()].data_mutable();
                     auto& part_e_local_connectivities = parts_e_local_connectivities[i];
 
                     for (auto part_e_local_id : utility::indices(e_local_to_global_map))
@@ -742,7 +751,7 @@ std::pair<Mesh, MeshAssociatedData> read_pfec_all_parts_kernel(
                 }
                 else
                 {
-                    auto& total_node_data = data.node_data[j].data;
+                    auto total_node_data = total_node_datas[j].data_mutable();
 
                     for (auto part_n_local_id : utility::indices(n_local_to_global_map))
                     {
@@ -757,18 +766,20 @@ std::pair<Mesh, MeshAssociatedData> read_pfec_all_parts_kernel(
             int offset = 0;
             if (convert_node_data_to_element_data)
             {
-                offset += part_data.node_data.size() + part_data.element_data.size();
+                offset += part_node_datas.size() + part_element_datas.size();
             }
             else
             {
-                offset += part_data.element_data.size();
+                offset += part_element_datas.size();
             }
 
-            for (auto j : utility::indices(part_data.node_by_element_data))
+            const auto& part_node_by_element_datas =
+              part_data.get<DataFieldType::NODE_BY_ELEMENT, double>();
+            for (auto j : utility::indices(part_node_by_element_datas))
             {
-                auto& part_node_by_element_data = part_data.node_by_element_data[j].data;
+                auto& part_node_by_element_data = part_node_by_element_datas[j].data();
                 auto& part_offsets              = part_data.node_by_element_offsets;
-                auto& total_element_data        = data.element_data[j + offset].data;
+                auto total_element_data = total_element_datas[j + offset].data_mutable();
 
                 for (auto part_e_local_id : utility::indices(e_local_to_global_map))
                 {
@@ -791,12 +802,13 @@ std::pair<Mesh, MeshAssociatedData> read_pfec_all_parts_kernel(
         data_reader->close();
     }
 
-    return { mesh, data };
+    return { mesh, std::move(data) };
 }
 
 } // end namespace detail
 
-std::pair<Mesh, MeshAssociatedData> read_pfec_all_parts(const std::string& meta_file_path,
+std::pair<Mesh, MeshAssociatedData> read_pfec_all_parts(
+  const std::string& meta_file_path,
   const int time_step_id,
   const bool convert_node_data_to_element_data)
 {

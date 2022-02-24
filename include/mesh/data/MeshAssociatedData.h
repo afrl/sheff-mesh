@@ -132,9 +132,9 @@ struct MeshAssociatedData
     /// @tparam DFT - enumeration for the type of data field to add (node, element, etc.)
     /// @tparam T - the type of the underlying data (supports: double and uint32_t)
     template<DataFieldType DFT, typename T>
-    auto& get()
+    std::vector<DataField<T>>& get()
     {
-        REUSE_CONST_ACCESSOR(get<DFT COMMA T>);
+        return const_cast<std::vector<DataField<T>>&>(std::as_const(*this).get<DFT , T>());
     }
 
     /// @brief Access data field by name as const for the templated type.
@@ -168,7 +168,9 @@ struct MeshAssociatedData
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // Inline and templated method definitions
 
+#ifdef WIN32
 #pragma region MeshAssociatedDataType - inline and templated method definitions
+#endif
 
 template<typename T>
 inline bool MeshAssociatedDataType<T>::empty() const
@@ -262,10 +264,14 @@ void MeshAssociatedDataType<T>::deserialize(SerializerType& s)
     s(utility::slice(element_group_data_fields));
 }
 
+#ifdef WIN32
 #pragma endregion
+#endif
 
 
+#ifdef WIN32
 #pragma region MeshAssociatedData - inline and templated method definitions
+#endif
 
 template<DataFieldType DFT, typename T>
 void add(const DataField<T>& data)
@@ -480,5 +486,7 @@ void MeshAssociatedData::deserialize(SerializerType& s)
     s(uint32_data, double_data);
 }
 
+#ifdef WIN32
 #pragma endregion
+#endif
 }

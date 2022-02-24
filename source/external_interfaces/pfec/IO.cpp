@@ -705,7 +705,7 @@ std::pair<Mesh, MeshAssociatedData> read_pfec_all_parts_kernel(
             auto& e_local_to_global_map = parts_e_local_to_global_map[i];
             auto part_data              = read_pfec_data_kernel(*data_reader, partition);
 
-            const auto& part_element_datas = part_data.get<DataFieldType::ELEMENT, double>();
+            const std::vector<DataField<double>>& part_element_datas = part_data.get<DataFieldType::ELEMENT, double>();
             auto& total_element_datas      = data.get<DataFieldType::ELEMENT, double>();
             for (auto j : utility::indices(part_element_datas))
             {
@@ -722,7 +722,7 @@ std::pair<Mesh, MeshAssociatedData> read_pfec_all_parts_kernel(
                 }
             }
 
-            const auto& part_node_datas = part_data.get<DataFieldType::NODE, double>();
+            const std::vector<DataField<double>>& part_node_datas = part_data.get<DataFieldType::NODE, double>();
             auto& total_node_datas      = data.get<DataFieldType::NODE, double>();
             for (auto j : utility::indices(part_node_datas))
             {
@@ -773,7 +773,7 @@ std::pair<Mesh, MeshAssociatedData> read_pfec_all_parts_kernel(
                 offset += part_element_datas.size();
             }
 
-            const auto& part_node_by_element_datas =
+            const std::vector<DataField<double>>& part_node_by_element_datas =
               part_data.get<DataFieldType::NODE_BY_ELEMENT, double>();
             for (auto j : utility::indices(part_node_by_element_datas))
             {

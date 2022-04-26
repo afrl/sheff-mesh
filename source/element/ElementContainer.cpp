@@ -110,7 +110,7 @@ const std::vector<ElementGroup>& ElementContainer::groups() const
 
 void ElementContainer::add(ElementType type, const std::vector<LocalIndex>& connectivity)
 {
-    add(type, utility::slice(connectivity));
+    add(type, utility::slice_c(connectivity));
 }
 
 void ElementContainer::add(ElementType type,
@@ -119,7 +119,7 @@ void ElementContainer::add(ElementType type,
                            PartitionIndex parent_partition,
                            ComponentIndex component_index)
 {
-    add(type, utility::slice(connectivity), i, parent_partition, component_index);
+    add(type, utility::slice_c(connectivity), i, parent_partition, component_index);
 }
 
 void ElementContainer::add(ElementType type, const utility::Slice<const LocalIndex>& connectivity)

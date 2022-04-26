@@ -97,9 +97,9 @@ class NodeContainer
     void serialize(SerializerType& s) const
     {
         s(utility::named_value("n_nodes_on_partition", global_indices_.size()),
-          utility::named_value("global_indices", utility::slice(global_indices_)),
-          utility::named_value("points", utility::slice(points_)),
-          utility::named_value("parent_partitions", utility::slice(parent_partitions_)));
+          utility::named_value("global_indices", utility::slice_c(global_indices_)),
+          utility::named_value("points", utility::slice_c(points_)),
+          utility::named_value("parent_partitions", utility::slice_c(parent_partitions_)));
     }
 
     template<typename SerializerType>

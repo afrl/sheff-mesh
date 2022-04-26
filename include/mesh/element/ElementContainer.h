@@ -129,18 +129,18 @@ class ElementContainer
     void serialize(SerializerType& s) const
     {
         s(utility::named_value("n_elements_in_partition", global_indices_.size()),
-          utility::named_value("global_indices", utility::slice(global_indices_)),
-          utility::named_value("types", utility::slice(types_)),
+          utility::named_value("global_indices", utility::slice_c(global_indices_)),
+          utility::named_value("types", utility::slice_c(types_)),
           utility::named_value("n_connectivity_entries", connectivities_.size()),
-          utility::named_value("connectivities", utility::slice(connectivities_)),
-          utility::named_value("connectivity_offsets", utility::slice(connectivity_offsets_)),
-          utility::named_value("parent_partitions", utility::slice(parent_partitions_)),
-          utility::named_value("component_indices", utility::slice(component_ids_)));
+          utility::named_value("connectivities", utility::slice_c(connectivities_)),
+          utility::named_value("connectivity_offsets", utility::slice_c(connectivity_offsets_)),
+          utility::named_value("parent_partitions", utility::slice_c(parent_partitions_)),
+          utility::named_value("component_indices", utility::slice_c(component_ids_)));
 
         s(utility::named_value("has_lcs", lcs_.size() > 0));
         if (lcs_.size() > 0)
         {
-            s(utility::named_value("lcs", utility::slice(lcs_)));
+            s(utility::named_value("lcs", utility::slice_c(lcs_)));
         }
     }
 

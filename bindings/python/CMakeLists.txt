@@ -19,9 +19,9 @@ find_package(PythonInterp REQUIRED)
 find_package(PythonLibs REQUIRED)
 include_directories(${PYTHON_INCLUDE_PATH})
 
-cmake_policy(SET CMP0086 NEW)
-
 # Include SWIG
+cmake_policy(SET CMP0078 NEW)
+cmake_policy(SET CMP0086 NEW)
 find_package(SWIG REQUIRED)
 include(${SWIG_USE_FILE})
 

@@ -15,7 +15,6 @@
 #include "mesh/external_interfaces/fea_io/MeshInfo.h"
 #include "mesh/external_interfaces/fea_io/TypeConversions.h"
 #include "mesh/relations/ElementAdjacencyList.h"
-#include "utility/Filesystem.h"
 #include "utility/MPIUtils.h"
 #include "utility/Range.h"
 

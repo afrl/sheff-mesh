@@ -53,6 +53,21 @@ static bool is_ref(const LCSAssignmentType& type)
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////
+// Definitions
+
+std::string to_string(const LCSAssignmentType& type)
+{
+    switch (type)
+    {
+        case LCSAssignmentType::None: return "None";
+        case LCSAssignmentType::Component: return "Component";
+        case LCSAssignmentType::Element: return "Element";
+        case LCSAssignmentType::Node: return "Node";
+        default: return "Undefined";
+    }
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////
 // QuaternionContainer methods
 
 QuaternionContainer::QuaternionContainer()

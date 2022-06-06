@@ -29,6 +29,8 @@ enum class LCSAssignmentType : char
     NodeRef
 };
 
+std::string to_string(const LCSAssignmentType& lcs_type);
+
 using Quaternion = simple_math::Quaternion;
 
 /// @brief Stores or refers to the quaternions that define the local coordinate system (LCS)

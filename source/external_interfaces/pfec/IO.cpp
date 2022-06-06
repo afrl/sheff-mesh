@@ -146,21 +146,34 @@ Mesh read_pfec_mesh_kernel(PFECNativeInterface::MetaReader& meta_reader,
                     {
                         lcs.initialize(LCSAssignmentType::Element,
                                        static_cast<ConnIndex>(element.connectivity().size()));
+                        auto& w = quaterions[local_index][0][0];
+                        auto& x = quaterions[local_index][0][1];
+                        auto& y = quaterions[local_index][0][2];
+                        auto& z = quaterions[local_index][0][3];
+                        auto q  = simple_math::Quaternion(w, x, y, z);
+                        lcs.set(0, q.inverse());
                     }
                     else if (n_quaterions_in_element > 1)
                     {
-                        lcs.initialize(LCSAssignmentType::Node,
+                        // Node-by-element is not easy to convert to a unique nodal value for the
+                        // subset of nodes in the component. So, for now, just average them to be
+                        // by element.
+                        lcs.initialize(LCSAssignmentType::Element,
                                        static_cast<ConnIndex>(element.connectivity().size()));
-                    }
-
-                    for (auto j = 0; j < n_quaterions_in_element; ++j)
-                    {
-                        auto& w = quaterions[local_index][j][0];
-                        auto& x = quaterions[local_index][j][1];
-                        auto& y = quaterions[local_index][j][2];
-                        auto& z = quaterions[local_index][j][3];
-                        auto q  = simple_math::Quaternion(w, x, y, z);
-                        lcs.set(j, q.inverse());
+                        double w = 0.;
+                        double x = 0.;
+                        double y = 0.;
+                        double z = 0.;
+                        for (auto j = 0; j < n_quaterions_in_element; ++j)
+                        {
+                            w += quaterions[local_index][j][0];
+                            x += quaterions[local_index][j][1];
+                            y += quaterions[local_index][j][2];
+                            z += quaterions[local_index][j][3];
+                        }
+                        auto q = simple_math::Quaternion(w, x, y, z);
+                        q.normalize();
+                        lcs.set(0, q.inverse());
                     }
                 }
             }
@@ -705,8 +718,9 @@ std::pair<Mesh, MeshAssociatedData> read_pfec_all_parts_kernel(
             auto& e_local_to_global_map = parts_e_local_to_global_map[i];
             auto part_data              = read_pfec_data_kernel(*data_reader, partition);
 
-            const std::vector<DataField<double>>& part_element_datas = part_data.get<DataFieldType::ELEMENT, double>();
-            auto& total_element_datas      = data.get<DataFieldType::ELEMENT, double>();
+            const std::vector<DataField<double>>& part_element_datas =
+              part_data.get<DataFieldType::ELEMENT, double>();
+            auto& total_element_datas = data.get<DataFieldType::ELEMENT, double>();
             for (auto j : utility::indices(part_element_datas))
             {
                 auto& part_element_data = part_element_datas[j].data();
@@ -722,8 +736,9 @@ std::pair<Mesh, MeshAssociatedData> read_pfec_all_parts_kernel(
                 }
             }
 
-            const std::vector<DataField<double>>& part_node_datas = part_data.get<DataFieldType::NODE, double>();
-            auto& total_node_datas      = data.get<DataFieldType::NODE, double>();
+            const std::vector<DataField<double>>& part_node_datas =
+              part_data.get<DataFieldType::NODE, double>();
+            auto& total_node_datas = data.get<DataFieldType::NODE, double>();
             for (auto j : utility::indices(part_node_datas))
             {
                 auto& part_node_data = part_node_datas[j].data();
@@ -779,7 +794,7 @@ std::pair<Mesh, MeshAssociatedData> read_pfec_all_parts_kernel(
             {
                 auto& part_node_by_element_data = part_node_by_element_datas[j].data();
                 auto& part_offsets              = part_data.node_by_element_offsets;
-                auto total_element_data = total_element_datas[j + offset].data_mutable();
+                auto total_element_data         = total_element_datas[j + offset].data_mutable();
 
                 for (auto part_e_local_id : utility::indices(e_local_to_global_map))
                 {

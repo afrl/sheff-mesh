@@ -81,6 +81,13 @@ fea_io::MeshInfo<GlobalIndex, LocalIndex, FloatType> get_fea_io_mesh_info(
             {
                 if (element.local_coord_sys().base_type() != first_assignment_type)
                 {
+                    std::cout
+                      << "ERR_INFO: Element " << element.local_index() << " in component "
+                      << component_id << " had LCS type "
+                      << to_string(element.local_coord_sys().base_type())
+                      << " which did not match the type of another element in the same component "
+                         "with type "
+                      << to_string(first_assignment_type) << std::endl;
                     throw _UTIL_MSG_EXCEPT(
                       "The elements within the same component must have the same "
                       "LCSAssignment to be written to the fea_io format.");

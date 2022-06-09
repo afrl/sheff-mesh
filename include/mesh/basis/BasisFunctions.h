@@ -47,6 +47,9 @@ class BasisFunctionsBase
                             ElementDerivMatrix& func_derivatives);
 
   private:
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // Lagrange polynomial basis functions
+
     // 1D
     static void lagrange_L1D2N(const Coordinate& p, ElementValueVector& S);
     static void deriv_lagrange_L1D2N(const Coordinate& p, ElementDerivMatrix& SDeriv);
@@ -82,6 +85,43 @@ class BasisFunctionsBase
     static void deriv_W3D6N(const Coordinate& p, ElementDerivMatrix& SDeriv);
     static void W3D15N(const Coordinate& p, ElementValueVector& S);
     static void deriv_W3D15N(const Coordinate& p, ElementDerivMatrix& SDeriv);
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // Berstein polynomial basis functions
+
+    // 1D
+    static void bernstein_line(const uint8_t& basis_order,
+                               const Coordinate& p,
+                               ElementValueVector& S);
+    static void deriv_bernstein_line(const uint8_t& basis_order,
+                                     const Coordinate& p,
+                                     ElementDerivMatrix& SDeriv);
+    // 2D
+    static void bernstein_triangle(const uint8_t& basis_order,
+                                   const Coordinate& p,
+                                   ElementValueVector& S);
+    static void deriv_bernstein_triangle(const uint8_t& basis_order,
+                                         const Coordinate& p,
+                                         ElementDerivMatrix& SDeriv);
+    static void bernstein_quadrilateral(const uint8_t& basis_order,
+                                        const Coordinate& p,
+                                        ElementValueVector& S);
+    static void deriv_bernstein_quadrilateral(const uint8_t& basis_order,
+                                              const Coordinate& p,
+                                              ElementDerivMatrix& SDeriv);
+    // 3D
+    static void bernstein_tetrahedral(const uint8_t& basis_order,
+                                      const Coordinate& p,
+                                      ElementValueVector& S);
+    static void deriv_bernstein_tetrahedral(const uint8_t& basis_order,
+                                            const Coordinate& p,
+                                            ElementDerivMatrix& SDeriv);
+    static void bernstein_hexahedral(const uint8_t& basis_order,
+                                     const Coordinate& p,
+                                     ElementValueVector& S);
+    static void deriv_bernstein_hexahedral(const uint8_t& basis_order,
+                                           const Coordinate& p,
+                                           ElementDerivMatrix& SDeriv);
 };
 
 using BasisFunctions =
@@ -517,9 +557,9 @@ inline void BasisFunctionsBase<Coordinate, ElementValueVector, ElementDerivMatri
     S(4) = 1.0 / 2.0 * (1.0 + mu);
     */
 
-    const double xi = p[0];
+    const double xi  = p[0];
     const double eta = p[1];
-    const double mu = p[2] / 2.0 + 0.5;
+    const double mu  = p[2] / 2.0 + 0.5;
 
     double ration = 0.0;
     if (fabs(mu - 1.0) > 1.0e-14)
@@ -567,8 +607,8 @@ inline void BasisFunctionsBase<Coordinate, ElementValueVector, ElementDerivMatri
 
     const double Q14 = 0.25;
 
-    const double xi = p[0];
-    const double eta = p[1];
+    const double xi   = p[0];
+    const double eta  = p[1];
     const double zeta = p[2];
     const double mu   = zeta / 2.0 + 0.5;
 
@@ -579,14 +619,14 @@ inline void BasisFunctionsBase<Coordinate, ElementValueVector, ElementDerivMatri
 
     if (fabs(mu - 1.0) > 1.0e-14)
     {
-        dration_dxi = eta * mu / (1.0 - mu);
-        dration_deta = xi * mu / (1.0 - mu);
+        dration_dxi   = eta * mu / (1.0 - mu);
+        dration_deta  = xi * mu / (1.0 - mu);
         dration_dzeta = dmu_dzeta * xi * eta / ((1.0 - mu) * (1.0 - mu));
     }
     else
     {
-        dration_dxi = 1.0;
-        dration_deta = 1.0;
+        dration_dxi   = 1.0;
+        dration_deta  = 1.0;
         dration_dzeta = dmu_dzeta; // dration_dmu = 1.0
     }
 
@@ -594,16 +634,16 @@ inline void BasisFunctionsBase<Coordinate, ElementValueVector, ElementDerivMatri
     SDeriv(0, 1) = Q14 * (-(1.0 - xi) + dration_deta);
     SDeriv(0, 2) = Q14 * (dration_dzeta - dmu_dzeta);
 
-    SDeriv(1, 0) = Q14 * ( (1.0 - eta) - dration_dxi);
+    SDeriv(1, 0) = Q14 * ((1.0 - eta) - dration_dxi);
     SDeriv(1, 1) = Q14 * (-(1.0 + xi) - dration_deta);
     SDeriv(1, 2) = Q14 * (-dration_dzeta - dmu_dzeta);
 
-    SDeriv(2, 0) = Q14 * ( (1.0 + eta) + dration_dxi);
-    SDeriv(2, 1) = Q14 * ( (1.0 + xi) + dration_deta);
+    SDeriv(2, 0) = Q14 * ((1.0 + eta) + dration_dxi);
+    SDeriv(2, 1) = Q14 * ((1.0 + xi) + dration_deta);
     SDeriv(2, 2) = Q14 * (dration_dzeta - dmu_dzeta);
 
     SDeriv(3, 0) = Q14 * (-(1.0 + eta) - dration_dxi);
-    SDeriv(3, 1) = Q14 * ( (1.0 - xi) - dration_deta);
+    SDeriv(3, 1) = Q14 * ((1.0 - xi) - dration_deta);
     SDeriv(3, 2) = Q14 * (-dration_dzeta - dmu_dzeta);
 
     SDeriv(4, 0) = 0.0;
@@ -1376,6 +1416,116 @@ inline void BasisFunctionsBase<Coordinate, ElementValueVector, ElementDerivMatri
         SDeriv(13, 2)    = -t13 + t4 + t6;
         SDeriv(14, 2)    = -0.2e1 * t15;
     }
+}
+
+template<typename Coordinate, typename ElementValueVector, typename ElementDerivMatrix>
+void BasisFunctionsBase<Coordinate, ElementValueVector, ElementDerivMatrix>::bernstein_line(
+  const uint8_t& basis_order,
+  const Coordinate& p,
+  ElementValueVector& S)
+{
+    const double xi = p[0];
+    // TODO
+}
+
+template<typename Coordinate, typename ElementValueVector, typename ElementDerivMatrix>
+void BasisFunctionsBase<Coordinate, ElementValueVector, ElementDerivMatrix>::deriv_bernstein_line(
+  const uint8_t& basis_order,
+  const Coordinate& p,
+  ElementDerivMatrix& SDeriv)
+{
+    const double xi = p[0];
+    // TODO
+}
+
+template<typename Coordinate, typename ElementValueVector, typename ElementDerivMatrix>
+void BasisFunctionsBase<Coordinate, ElementValueVector, ElementDerivMatrix>::bernstein_triangle(
+  const uint8_t& basis_order,
+  const Coordinate& p,
+  ElementValueVector& S)
+{
+    const double xi  = p[0];
+    const double eta = p[1];
+    // TODO
+}
+
+template<typename Coordinate, typename ElementValueVector, typename ElementDerivMatrix>
+void BasisFunctionsBase<Coordinate, ElementValueVector, ElementDerivMatrix>::
+  deriv_bernstein_triangle(const uint8_t& basis_order,
+                           const Coordinate& p,
+                           ElementDerivMatrix& SDeriv)
+{
+    const double xi  = p[0];
+    const double eta = p[1];
+    // TODO
+}
+
+template<typename Coordinate, typename ElementValueVector, typename ElementDerivMatrix>
+void BasisFunctionsBase<Coordinate, ElementValueVector, ElementDerivMatrix>::
+  bernstein_quadrilateral(const uint8_t& basis_order, const Coordinate& p, ElementValueVector& S)
+{
+    const double xi  = p[0];
+    const double eta = p[1];
+    // TODO
+}
+
+template<typename Coordinate, typename ElementValueVector, typename ElementDerivMatrix>
+void BasisFunctionsBase<Coordinate, ElementValueVector, ElementDerivMatrix>::
+  deriv_bernstein_quadrilateral(const uint8_t& basis_order,
+                                const Coordinate& p,
+                                ElementDerivMatrix& SDeriv)
+{
+    const double xi  = p[0];
+    const double eta = p[1];
+    // TODO
+}
+
+template<typename Coordinate, typename ElementValueVector, typename ElementDerivMatrix>
+void BasisFunctionsBase<Coordinate, ElementValueVector, ElementDerivMatrix>::bernstein_tetrahedral(
+  const uint8_t& basis_order,
+  const Coordinate& p,
+  ElementValueVector& S)
+{
+    const double xi   = p[0];
+    const double eta  = p[1];
+    const double zeta = p[2];
+    // TODO
+}
+
+template<typename Coordinate, typename ElementValueVector, typename ElementDerivMatrix>
+void BasisFunctionsBase<Coordinate, ElementValueVector, ElementDerivMatrix>::
+  deriv_bernstein_tetrahedral(const uint8_t& basis_order,
+                              const Coordinate& p,
+                              ElementDerivMatrix& SDeriv)
+{
+    const double xi   = p[0];
+    const double eta  = p[1];
+    const double zeta = p[2];
+    // TODO
+}
+
+template<typename Coordinate, typename ElementValueVector, typename ElementDerivMatrix>
+void BasisFunctionsBase<Coordinate, ElementValueVector, ElementDerivMatrix>::bernstein_hexahedral(
+  const uint8_t& basis_order,
+  const Coordinate& p,
+  ElementValueVector& S)
+{
+    const double xi   = p[0];
+    const double eta  = p[1];
+    const double zeta = p[2];
+    // TODO
+}
+
+template<typename Coordinate, typename ElementValueVector, typename ElementDerivMatrix>
+void BasisFunctionsBase<Coordinate, ElementValueVector, ElementDerivMatrix>::
+  deriv_bernstein_hexahedral(const uint8_t& basis_order,
+                             const Coordinate& p,
+                             ElementDerivMatrix& SDeriv)
+{
+    const double xi   = p[0];
+    const double eta  = p[1];
+    const double zeta = p[2];
+    // TODO
 }
 
 #ifdef _MSC_VER

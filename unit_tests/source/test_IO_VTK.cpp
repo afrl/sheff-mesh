@@ -20,7 +20,7 @@ int main()
 
 
 
-    write_vtk2(mesh, "grid.vtk", data);
+    write_vtk(mesh, "grid.vtk", data);
 
     return 0;
 }

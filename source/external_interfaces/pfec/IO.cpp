@@ -138,6 +138,7 @@ Mesh read_pfec_mesh_kernel(PFECNativeInterface::MetaReader& meta_reader,
             for (auto& element : mesh.elements())
             {
                 auto local_index             = element.local_index();
+                auto component_id            = element.component_id();
                 auto n_quaterions_in_element = quaterions[local_index].size();
                 auto& lcs                    = element.local_coord_sys();
                 if (n_quaterions_in_element > 0)

@@ -67,11 +67,13 @@ fea_io::MeshInfo<GlobalIndex, LocalIndex, FloatType> get_fea_io_mesh_info(
     {
         // Ensure the orientation type for all the elements is the same
         LCSAssignmentType first_assignment_type = LCSAssignmentType::None;
+        LocalIndex first_element                = 0;
         for (auto& element : mesh.elements())
         {
             if (element.component_id() == component_id)
             {
                 first_assignment_type = element.local_coord_sys().base_type();
+                first_element         = element.local_index();
                 break;
             }
         }
@@ -85,8 +87,9 @@ fea_io::MeshInfo<GlobalIndex, LocalIndex, FloatType> get_fea_io_mesh_info(
                       << "ERR_INFO: Element " << element.local_index() << " in component "
                       << component_id << " had LCS type "
                       << to_string(element.local_coord_sys().base_type())
-                      << " which did not match the type of another element in the same component "
-                         "with type "
+                      << " which did not match the type of the first element in the same component ("
+                      << first_element <<
+                         ") with type "
                       << to_string(first_assignment_type) << std::endl;
                     throw _UTIL_MSG_EXCEPT(
                       "The elements within the same component must have the same "

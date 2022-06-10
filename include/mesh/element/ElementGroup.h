@@ -23,7 +23,7 @@ struct ElementGroup
     {
         s(utility::named_value("name", name),
           utility::named_value("n_elements", element_indices.size()),
-          utility::named_value("element_indices", utility::slice(element_indices)));
+          utility::named_value("element_indices", utility::slice_c(element_indices)));
     }
 
     template<typename SerializerType>

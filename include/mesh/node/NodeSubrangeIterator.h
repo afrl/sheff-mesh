@@ -102,7 +102,7 @@ class NodeSubrangeIteratorBase
     /// @brief Moves accessor to the given node (does not check if index is valid).
     inline void go_to(LocalIndex i)
     {
-        curr_index_ = i;
+        curr_subrange_index_ = i;
     }
 
   protected:

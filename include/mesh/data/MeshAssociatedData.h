@@ -149,7 +149,14 @@ struct MeshAssociatedData
     template<DataFieldType DFT, typename T>
     auto& get(const std::string& field_name)
     {
-        REUSE_CONST_ACCESSOR(get<DFT COMMA T>, field_name);
+        for (auto& d : get<DFT, T>())
+        {
+            if (utility::istr_is_equal(d.name, field_name))
+            {
+                return d;
+            }
+        }
+        throw _UTIL_MSG_EXCEPT_C("Data field '" + field_name + "' does not exist for given type.");
     }
 
     //////////////////////////////////////////////////////////////////////////////////////
@@ -198,21 +205,21 @@ template<typename SerializerType>
 void MeshAssociatedDataType<T>::serialize(SerializerType& s) const
 {
     s(utility::named_value("n_node_data_fields", node_data_fields.size()),
-      utility::named_value("node_data_fields", utility::slice(node_data_fields)),
+      utility::named_value("node_data_fields", utility::slice_c(node_data_fields)),
       utility::named_value("n_element_data_fields", element_data_fields.size()),
-      utility::named_value("element_data_fields", utility::slice(element_data_fields)),
+      utility::named_value("element_data_fields", utility::slice_c(element_data_fields)),
       utility::named_value("n_node_by_element_data_fields", node_by_element_data_fields.size()),
       utility::named_value("node_by_element_data_fields",
-                           utility::slice(node_by_element_data_fields)),
+                           utility::slice_c(node_by_element_data_fields)),
       utility::named_value("n_node_by_component_data_fields", node_by_component_data_fields.size()),
       utility::named_value("node_by_component_data_fields",
-                           utility::slice(node_by_component_data_fields)),
+                           utility::slice_c(node_by_component_data_fields)),
       utility::named_value("n_quad_point_data_fields", quad_point_data_fields.size()),
-      utility::named_value("quad_point_data_fields", utility::slice(quad_point_data_fields)),
+      utility::named_value("quad_point_data_fields", utility::slice_c(quad_point_data_fields)),
       utility::named_value("n_node_group_data_fields", node_group_data_fields.size()),
-      utility::named_value("node_group_data_fields", utility::slice(node_group_data_fields)),
+      utility::named_value("node_group_data_fields", utility::slice_c(node_group_data_fields)),
       utility::named_value("n_element_group_data_fields", element_group_data_fields.size()),
-      utility::named_value("element_group_data_fields", utility::slice(element_group_data_fields)));
+      utility::named_value("element_group_data_fields", utility::slice_c(element_group_data_fields)));
 }
 
 template<typename T>
@@ -276,7 +283,7 @@ void MeshAssociatedDataType<T>::deserialize(SerializerType& s)
 template<DataFieldType DFT, typename T>
 void add(const DataField<T>& data)
 {
-    static_assert(false, "Specialization for given types is not implemented.");
+    throw _UTIL_MSG_EXCEPT("Specialization for given types is not implemented.");
 }
 
 // Specializations for uint32_t data
@@ -363,7 +370,7 @@ inline bool MeshAssociatedData::operator==(const MeshAssociatedData& other) cons
 template<DataFieldType DFT, typename T>
 inline const std::vector<DataField<T>>& MeshAssociatedData::get() const
 {
-    static_assert(false, "Specialization for given types is not implemented.");
+    throw _UTIL_MSG_EXCEPT("Specialization for given types is not implemented.");
 }
 
 // Specializations for uint32_t
@@ -457,11 +464,11 @@ template<typename SerializerType>
 void MeshAssociatedData::serialize(SerializerType& s) const
 {
     s(utility::named_value("n_node_by_element_offsets", node_by_element_offsets.size()),
-      utility::named_value("node_by_element_offsets", utility::slice(node_by_element_offsets)),
+      utility::named_value("node_by_element_offsets", utility::slice_c(node_by_element_offsets)),
       utility::named_value("n_node_by_component_offsets", node_by_component_offsets.size()),
-      utility::named_value("node_by_component_offsets", utility::slice(node_by_component_offsets)),
+      utility::named_value("node_by_component_offsets", utility::slice_c(node_by_component_offsets)),
       utility::named_value("n_quad_point_offsets", quad_point_offsets.size()),
-      utility::named_value("quad_point_offsets", utility::slice(quad_point_offsets)),
+      utility::named_value("quad_point_offsets", utility::slice_c(quad_point_offsets)),
       utility::named_ref("uint32_data", uint32_data),
       utility::named_ref("double_data", double_data));
 }

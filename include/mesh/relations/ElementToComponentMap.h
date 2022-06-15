@@ -67,9 +67,9 @@ class ElementToComponentMap
     {
         s(utility::named_value("n_subcomponents", subcomponent_to_component_map_.size()),
           utility::named_value("subcomponent_to_component_map",
-                               utility::slice(subcomponent_to_component_map_)),
+                               utility::slice_c(subcomponent_to_component_map_)),
           utility::named_value("element_to_subcomponent_map",
-                               utility::slice(element_to_subcomponent_map_)));
+                               utility::slice_c(element_to_subcomponent_map_)));
     }
 
     /// @brief Sets the mesh without building anything maps (only useful before a deserialize)

@@ -23,7 +23,7 @@ struct NodeGroup
     {
         s(utility::named_value("name", name),
           utility::named_value("n_nodes", node_indices.size()),
-          utility::named_value("node_indices", utility::slice(node_indices)));
+          utility::named_value("node_indices", utility::slice_c(node_indices)));
     }
 
     template<typename SerializerType>

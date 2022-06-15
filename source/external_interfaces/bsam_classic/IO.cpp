@@ -245,6 +245,28 @@ Mesh read_bsam_classic(const std::string& file_path)
     return mesh;
 }
 
+Mesh read_bsam20(const std::string& file_path)
+{
+    Mesh mesh;
+
+    std::ifstream input_stream(file_path);
+    utility::skip_to_line_that_contains("CLUSTERS", input_stream);
+
+    LocalIndex n_nodes_before_prev_block    = 0;
+    LocalIndex n_elements_before_prev_block = 0;
+
+    while (read_next_cluster(input_stream,
+                             n_nodes_before_prev_block,
+                             n_elements_before_prev_block,
+                             mesh))
+    {
+    }
+
+    input_stream.close();
+
+    return mesh;
+}
+
 Mesh read_ele(const std::string& file_path)
 {
     std::ifstream input_stream(file_path);

@@ -10,6 +10,9 @@ namespace mesh
 /// @param file_path - relative (to cwd) or absolute path to .in file
 Mesh read_bsam_classic(const std::string& file_path);
 
+/// An experimental algorithm to read BSAM20 files.
+Mesh read_bsam20(const std::string& file_path);
+
 /// Reads an BSAM classic .in file and populates a mesh for each cluster in the input file.
 /// \param file_path - relative (to cwd) or absolute path to .in file
 std::vector<Mesh> read_bsam_classic_by_cluster(const std::string& file_path);

@@ -861,7 +861,14 @@ MeshAssociatedData read_pfec_data(const std::string& meta_file_path,
     PFECNativeInterface::MetaReader meta_reader;
     meta_reader.read_meta_file(meta_file_path);
     auto data_reader = meta_reader.get_data_reader(time_step_id);
-    return detail::read_pfec_data_kernel(*data_reader, partition);
+    if (data_reader)
+    {
+        return detail::read_pfec_data_kernel(*data_reader, partition);
+    }
+    else
+    {
+        return MeshAssociatedData();
+    }
 }
 
 

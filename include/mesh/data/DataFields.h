@@ -49,10 +49,10 @@ struct DataField
     {
         s(utility::named_value("name", name),
           utility::named_value("n_component_names", component_names.size()),
-          utility::named_value("component_names", utility::slice(component_names)),
+          utility::named_value("component_names", utility::slice_c(component_names)),
           utility::named_value("n_data_rows", data().rows()),
           utility::named_value("data",
-                               utility::slice(data().data(), data().rows() * data().cols())));
+                               utility::slice_c(data().data(), data().rows() * data().cols())));
     }
 
     /// @brief Provides deserialization support

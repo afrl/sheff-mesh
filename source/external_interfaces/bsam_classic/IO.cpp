@@ -185,8 +185,10 @@ static bool read_next_cluster(std::ifstream& input_stream,
 
                 for (auto i : utility::range_as<mesh::LocalIndex>(quaternions.size()))
                 {
-                    mesh.elements()[i].local_coord_sys().initialize(LCSAssignmentType::Element);
-                    for (auto& q : mesh.elements()[i].local_coord_sys())
+                    auto element_index = i + n_elements_before_prev_block;
+                    mesh.elements()[element_index].local_coord_sys().initialize(
+                      LCSAssignmentType::Element);
+                    for (auto& q : mesh.elements()[element_index].local_coord_sys())
                     {
                         q = quaternions[i];
                     }
@@ -194,15 +196,18 @@ static bool read_next_cluster(std::ifstream& input_stream,
             }
             else
             {
-                assert(quaternions.size() == mesh.nodes().size());
+                assert(quaternions.size() == mesh.nodes().size() - n_nodes_before_prev_block);
 
-                for (auto e : mesh.elements())
+                for (auto element_index :
+                     utility::range(n_elements_before_prev_block, mesh.elements().size()))
                 {
+                    auto e = mesh.elements()[element_index];
                     e.local_coord_sys().initialize(LCSAssignmentType::Node,
                                                    e.connectivity().size());
                     for (auto i : utility::range(e.connectivity().size()))
                     {
-                        e.local_coord_sys()[i] = quaternions[e.connectivity()[i]];
+                        e.local_coord_sys()[i] =
+                          quaternions[e.connectivity()[i] - n_nodes_before_prev_block];
                     }
                 }
             }

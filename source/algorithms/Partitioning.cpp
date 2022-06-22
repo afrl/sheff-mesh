@@ -105,7 +105,14 @@ Mesh extract_partition_mesh(const Mesh& mesh, const PartitionIndex partition)
 {
     Mesh mesh_part;
     mesh_part.n_partitions() = mesh.n_partitions();
-    mesh_part.partition_id() = partition;
+    if (mesh_part.n_partitions() == 1)
+    {
+        mesh_part.partition_id() = mesh.partition_id();
+    }
+    else
+    {
+        mesh_part.partition_id() = partition;
+    }
 
     ElementAdjacencyList adjacency;
     adjacency.update(mesh);

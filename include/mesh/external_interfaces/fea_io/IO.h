@@ -9,7 +9,6 @@
 
 namespace mesh
 {
-#ifdef USE_FEAIO
 
 /// Reads a fea_io JSON/binary files and populates a mesh.
 /// @param file_stem - stem for the relative (to cwd) or absolute path (this is basically the file
@@ -59,6 +58,4 @@ void write_fea_io(const Mesh& mesh,
                   const std::string& base_directory,
                   const std::string& mesh_name,
                   const std::string meta_file_name = "");
-
-#endif
 }

@@ -3,6 +3,8 @@
 #include "mesh/algorithms/Partitioning.h"
 #include "utility/MPIUtils.h"
 
+#include <iostream>
+
 using namespace mesh;
 
 int main(int argc, char** argv)
@@ -32,20 +34,23 @@ int main(int argc, char** argv)
 
     partition_metis(mesh, 3);
 
+    // Note: you cannot check that each partition based on previous results, since
+    // METIS is not deterministic across platforms.
+
     // Test read and write of partitioned mesh with no meta file
     {
         write_fea_io(mesh, ".", "grid_mesh_partitioned_no_meta");
         auto grid_mesh = read_fea_io_mesh("./grid_mesh_partitioned_no_meta", 0);
-        assert(grid_mesh.nodes().size() == 99);
-        assert(grid_mesh.elements().size() == 47);
+        assert(grid_mesh.nodes().size() < mesh.nodes().size());
+        assert(grid_mesh.elements().size() < mesh.elements().size());
     }
 
     // Test read and write of partitioned mesh with no meta file
     {
         write_fea_io(mesh, ".", "grid_mesh_partitioned", "grid_mesh_partitioned");
         auto grid_mesh = read_fea_io_mesh_from_meta("./grid_mesh_partitioned.x.json", 0);
-        assert(grid_mesh.nodes().size() == 99);
-        assert(grid_mesh.elements().size() == 47);
+        assert(grid_mesh.nodes().size() < mesh.nodes().size());
+        assert(grid_mesh.elements().size() < mesh.elements().size());
     }
 
     return 0;

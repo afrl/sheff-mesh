@@ -1,18 +1,15 @@
 #pragma once
 
-#ifdef USE_FEAIO
 #include "fea_io/mesh/MeshInfoStructs.h"
 #include "mesh/Defines.h"
 #include "mesh/Mesh.h"
 #include "mesh/common/ElementTypes.h"
-#endif
 
 #include <string>
 #include <vector>
 
 namespace mesh
 {
-#ifdef USE_FEAIO
 
 /// @brief A helper that creates a fea_io::MeshInfo object from information about the mesh.
 ///
@@ -33,5 +30,4 @@ fea_io::PartitionInfo<GlobalIndex, LocalIndex, FloatType> get_fea_io_partition_i
   const Mesh& mesh,
   const fea_io::MeshInfo<GlobalIndex, LocalIndex, FloatType>& mesh_info);
 
-#endif
 }

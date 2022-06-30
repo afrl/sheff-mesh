@@ -1,186 +1,54 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.17)
 
 cmake_policy(SET CMP0048 NEW)
 project(MESH VERSION 1.0.0 LANGUAGES CXX)
 
+#########################################
+# Variables that configure this project #
+#########################################
+
+set(PUBLIC_MODULE_NAME "Mesh")
+set(MAIN_COMPONENT "mesh")
+
+set(SHEFF_FIRST_DEPENDS "FeaIo::fea_io;SimpleMath::simple_math")
+set(SHEFF_SECOND_DEPENDS "SecondPartyMetis::second_party_metis;SecondPartyMesh::second_party_mesh")
+
+# Third-party dependencies (length of all three lists must match).
+# Since we cannot assume certain pattern for names, using multiple lists gives
+# the flexibility needed for various packages.
+set(SHEFF_THIRD_DEPENDS_name "json;rapidjson")
+set(SHEFF_THIRD_DEPENDS_package "nlohmann_json;RapidJSON")
+set(SHEFF_THIRD_DEPENDS_target "nlohmann_json::nlohmann_json;rapidjson")
+
+# External dependencies need to be found from the system (such as MPI)
+# toggle_var indicates the variable name that controls whether the package is included.
+# The entry can be "1" for packages that are always included.
+set(SHEFF_EXTERNAL_DEPENDS_toggle_var "")
+# The name of the package in the call find_package(<package name>)
+set(SHEFF_EXTERNAL_DEPENDS_package "")
+# Any components to get from the package (use comma delimited for multiple components in the same package)
+set(SHEFF_EXTERNAL_DEPENDS_components "")
+# The targets to link from the package (use comma delimited for multiple targets in the same package)
+set(SHEFF_EXTERNAL_DEPENDS_targets "")
+# Extra compile definitions if the package is included
+set(SHEFF_EXTERNAL_DEPENDS_compile_defs "")
+
+macro(SPECIAL_TARGET_COMMANDS)
+  
+endmacro()
+
 # Options
-option(SHEFF_BuildTests "Build the unit tests." OFF)
-option(SHEFF_BuildPython "Build Python SWIG module" OFF)
-option(SHEFF_USE_FEAIO "Indicates if the build will support the fea_io file format, requiring the library." ON)
+option(SHEFF_BuildTests        "Build the unit tests." OFF)
+option(SHEFF_BuildPython       "Build Python SWIG module" OFF)
+option(SHEFF_BuildFortran      "Build Fortran SWIG module" OFF)
 
 # For debugging, print generator, compiler, and options
 message(STATUS "Gen: ${CMAKE_GENERATOR}, CXX: ${CMAKE_CXX_COMPILER_ID}, Mode: ${CMAKE_BUILD_TYPE}")
-message(STATUS "Tests: ${SHEFF_BuildTests}, FEAIO: ${SHEFF_USE_FEAIO}")
+message(STATUS "Python Bindings: ${SHEFF_BuildPython}, Fortran Bindings: ${SHEFF_BuildPython}")
+message(STATUS "Tests: ${SHEFF_BuildTests}")
 
-# Add cmake dir to module path
-list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
+message(STATUS "SHEFF_FIRST_DEPENDS: ${SHEFF_FIRST_DEPENDS}")
+message(STATUS "SHEFF_SECOND_DEPENDS: ${SHEFF_SECOND_DEPENDS}")
+message(STATUS "SHEFF_THIRD_DEPENDS_name: ${SHEFF_THIRD_DEPENDS_name}")
 
-##################
-# Checking input #
-##################
-
-include(${PROJECT_SOURCE_DIR}/cmake/CommonInputChecks.cmake)
-
-########################
-# Declare dependencies #
-########################
-
-if(NOT RapidJSON_FOUND)
-    message(STATUS "SecondPartyMath did not already exist, finding package.")
-    find_package(RapidJSON 1.1.0 CONFIG REQUIRED NO_CMAKE_SYSTEM_PACKAGE_REGISTRY HINTS
-                 "${PROJECT_SOURCE_DIR}/../../third_party/rapidjson/build" 
-                 "${PROJECT_SOURCE_DIR}/../../third_party/rapidjson_install_dir")
-endif()
-if(NOT TARGET Utility::Utility)
-    message(STATUS "Utility did not already exist, finding package.")
-    find_package(Utility CONFIG REQUIRED NO_CMAKE_SYSTEM_PACKAGE_REGISTRY HINTS
-                 "${PROJECT_SOURCE_DIR}/../../first_party/utility/build")
-endif()
-if(NOT TARGET SecondPartyMesh::SecondPartyMesh)
-    message(STATUS "SecondPartyMesh did not already exist, finding package.")
-    find_package(SecondPartyMesh CONFIG REQUIRED NO_CMAKE_SYSTEM_PACKAGE_REGISTRY HINTS
-                 "${PROJECT_SOURCE_DIR}/../../second_party/second_party_mesh/build")
-endif()
-if(NOT TARGET SecondPartyMetis::SecondPartyMetis)
-    message(STATUS "SecondPartyMetis did not already exist, finding package.")
-    find_package(SecondPartyMetis CONFIG REQUIRED NO_CMAKE_SYSTEM_PACKAGE_REGISTRY HINTS
-                 "${PROJECT_SOURCE_DIR}/../../second_party/second_party_metis/build")
-endif()
-if(NOT TARGET SimpleMath::SimpleMath)
-    message(STATUS "SimpleMath did not already exist, finding package.")
-    find_package(SimpleMath CONFIG REQUIRED NO_CMAKE_SYSTEM_PACKAGE_REGISTRY HINTS
-                 "${PROJECT_SOURCE_DIR}/../../first_party/simple_math/build")
-endif()
-
-if(SHEFF_USE_FEAIO)
-    if(NOT TARGET FeaIo::FeaIo)
-        message(STATUS "FeaIo did not already exist, finding package.")
-        find_package(FeaIo CONFIG REQUIRED NO_CMAKE_SYSTEM_PACKAGE_REGISTRY HINTS
-                     "${PROJECT_SOURCE_DIR}/../../first_party/fea_io/build")
-    endif()
-endif()
-
-######################################
-# Setting up MESH_INCLUDE target #
-######################################
-
-# Set the variables for MESH
-set( MESH_INCLUDE     ${PROJECT_SOURCE_DIR}/include )
-set( MESH_SRC         ${PROJECT_SOURCE_DIR}/source )
-
-file( GLOB_RECURSE MESH_HEADER_LIST "${MESH_INCLUDE}/*.h" )
-file( GLOB_RECURSE MESH_SOURCE_LIST "${MESH_SRC}/*.h" "${MESH_SRC}/*.cpp" )
-	
-# Create header-only target
-add_library(mesh STATIC)
-# Add the header includes and headers to the library
-target_include_directories(mesh PUBLIC
-    $<BUILD_INTERFACE:${MESH_INCLUDE}>
-    $<INSTALL_INTERFACE:include>)
-# Add headers in the include folder as PUBLIC so downstream
-# targets have access to them
-target_sources(mesh PUBLIC ${MESH_HEADER_LIST})
-# Add headers and sources in the source folder as PRIVATE as they
-# will not be needed downstream
-target_sources(mesh PRIVATE ${MESH_SOURCE_LIST})
-# Add an alias so that a library can be used inside the build tree, eg when testing
-add_library(Mesh::Mesh ALIAS mesh)
-# Add C++ 14 flag
-target_compile_features(mesh PUBLIC cxx_std_14)
-set_target_properties(mesh PROPERTIES FOLDER "sheff")
-# Link dependencies
-target_include_directories(mesh PUBLIC ${RapidJSON_INCLUDE_DIR})
-target_link_libraries(mesh PUBLIC SecondPartyMesh::SecondPartyMesh)
-target_link_libraries(mesh PUBLIC SecondPartyMetis::SecondPartyMetis)
-target_link_libraries(mesh PUBLIC SimpleMath::SimpleMath)
-
-if(SHEFF_USE_FEAIO)
-	target_compile_definitions(mesh PUBLIC USE_FEAIO)
-	target_link_libraries(mesh PUBLIC FeaIo::FeaIo)
-endif()
-
-###########################
-# Assigning source groups #
-###########################
-
-include("$ENV{SHEFF_TOOLS}/cmake/IncludeSHEFF.cmake")
-register_sources_sheff("mesh"
-                       "${MESH_HEADER_LIST}"
-                       "${MESH_SOURCE_LIST}")
-assign_source_groups_sheff()
-
-#################################
-# Add unit test targets #
-#################################
-    
-# Build tests
-if(SHEFF_BuildTests)
-    include(CTest)
-    enable_testing()
-    add_subdirectory(unit_tests)
-endif()
-
-#######################
-# Add Python wrappers #
-#######################
-
-if(SHEFF_BuildPython)
-    find_package(SWIG REQUIRED)
-    include(${SWIG_USE_FILE})
-
-    add_subdirectory(bindings/python)
-endif()
-
-################
-# Installation #
-################
-
-include(GNUInstallDirs)
-set(INSTALL_CONFIGDIR ${CMAKE_INSTALL_LIBDIR}/cmake/Mesh)
-
-# Install the mesh target (library and headers)
-install(
-    TARGETS mesh
-    EXPORT MeshTargets
-    LIBRARY DESTINATION lib
-    ARCHIVE DESTINATION lib
-    INCLUDES DESTINATION include
-)
-# This is required so that the exported target has the name Mesh and not mesh
-set_target_properties(mesh PROPERTIES EXPORT_NAME Mesh)
-
-# Create a ConfigVersion.cmake file
-include(CMakePackageConfigHelpers)
-write_basic_package_version_file(
-    ${CMAKE_CURRENT_BINARY_DIR}/MeshConfigVersion.cmake
-    VERSION ${PROJECT_VERSION}
-    COMPATIBILITY SameMajorVersion
-)
-
-# Create the package config file for find_package(Mesh)
-configure_package_config_file(
-    ${CMAKE_CURRENT_LIST_DIR}/cmake/MeshConfig.cmake.in
-    ${CMAKE_CURRENT_BINARY_DIR}/MeshConfig.cmake
-    INSTALL_DESTINATION ${INSTALL_CONFIGDIR}
-)
-
-# Install the config and config version files
-# Note: if you write custom find modules, add them here
-# Refer to https://github.com/pabloariasal/modern-cmake-sample/blob/cfda7b51ff915409fd61d4f2e75b63032bedb182/libjsonutils/CMakeLists.txt
-install(FILES
-    ${CMAKE_CURRENT_BINARY_DIR}/MeshConfig.cmake
-    ${CMAKE_CURRENT_BINARY_DIR}/MeshConfigVersion.cmake
-	  ${CMAKE_CURRENT_BINARY_DIR}/MeshTargets.cmake
-    DESTINATION ${INSTALL_CONFIGDIR}
-)
-
-###########
-# Exports #
-###########
-
-# Export just the mesh target (not tests, etc.)
-export(
-    TARGETS mesh
-    FILE ${CMAKE_CURRENT_BINARY_DIR}/MeshTargets.cmake
-    NAMESPACE Mesh::
-)
+include("$ENV{SHEFF_TOOLS}/cmake/SHEFFModuleMain.cmake")

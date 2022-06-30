@@ -1,7 +1,5 @@
 #include "mesh/external_interfaces/fea_io/IO.h"
 
-#ifdef USE_FEAIO
-
 #include "fea_io/common/Filesystem.h"
 #include "fea_io/data/DataWriter.h"
 #include "fea_io/group/GroupReader.h"
@@ -803,5 +801,3 @@ void write_fea_io(const Mesh& mesh,
     }
 }
 }
-
-#endif

@@ -34,13 +34,13 @@ def build():
     os.system("doxyrest -c doxyrest-config.lua")
 
     shutil.copyfile('conf.py', './rst_dir/conf.py')
-    os.system("sphinx-build -b html rst_dir html_dir")
+    os.system("sphinx-build -b html rst_dir sphinx_html")
 
 def view():
-    if not os.path.exists("./html_dir/index.html"):
+    if not os.path.exists("./sphinx_html/index.html"):
         raise Exception("The documentation was not build yet for this module.")
 
-    os.chdir('./html_dir')
+    os.chdir('./sphinx_html')
     os.system("index.html")
 
 parser = argparse.ArgumentParser(description='A utility for building documentation for BSAM++.')

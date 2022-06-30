@@ -3,10 +3,7 @@
 #include "mesh/Defines.h"
 #include "mesh/common/QuaternionContainer.h"
 #include "mesh/common/ElementTypes.h"
-
-#ifdef USE_FEAIO
 #include "fea_io/mesh/MeshEnums.h"
-#endif
 
 namespace mesh
 {

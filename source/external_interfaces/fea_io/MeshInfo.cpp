@@ -10,7 +10,6 @@
 
 namespace mesh
 {
-#ifdef USE_FEAIO
 
 fea_io::MeshInfo<GlobalIndex, LocalIndex, FloatType> get_fea_io_mesh_info(
   const Mesh& mesh,
@@ -155,5 +154,4 @@ fea_io::PartitionInfo<GlobalIndex, LocalIndex, FloatType> get_fea_io_partition_i
     return partition_info;
 }
 
-#endif
 }

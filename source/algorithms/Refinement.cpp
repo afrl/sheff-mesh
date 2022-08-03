@@ -21,46 +21,65 @@ struct ElementRefinementEntry
     std::vector<LocalIndex> new_elements;
 };
 
-inline std::vector<LocalIndex> create_new_nodes(
+/// @brief A helper function add new nodes on edges, on faces, or inside an element to support
+/// refining a mesh.
+///
+/// The partition id given to new nodes is based on the partition element.
+///
+/// @param element - parent element for which new nodes need to be added for a refinement.
+///        The same new nodes will likely be requested for a neighboring element if one shares the
+///        same face/edge, but only unique nodes will be created.
+/// @param avg_nodes_for_new_nodes - for each new node needed, this holds a list of indices
+///        corresponding to the element's connectivity for which the average coordinate describes
+///        the location of the new node. To place a node along the midpoint of an line segment,
+///        simply indicate the nodes at the beginning and end of the segment.  To place a node
+///        in the middle of a face, indicate the corner nodes of the face.
+/// @param mesh - the mesh object to which to add new nodes.
+/// @param avg_nodes_hash_to_new_node_map - for each set of nodes for which the average coordinate
+///        describes a new node this maps the hash to a unique node, preventing duplicate nodes
+///        from being place along shared edges and faces.
+/// @return Connectivity for the new element with the extra nodes appended to the end.
+std::vector<LocalIndex> create_new_nodes(
   const ElementConstAccessor& element,
-  const std::vector<std::vector<ConnIndex>>& split_nodes,
+  const std::vector<std::vector<ConnIndex>>& avg_nodes_for_new_nodes,
   Mesh& mesh,
-  std::map<std::size_t, RefinementEntry>& edge_face_hash_to_new_node_map)
+  std::map<std::size_t, RefinementEntry>& avg_nodes_hash_to_new_node_map)
 {
-    // Find or create new midside nodes (4-9 in the figure above)
-    std::vector<mesh::LocalIndex> c =
+    std::vector<mesh::LocalIndex> new_connectivity =
       std::vector<mesh::LocalIndex>(element.connectivity().begin(), element.connectivity().end());
-    std::vector<mesh::LocalIndex> split_conn;
-    for (auto& n : split_nodes)
+    std::vector<mesh::LocalIndex> sorted_node_indices;
+    for (auto& avg_nodes_for_new_node : avg_nodes_for_new_nodes)
     {
-        split_conn.resize(n.size());
-        for (auto i : utility::range(n.size()))
+        sorted_node_indices.resize(avg_nodes_for_new_node.size());
+        for (auto i : utility::range(avg_nodes_for_new_node.size()))
         {
-            split_conn[i] = c[n[i]];
+            sorted_node_indices[i] = new_connectivity[avg_nodes_for_new_node[i]];
         }
-        std::sort(split_conn.begin(), split_conn.end());
+        std::sort(sorted_node_indices.begin(), sorted_node_indices.end());
 
-        const auto segment_hash = utility::hash(split_conn);
-        auto find_iter          = edge_face_hash_to_new_node_map.find(segment_hash);
-        if (find_iter == edge_face_hash_to_new_node_map.end())
-        { // If it doesn't exist, add a midside node
+        const auto segment_hash = utility::hash(sorted_node_indices);
+        auto find_iter          = avg_nodes_hash_to_new_node_map.find(segment_hash);
+        if (find_iter == avg_nodes_hash_to_new_node_map.end())
+        { // If it doesn't exist, add a node
             Vector3D new_coord(0, 0, 0);
-            for (auto i : utility::range(n.size()))
+            for (auto i : utility::range(avg_nodes_for_new_node.size()))
             {
-                new_coord += mesh.nodes()[c[n[i]]].coord();
+                new_coord += mesh.nodes()[new_connectivity[avg_nodes_for_new_node[i]]].coord();
             }
-            new_coord = new_coord / (double)n.size();
+            new_coord = new_coord / (double)avg_nodes_for_new_node.size();
             mesh.nodes().add(simple_math::to_point(new_coord));
+            mesh.nodes().back().parent_partition() = element.parent_partition();
 
-            edge_face_hash_to_new_node_map[segment_hash] = { split_conn, mesh.nodes().size() - 1 };
-            c.push_back(mesh.nodes().size() - 1);
+            avg_nodes_hash_to_new_node_map[segment_hash] = { sorted_node_indices,
+                                                             mesh.nodes().size() - 1 };
+            new_connectivity.push_back(mesh.nodes().size() - 1);
         }
         else
         {
-            c.push_back(find_iter->second.new_node);
+            new_connectivity.push_back(find_iter->second.new_node);
         }
     }
-    return c;
+    return new_connectivity;
 }
 
 void refine_linear_tetrahedron(
@@ -92,7 +111,7 @@ void refine_linear_tetrahedron(
         { 0, 2 }, // 5
         { 0, 3 }, // 6
         { 1, 2 }, // 7
-        { 1 ,3 }, // 8
+        { 1, 3 }, // 8
         { 2, 3 }, // 9
     };
 
@@ -566,8 +585,12 @@ void refine_uniform(Mesh& mesh)
         }
         for (auto& refined_edge : edge_face_hash_to_new_node_map)
         {
-            if (is_node_in_group[refined_edge.second.orig_nodes[0]] &&
-                is_node_in_group[refined_edge.second.orig_nodes[1]])
+            bool all_orig_nodes_in_group = true;
+            for (auto n : refined_edge.second.orig_nodes)
+            {
+                all_orig_nodes_in_group &= is_node_in_group[n];
+            }
+            if (all_orig_nodes_in_group)
             {
                 group.node_indices.push_back(refined_edge.second.new_node);
             }

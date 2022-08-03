@@ -43,10 +43,17 @@ class NodeContainer
     NodeIterator end();
     /// Enables ranged-based loop over nodes (const).
     NodeConstIterator end() const;
+
     /// Access a particular node by local index
     NodeAccessor operator[](LocalIndex i);
     /// Const access a particular node by local index
     NodeConstAccessor operator[](LocalIndex i) const;
+
+    /// Access the last node
+    NodeAccessor back();
+    /// Const access the last node
+    NodeConstAccessor back() const;
+
     /// Returns the size of the container, which is the number of nodes on this partition.
     LocalIndex size() const;
 

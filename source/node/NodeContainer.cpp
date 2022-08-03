@@ -44,6 +44,16 @@ NodeConstAccessor NodeContainer::operator[](LocalIndex i) const
     return NodeConstAccessor(*this, i);
 }
 
+NodeAccessor NodeContainer::back()
+{
+    return NodeAccessor(*this, global_indices_.size() - 1);
+}
+
+NodeConstAccessor NodeContainer::back() const
+{
+    return NodeConstAccessor(*this, global_indices_.size() - 1);
+}
+
 LocalIndex NodeContainer::size() const
 {
     return static_cast<LocalIndex>(global_indices_.size());

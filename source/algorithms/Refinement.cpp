@@ -142,7 +142,8 @@ void refine_linear_tetrahedron(
     for (auto i : utility::range(mesh.elements().size() - 7, mesh.elements().size()))
     {
         mesh.elements()[i].local_coord_sys().copy(element.local_coord_sys());
-        mesh.elements()[i].component_id() = element.component_id();
+        mesh.elements()[i].component_id()     = element.component_id();
+        mesh.elements()[i].parent_partition() = element.parent_partition();
         new_elements.push_back(i);
     }
     element_refinements.push_back({ element.local_index(), new_elements });
@@ -235,7 +236,8 @@ void refine_quadratic_tetrahedron(
     for (auto i : utility::range(mesh.elements().size() - 7, mesh.elements().size()))
     {
         mesh.elements()[i].local_coord_sys().copy(element.local_coord_sys());
-        mesh.elements()[i].component_id() = element.component_id();
+        mesh.elements()[i].component_id()     = element.component_id();
+        mesh.elements()[i].parent_partition() = element.parent_partition();
         new_elements.push_back(i);
     }
     element_refinements.push_back({ element.local_index(), new_elements });
@@ -318,7 +320,8 @@ void refine_linear_hexahedron(
     for (auto i : utility::range(mesh.elements().size() - 7, mesh.elements().size()))
     {
         mesh.elements()[i].local_coord_sys().copy(element.local_coord_sys());
-        mesh.elements()[i].component_id() = element.component_id();
+        mesh.elements()[i].component_id()     = element.component_id();
+        mesh.elements()[i].parent_partition() = element.parent_partition();
         new_elements.push_back(i);
     }
     element_refinements.push_back({ element.local_index(), new_elements });
@@ -525,7 +528,8 @@ void refine_quadratic_hexahedron(
     for (auto i : utility::range(mesh.elements().size() - 7, mesh.elements().size()))
     {
         mesh.elements()[i].local_coord_sys().copy(element.local_coord_sys());
-        mesh.elements()[i].component_id() = element.component_id();
+        mesh.elements()[i].component_id()     = element.component_id();
+        mesh.elements()[i].parent_partition() = element.parent_partition();
         new_elements.push_back(i);
     }
     element_refinements.push_back({ element.local_index(), new_elements });

@@ -17,7 +17,7 @@ void ElementAdjacencyList::update(const Mesh& mesh)
 {
     NodeToElementMap node_to_element_map;
     node_to_element_map.update(mesh);
-    update(mesh, node_to_element_map);
+    this->update(mesh, node_to_element_map);
 }
 
 void ElementAdjacencyList::update(const Mesh& mesh, const NodeToElementMap& node_to_element_map)
@@ -37,6 +37,9 @@ void ElementAdjacencyList::update(const Mesh& mesh, const NodeToElementMap& node
     using RelationTuple = std::tuple<mesh::LocalIndex, mesh::LocalIndex, int8_t>;
     // This will temporarily hold all element adjacency relations discovered
     std::vector<RelationTuple> relations;
+    // Completely a heuristic guess at how big relations need to be, but it avoids
+    // most memory allocations
+    relations.reserve(50 * mesh.elements().size());
 
     // Note: consider also including the local face/edge index so that if you sort by it, you know
     // what face a given element is adjacent through very efficiently
@@ -45,6 +48,9 @@ void ElementAdjacencyList::update(const Mesh& mesh, const NodeToElementMap& node
 
     // Tracks the hash of all element pairs that have been added to 'relations'
     std::unordered_set<std::size_t> adjacent_element_pairs_added;
+    // Completely a heuristic guess at how big relations need to be, but it avoids
+    // most memory allocations
+    adjacent_element_pairs_added.reserve(50 * mesh.elements().size());
 
     // Loop over the elements and find all elements sharing the same face
     {
@@ -328,5 +334,15 @@ inline void ElementAdjacencyList::clear_skip_flags()
     {
         skip_in_search_[i] = false;
     }
+}
+bool ElementAdjacencyList::operator==(const ElementAdjacencyList& other) const
+{
+    // Note: we will skip checking that skip_in_search_ is the same, since that has nothing to do
+    // with the adjacency list, it just enhances the searches.
+    return adjacent_element_list_ == other.adjacent_element_list_ &&
+           element_offsets_ == other.element_offsets_ &&
+           n_face_adjacent_elements_ == other.n_face_adjacent_elements_ &&
+           n_edge_adjacent_elements_ == other.n_edge_adjacent_elements_ &&
+           mesh_ptr_ == other.mesh_ptr_;
 }
 }

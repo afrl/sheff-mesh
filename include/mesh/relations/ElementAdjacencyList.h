@@ -74,6 +74,9 @@ class ElementAdjacencyList
                (mesh_ptr_ && mesh_ptr_->elements().size() == 0);
     }
 
+    /// @brief Evaluates if two adjacency lists are the same (excluding the skip flags)
+    bool operator==(const ElementAdjacencyList& other) const;
+
   private:
     /// The unraveled list of adjacent elements for every element in the mesh.  This may be sorted
     /// due to the nature of how it is created but do not count on the order.

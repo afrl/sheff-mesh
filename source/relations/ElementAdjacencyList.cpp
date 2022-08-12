@@ -31,27 +31,26 @@ void ElementAdjacencyList::update(const Mesh& mesh, const NodeToElementMap& node
 
     // Within this functino, this type defines some adjacency relationship between two
     // elements in the form:
-    // < element_1 local index, element #2 local index, int indicating type of adjacency >
+    // < adjacent element local index, int indicating type of adjacency >
     // Note: for the type int, 0 corresponds to face adjacent, 1 corresponds to edge adjacent,
     //       and 2 corresponds to node adjacent.
-    using RelationTuple = std::tuple<mesh::LocalIndex, mesh::LocalIndex, int8_t>;
+    using RelationTuple = std::tuple<mesh::LocalIndex, int8_t>;
     // This will temporarily hold all element adjacency relations discovered
-    std::vector<RelationTuple> relations;
+    std::vector<std::vector<std::tuple<mesh::LocalIndex, int8_t>>> all_adjacency_relations;
     // Completely a heuristic guess at how big relations need to be, but it avoids
     // most memory allocations
-    relations.reserve(50 * mesh.elements().size());
+    all_adjacency_relations.resize(mesh.elements().size());
+    for (auto& r : all_adjacency_relations)
+    {
+        r.reserve(20);
+    }
 
     // Note: consider also including the local face/edge index so that if you sort by it, you know
     // what face a given element is adjacent through very efficiently
     // A list of local adjacency indices would need to be kept as well (indicating the
     // face/edge/node in the element through which an adjacent element connects to a given element)
 
-    // Tracks the hash of all element pairs that have been added to 'relations'
-    std::unordered_set<std::size_t> adjacent_element_pairs_added;
-    // Completely a heuristic guess at how big relations need to be, but it avoids
-    // most memory allocations
-    adjacent_element_pairs_added.reserve(50 * mesh.elements().size());
-
+    std::cout << " - ElementAdjacencyList::update: creating face adjacencies" << std::endl;
     // Loop over the elements and find all elements sharing the same face
     {
         // A map from face hash to element ids
@@ -93,18 +92,14 @@ void ElementAdjacencyList::update(const Mesh& mesh, const NodeToElementMap& node
                 map_pair.second[1] != std::numeric_limits<mesh::LocalIndex>::max())
             {
                 // Add relation for the first element -> second element
-                adjacent_element_pairs_added.insert(
-                  utility::hash(map_pair.second[0], map_pair.second[1]));
-                relations.push_back({ map_pair.second[0], map_pair.second[1], 0 });
-
+                all_adjacency_relations[map_pair.second[0]].push_back({ map_pair.second[1], 0 });
                 // Add relation for the second element -> first element
-                adjacent_element_pairs_added.insert(
-                  utility::hash(map_pair.second[1], map_pair.second[0]));
-                relations.push_back({ map_pair.second[1], map_pair.second[0], 0 });
+                all_adjacency_relations[map_pair.second[1]].push_back({ map_pair.second[0], 0 });
             }
         }
     }
 
+    std::cout << " - ElementAdjacencyList::update: creating edge adjacencies" << std::endl;
     // Loop over the elements and find all elements sharing the same edge
     {
         // A map from edge hash to element ids
@@ -149,31 +144,18 @@ void ElementAdjacencyList::update(const Mesh& mesh, const NodeToElementMap& node
             {
                 for (auto j : utility::range(i + 1, map_pair.second.size()))
                 {
-                    // Add relation for the element i -> element j (if there was already an
-                    // adjacency relation due to them sharing a face)
-                    if (adjacent_element_pairs_added.find(
-                          utility::hash(map_pair.second[i], map_pair.second[j])) ==
-                        adjacent_element_pairs_added.end())
-                    {
-                        adjacent_element_pairs_added.insert(
-                          utility::hash(map_pair.second[i], map_pair.second[j]));
-                        relations.push_back({ map_pair.second[i], map_pair.second[j], 1 });
-                    }
-                    // Add relation for the element j -> element i (if there was already an
-                    // adjacency relation due to them sharing a face)
-                    if (adjacent_element_pairs_added.find(
-                          utility::hash(map_pair.second[j], map_pair.second[i])) ==
-                        adjacent_element_pairs_added.end())
-                    {
-                        adjacent_element_pairs_added.insert(
-                          utility::hash(map_pair.second[j], map_pair.second[i]));
-                        relations.push_back({ map_pair.second[j], map_pair.second[i], 1 });
-                    }
+                    // Add relation for the element i -> element j
+                    all_adjacency_relations[map_pair.second[i]].push_back(
+                      { map_pair.second[j], 1 });
+                    // Add relation for the element j -> element i
+                    all_adjacency_relations[map_pair.second[j]].push_back(
+                      { map_pair.second[i], 1 });
                 }
             }
         }
     }
 
+    std::cout << " - ElementAdjacencyList::update: creating node adjacencies" << std::endl;
     // Loop over nodes and use the node->element map to find elements that adjacent via a node
     // that do not share an edge or face (which have already been discovered)
     // Add relations for node adjacency
@@ -187,33 +169,28 @@ void ElementAdjacencyList::update(const Mesh& mesh, const NodeToElementMap& node
             {
                 if (i != j)
                 {
-                    if (adjacent_element_pairs_added.find(utility::hash(i, j)) ==
-                        adjacent_element_pairs_added.end())
-                    {
-                        // Note: no need to add the relation to adjacent_element_pairs_added,
-                        // since this is the last type and elements will not appear multiple
-                        // times for the same node in the node->element map.
-                        relations.push_back({ i, j, 2 });
-                    }
+                    all_adjacency_relations[i].push_back({ j, 2 });
                 }
             }
         }
     }
-    adjacent_element_pairs_added.clear();
 
-    // Sort relations by 1) the first element, 2) the second element, 3) the relation type (an int
-    // being one of: 0, 1, 2)
-    std::sort(
-      relations.begin(),
-      relations.end(),
-      [](const RelationTuple& lhs, const RelationTuple& rhs) -> bool
-      {
-          return (std::get<0>(lhs) < std::get<0>(rhs)) ||
-                 (std::get<0>(lhs) == std::get<0>(rhs) && std::get<2>(lhs) < std::get<2>(rhs)) ||
-                 (std::get<0>(lhs) == std::get<0>(rhs) && std::get<2>(lhs) == std::get<2>(rhs) &&
-                  std::get<1>(lhs) < std::get<1>(rhs));
-      });
+    std::cout << " - ElementAdjacencyList::update: sorting adjacencies" << std::endl;
+    // Sort the adjacency relations for each element by 1) relation type (an int being one of: 0, 1,
+    // or 2), and 2) by the adjacent element's local index
+    for (auto& r : all_adjacency_relations)
+    {
+        std::sort(r.begin(),
+                  r.end(),
+                  [](const RelationTuple& lhs, const RelationTuple& rhs) -> bool
+                  {
+                      return (std::get<1>(lhs) < std::get<1>(rhs)) ||
+                             (std::get<1>(lhs) == std::get<1>(rhs) &&
+                              std::get<0>(lhs) < std::get<0>(rhs));
+                  });
+    }
 
+    std::cout << " - ElementAdjacencyList::update: allocating memory" << std::endl;
     adjacent_element_list_.clear();
     element_offsets_.clear();
     element_offsets_.resize(mesh.elements().size() + 1, 0);
@@ -224,47 +201,41 @@ void ElementAdjacencyList::update(const Mesh& mesh, const NodeToElementMap& node
     skip_in_search_.clear();
     skip_in_search_.resize(mesh.elements().size(), false);
 
-    mesh::LocalIndex curr_element_index  = 0;
-    int8_t curr_n_face_adjacent_elements = 0;
-    int8_t curr_n_edge_adjacent_elements = 0;
+    std::cout << " - ElementAdjacencyList::update: creating adjacency list" << std::endl;
     // Note: This algorithm was modified to ensure duplicate relations for element pairs are not
     // added, but I will leave the code relating to `curr_adjacent_elements` that makes sure we
     // do not add duplicate relations in this loop in case there is a weird case like an element
     // contains the same node more than once in its connectivity list.
-    std::unordered_set<mesh::LocalIndex> curr_adjacent_elements;
-    for (auto& relation : relations)
+    for (auto i : utility::indices(all_adjacency_relations))
     {
-        // Ensures entries exist for any elements that have no adjacencies
-        while (std::get<0>(relation) != curr_element_index)
+        auto& element_adjacency_relations = all_adjacency_relations[i];
+        int8_t curr_n_face_adjacent_elements = 0;
+        int8_t curr_n_edge_adjacent_elements = 0;
+        std::unordered_set<mesh::LocalIndex> curr_adjacent_elements;
+
+        for (auto& relation : element_adjacency_relations)
         {
-            n_face_adjacent_elements_[curr_element_index] = curr_n_face_adjacent_elements;
-            n_edge_adjacent_elements_[curr_element_index] = curr_n_edge_adjacent_elements;
-            element_offsets_[curr_element_index + 1]      = adjacent_element_list_.size();
-
-            curr_element_index            = std::get<0>(relation);
-            curr_n_face_adjacent_elements = 0;
-            curr_n_edge_adjacent_elements = 0;
-            curr_adjacent_elements.clear();
-        }
-
-        if (curr_adjacent_elements.count(std::get<1>(relation)) == 0)
-        {
-            if (std::get<2>(relation) == 0)
+            if (curr_adjacent_elements.count(std::get<0>(relation)) == 0)
             {
-                curr_n_face_adjacent_elements++;
-            }
-            else if (std::get<2>(relation) == 1)
-            {
-                curr_n_edge_adjacent_elements++;
-            }
+                if (std::get<1>(relation) == 0)
+                {
+                    curr_n_face_adjacent_elements++;
+                }
+                else if (std::get<1>(relation) == 1)
+                {
+                    curr_n_edge_adjacent_elements++;
+                }
 
-            adjacent_element_list_.push_back(std::get<1>(relation));
-            curr_adjacent_elements.insert(std::get<1>(relation));
+                adjacent_element_list_.push_back(std::get<0>(relation));
+                curr_adjacent_elements.insert(std::get<0>(relation));
+            }
         }
+        
+        n_face_adjacent_elements_[i] = curr_n_face_adjacent_elements;
+        n_edge_adjacent_elements_[i] = curr_n_edge_adjacent_elements;
+        element_offsets_[i + 1]      = adjacent_element_list_.size();
     }
-    n_face_adjacent_elements_[curr_element_index] = curr_n_face_adjacent_elements;
-    n_edge_adjacent_elements_[curr_element_index] = curr_n_edge_adjacent_elements;
-    element_offsets_[curr_element_index + 1]      = adjacent_element_list_.size();
+    std::cout << " - ElementAdjacencyList::update: complete" << std::endl;
 }
 
 std::vector<LocalIndex> ElementAdjacencyList::get_adjacent_element_indices_with_skips(

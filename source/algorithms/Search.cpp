@@ -78,6 +78,24 @@ std::pair<Point, Point> find_extent(const std::vector<std::pair<Point, Point>>& 
     return { neg_point, pos_point };
 }
 
+std::vector<LocalIndex> find_nodes_in_box(const Mesh& mesh, const Point& min, const Point& max)
+{
+    std::vector<LocalIndex> node_indices;
+    for (auto n : mesh.nodes())
+    {
+        bool inside = true;
+        for (auto i : utility::range(3))
+        {
+            inside &= n.point(i) >= min[i] && n.point(i) <= max[i];
+        }
+        if (inside)
+        {
+            node_indices.push_back(n.local_index());
+        }
+    }
+    return node_indices;
+}
+
 std::vector<LocalIndex> find_elements_in_box(const Mesh& mesh, const Point& min, const Point& max)
 {
     std::vector<LocalIndex> element_indices;

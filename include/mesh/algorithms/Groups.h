@@ -28,6 +28,13 @@ void add_to_group(Mesh& mesh, const std::string group_name, NodeSelection select
 ///        group to exist before this call)
 void add_to_group(Mesh& mesh, const std::string group_name, ElementSelection selection);
 
+/// @brief Adds the list of nodes to a group (ensuring no duplicates)
+/// @param group_name - the name of the group to add to (does not require the group to exist before
+///        this call)
+void add_nodes_to_group(Mesh& mesh,
+                        const std::string group_name,
+                        std::vector<mesh::LocalIndex>& local_ids_to_add);
+
 /// @brief Adds the list of elements to a group (ensuring no duplicates)
 /// @param group_name - the name of the group to add to (does not require the group to exist before
 ///        this call)

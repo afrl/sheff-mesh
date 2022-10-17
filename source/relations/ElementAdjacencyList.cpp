@@ -281,19 +281,40 @@ ElementAdjacencyList::get_adjacent_element_indices(const LocalIndex element_inde
     switch (adjacency_type)
     {
         case ElementAdjacencyType::FaceEdgeNode:
-            return utility::Slice<const mesh::LocalIndex, mesh::ConnIndex>(
-              &adjacent_element_list_[element_offsets_[element_index]],
-              static_cast<mesh::ConnIndex>(element_offsets_[element_index + 1] -
-                                           element_offsets_[element_index]));
+            if (!adjacent_element_list_.empty())
+            {
+                return utility::Slice<const mesh::LocalIndex, mesh::ConnIndex>(
+                  &adjacent_element_list_[element_offsets_[element_index]],
+                  static_cast<mesh::ConnIndex>(element_offsets_[element_index + 1] -
+                                               element_offsets_[element_index]));
+            }
+            else
+            {
+                return utility::Slice<const mesh::LocalIndex, mesh::ConnIndex>(nullptr, 0);
+            }
         case ElementAdjacencyType::FaceEdge:
-            return utility::Slice<const mesh::LocalIndex, mesh::ConnIndex>(
-              &adjacent_element_list_[element_offsets_[element_index]],
-              static_cast<mesh::ConnIndex>(n_face_adjacent_elements_[element_index] +
-                                           n_edge_adjacent_elements_[element_index]));
+            if (!adjacent_element_list_.empty())
+            {
+                return utility::Slice<const mesh::LocalIndex, mesh::ConnIndex>(
+                  &adjacent_element_list_[element_offsets_[element_index]],
+                  static_cast<mesh::ConnIndex>(n_face_adjacent_elements_[element_index] +
+                                               n_edge_adjacent_elements_[element_index]));
+            }
+            else
+            {
+                return utility::Slice<const mesh::LocalIndex, mesh::ConnIndex>(nullptr, 0);
+            }
         case ElementAdjacencyType::Face:
-            return utility::Slice<const mesh::LocalIndex, mesh::ConnIndex>(
-              &adjacent_element_list_[element_offsets_[element_index]],
-              static_cast<mesh::ConnIndex>(n_face_adjacent_elements_[element_index]));
+            if (!adjacent_element_list_.empty())
+            {
+                return utility::Slice<const mesh::LocalIndex, mesh::ConnIndex>(
+                  &adjacent_element_list_[element_offsets_[element_index]],
+                  static_cast<mesh::ConnIndex>(n_face_adjacent_elements_[element_index]));
+            }
+            else
+            {
+                return utility::Slice<const mesh::LocalIndex, mesh::ConnIndex>(nullptr, 0);
+            }
         default:
             throw _UTIL_MSG_EXCEPT_C("A case is not implemented for the given adjacency type.");
     }

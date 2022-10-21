@@ -292,8 +292,11 @@ ElementType element_equivalent_for_face(const FaceType& face_type)
         case FaceType::Q3D4N: return ElementType::Q2D4N;
         case FaceType::T3D6N: return ElementType::T2D6N;
         case FaceType::Q3D8N: return ElementType::Q2D8N;
+        case FaceType::L1D1N:
+        case FaceType::UNKNGEOM:
+        default:
+            throw _UTIL_MSG_EXCEPT("There is no element equivalent for the given face type.");
     }
-    throw _UTIL_MSG_EXCEPT("There is no element equivalent for the given face type.");
 }
 
 
@@ -303,8 +306,10 @@ ElementType element_equivalent_for_edge(const EdgeType& edge_type)
     {
         case EdgeType::E2N: return ElementType::L1D2N;
         case EdgeType::E3N: return ElementType::L1D3N;
+        case EdgeType::UNKNGEOM:
+        default:
+            throw _UTIL_MSG_EXCEPT("There is no element equivalent for the given edge type.");
     }
-    throw _UTIL_MSG_EXCEPT("There is no element equivalent for the given edge type.");
 }
 
 std::vector<std::vector<ConnIndex>> connectivity_helper(const ConnIndex num_faces,
@@ -356,8 +361,10 @@ ElementTypeCategory get_category(const ElementType& type)
         case ElementType::Q3D8N: return ElementTypeCategory::SOLID;
         case ElementType::C3D8N:
         case ElementType::C3D16N: return ElementTypeCategory::INTERFACIAL;
+        case ElementType::UNKNGEOM: 
+        default:
+            throw _UTIL_MSG_EXCEPT("A category is not known for element type: " + to_string(type));
     }
-    throw _UTIL_MSG_EXCEPT("A category is not known for element type: " + to_string(type));
 }
 
 std::string to_string(const ElementType& type)
@@ -523,8 +530,9 @@ ElementType get_linearized_type(const ElementType& geom_type)
         case ElementType::H3D20N: return ElementType::H3D8N;
         case ElementType::Q3D8N: return ElementType::Q3D4N;
         case ElementType::C3D16N: return ElementType::C3D8N;
+        default:
+            return geom_type;
     }
-    return geom_type;
 }
 
 bool is_type_linear(const ElementType& geom_type)

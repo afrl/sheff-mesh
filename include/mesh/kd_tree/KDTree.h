@@ -64,7 +64,7 @@ class NodeContainerKDTree
   public:
     NodeContainerKDTree(const NodeContainer& nodes);
     // NodeContainerKDTree(const NodeContainerKDTree& other);
-    NodeContainerKDTree(NodeContainerKDTree&&) noexcept = default;
+    // NodeContainerKDTree(NodeContainerKDTree&&) noexcept = default;
 
     /// Finds the closest node to the given point and returns an accessor.
     NodeConstAccessor closest_node(const Point& p) const;

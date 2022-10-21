@@ -157,8 +157,9 @@ BasisFunctionsBase<Coordinate, ElementValueVector, ElementDerivMatrix>::basis_in
         case ElementType::P3D5N: // Note: currently, the basis functions are quadratic for 5-node
                                  // pyramids.  This is odd and should be revisited.
         case ElementType::P3D13N: return { BasisFunctionInfo::POLYNOMIAL, 2 };
+        default:
+          throw _UTIL_MSG_EXCEPT("Information for element type is not in the switch statement.");
     }
-    throw _UTIL_MSG_EXCEPT("Information for element type is not in the switch statement.");
 }
 
 template<typename Coordinate, typename ElementValueVector, typename ElementDerivMatrix>

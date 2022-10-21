@@ -18,7 +18,7 @@ set(SHEFF_SECOND_DEPENDS "SecondPartyMetis::second_party_metis;SecondPartyMesh::
 # the flexibility needed for various packages.
 set(SHEFF_THIRD_DEPENDS_name "json;rapidjson")
 set(SHEFF_THIRD_DEPENDS_package "nlohmann_json;RapidJSON")
-set(SHEFF_THIRD_DEPENDS_target "nlohmann_json::nlohmann_json;rapidjson")
+set(SHEFF_THIRD_DEPENDS_target "nlohmann_json::nlohmann_json;")
 
 # External dependencies need to be found from the system (such as MPI)
 # toggle_var indicates the variable name that controls whether the package is included.
@@ -34,7 +34,7 @@ set(SHEFF_EXTERNAL_DEPENDS_targets "")
 set(SHEFF_EXTERNAL_DEPENDS_compile_defs "")
 
 macro(SPECIAL_TARGET_COMMANDS)
-  
+  target_include_directories(${MAIN_COMPONENT} PUBLIC $<BUILD_INTERFACE:${RapidJSON_INCLUDE_DIR}>)
 endmacro()
 
 # Options

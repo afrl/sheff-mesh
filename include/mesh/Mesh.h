@@ -50,7 +50,7 @@ class Mesh
     const PartitionIndex& n_partitions() const;
 
     /// Const access to the partition that this instance represents.
-    /// @important If this instance represents all partitions, then the returned value will be
+    /// @attention If this instance represents all partitions, then the returned value will be
     /// numeric_limits<PartitionIndex>::max(), but contains_all_partitions provides a more
     /// convenient test for this case.
     const PartitionIndex& partition_id() const;
@@ -67,7 +67,7 @@ class Mesh
     /// Copies a subset of elements from another mesh and adds them to the end of this container and
     /// also copies any nodes that appear in the element connectivies being copied.
     ///
-    /// @important No checks are performed to see if a node already exists, so duplicate nodes could
+    /// @attention No checks are performed to see if a node already exists, so duplicate nodes could
     /// be created.
     ///
     /// @return A node index map from the numbering in @param other to the indices of the new nodes
@@ -79,7 +79,7 @@ class Mesh
     /// Copies a subset of elements from another mesh and adds them to the end of this container and
     /// also copies any nodes that appear in the element connectivies being copied.
     ///
-    /// @important No checks are performed to see if a node already exists, so duplicate nodes could
+    /// @attention No checks are performed to see if a node already exists, so duplicate nodes could
     /// be created.
     ///
     /// @return A node index map from the numbering in @param other to the indices of the new nodes
@@ -98,7 +98,7 @@ class Mesh
 
     /// Copies all elements and nodes from another mesh and adds them to the end of this container
     /// and also copies any nodes that appear in the element connectivies being copied.
-    /// @important No checks are performed to see if a node already exists, so duplicate nodes could
+    /// @attention No checks are performed to see if a node already exists, so duplicate nodes could
     /// be created.
     void copy(const Mesh& other);
 
@@ -124,7 +124,7 @@ class Mesh
     /// Mutable access to the partition that this instance represents (can be used to update this if
     /// the mesh is be partitioned).
     ///
-    /// @important If this instance represents all partitions, then the returned value will be
+    /// @attention If this instance represents all partitions, then the returned value will be
     /// numeric_limits<PartitionIndex>::max(), but contains_all_partitions provides a more
     /// convenient test for this case.
     PartitionIndex& partition_id();

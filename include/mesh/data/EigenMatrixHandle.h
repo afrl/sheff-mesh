@@ -91,7 +91,9 @@ class EigenMatrixConstMapHandle : public EigenMatrixHandleBase<T>
 {
   public:
     /// @param data - row major data, for example: EigenMatrixConstMapHandle([ 0, 1, 2, 3, 4, 5 ],
-    /// 2, 3) results in the matrix [ [0, 1, 2], [3, 4, 5] ]
+    ///               2, 3) results in the matrix [ [0, 1, 2], [3, 4, 5] ]
+    /// @param n_rows - number of rows
+    /// @param n_cols - number of columns
     EigenMatrixConstMapHandle(const T* data, const Eigen::Index& n_rows, const Eigen::Index& n_cols)
       : EigenMatrixHandleBase<T>(const_ref_)
       , data_map_(data, n_rows, n_cols)
@@ -112,7 +114,9 @@ class EigenMatrixMutableMapHandle : public EigenMatrixHandleBase<T>
 {
   public:
     /// @param data - row major data, for example: EigenMatrixConstMapHandle([ 0, 1, 2, 3, 4, 5 ],
-    /// 2, 3) results in the matrix [ [0, 1, 2], [3, 4, 5] ]
+    ///               2, 3) results in the matrix [ [0, 1, 2], [3, 4, 5] ]
+    /// @param n_rows - number of rows
+    /// @param n_cols - number of columns
     EigenMatrixMutableMapHandle(T* data, const Eigen::Index& n_rows, const Eigen::Index& n_cols)
       : EigenMatrixHandleBase<T>(const_ref_)
       , data_map_(data, n_rows, n_cols)

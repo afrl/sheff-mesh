@@ -6,6 +6,7 @@ namespace mesh
 {
 /// @brief Assigns the local coordinate system for a set/group of elements.
 ///
+/// @param m - mesh to modify
 /// @param element_set_name - name of element set/group to assign the LCS (error will not be throw
 ///        if group does not exist)
 /// @param x_vector - local x-axis expressed in terms of the global coordinate system.

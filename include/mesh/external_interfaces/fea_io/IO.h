@@ -29,7 +29,7 @@ Mesh read_fea_io_mesh_from_meta(const std::string& meta_filepath,
 /// This works for centralized/distributed meshes and partitioned/unpartitioned meshes.  However,
 /// there is the assumption that if it is distributed that each rank possesses a single partition.
 ///
-/// @important This method should be used when a single rank holds the entire mesh.  See
+/// @attention This method should be used when a single rank holds the entire mesh.  See
 ///            write_distributed_fea_io() if the mesh is distributed across several ranks.
 /// @param mesh - mesh to write to the file. If the mesh is partitioned, ghost elements will
 ///        be included for each partition.

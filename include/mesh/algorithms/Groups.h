@@ -10,6 +10,7 @@ namespace mesh
 ///
 /// Creates the following groups: "<prefix_>neg_x" "<prefix_>pos_x" "<prefix_>neg_y"
 ///                               "<prefix_>pos_y" "<prefix_>neg_z" "<prefix_>pos_z"
+/// @param mesh - mesh to modify
 /// @param name_prefix - a prefix for the group names (a "_" will be appended to the prefix to form
 ///                      the name if the prefix is not empty)
 /// @param rel_tol - tolerance to use when finding nodes on the extent (relative to diagonal
@@ -19,25 +20,33 @@ void create_groups_for_nodes_on_extent(Mesh& mesh,
                                        const double& rel_tol          = 1e-12);
 
 /// @brief Adds the nodes to a group based on a selection object.
+/// @param mesh - mesh to modify
 /// @param group_name - the name of the group to add the selected nodes to (does not require the
 ///        group to exist before this call)
+/// @param selection - object that can generate the list of nodes to add to the group
 void add_to_group(Mesh& mesh, const std::string group_name, NodeSelection selection);
 
 /// @brief Adds the elements to a group based on a selection object.
+/// @param mesh - mesh to modify
 /// @param group_name - the name of the group to add the selected elements to (does not require the
 ///        group to exist before this call)
+/// @param selection - object that can generate the list of elements to add to the group
 void add_to_group(Mesh& mesh, const std::string group_name, ElementSelection selection);
 
 /// @brief Adds the list of nodes to a group (ensuring no duplicates)
+/// @param mesh - mesh to modify
 /// @param group_name - the name of the group to add to (does not require the group to exist before
 ///        this call)
+/// @param local_ids_to_add - node local indices to be added to the group
 void add_nodes_to_group(Mesh& mesh,
                         const std::string group_name,
                         std::vector<mesh::LocalIndex>& local_ids_to_add);
 
 /// @brief Adds the list of elements to a group (ensuring no duplicates)
+/// @param mesh - mesh to modify
 /// @param group_name - the name of the group to add to (does not require the group to exist before
 ///        this call)
+/// @param local_ids_to_add - element local indices to be added to the group
 void add_elements_to_group(Mesh& mesh,
                            const std::string group_name,
                            std::vector<mesh::LocalIndex>& local_ids_to_add);

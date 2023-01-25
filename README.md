@@ -1,4 +1,6 @@
-# Mesh Module Overview
+## Mesh {#page_mesh_module}
+
+### Overview
 
 ```
 Important Note:
@@ -20,7 +22,7 @@ The primary data structure for the module is mesh::Mesh, which is a very simple 
 * mesh::NodeSubrangeIterator - an iterator that moves over a particular subset of the nodes in a mesh::NodeContainer instance. This is very handy for iterating over the nodes that appear in the connectivity of an element for example.  Dereferencing the iterator yields a mesh::NodeAccessor object.
 * mesh::NodeSubrangeConstIterator - const equivalent of mesh::NodeSubrangeIterator.
 
-# Examples
+### Examples
 
 When using the mesh::Mesh, one typically will either
 1. start with an empty mesh and add nodes and elements to it or
@@ -28,10 +30,10 @@ When using the mesh::Mesh, one typically will either
 
 Examples of both of these cases and how data can be accessed in a mesh are shown in the following sections.
 
-## Creating a new mesh
+#### Creating a new mesh
 ```cpp
 // Relevant includes:
-#include "mesh/Mesh.h"
+###include "mesh/Mesh.h"
 // End includes
 
 mesh::Mesh m;
@@ -46,12 +48,12 @@ m.nodes().add({ 0, 1, 0 });
 m.elements().add(mesh::ElementType::Q2D4N, { 0, 1, 2, 3 });
 ```
 
-## Creating a mesh via a built-in algorithm
+#### Creating a mesh via a built-in algorithm
 ```cpp
 // Relevant includes:
-#include "mesh/Mesh.h"
-#include "mesh/algorithms/Creation.h"
-#include "mesh/algorithms/IO.h"
+###include "mesh/Mesh.h"
+###include "mesh/algorithms/Creation.h"
+###include "mesh/algorithms/IO.h"
 // End includes
 
 // Creates a mesh from an Abaqus input script
@@ -64,10 +66,10 @@ mesh::Mesh mesh_from_abaqus = mesh::read_abaqus("BarWithHole.inp");
 mesh::Mesh grid = mesh::make_linear_grid({ 0, 1, 2 }, { 0, 1, 2, 3, 4 });
 ```
 
-## Accessing data in a mesh
+#### Accessing data in a mesh
 ```cpp
 // Relevant includes:
-#include "mesh/Mesh.h"
+###include "mesh/Mesh.h"
 // End includes
 
 mesh::Mesh m;
@@ -119,7 +121,7 @@ for (auto element : m.elements())
 }
 ```
 
-## Partitioning the mesh
+#### Partitioning the mesh
 To perform a finite element analysis on a very large mesh, a high-performance computing system is typically needed, which is composed of multiple computation nodes.  The distributed nature of the hardware requires a distributed analysis.  To accommodate this, it is useful to partition the mesh.  Some terminology related to HPC analyses and mesh partitioning are:
 * Rank: an independent process running on a computation node (there can be multiple per computation node).  This is a concept integral to MPI programs.
 * Partition: a piece of the mesh that has nothing to do with the model.  It only is meant to accommodate the distributed software.  In this framework, we want one partition per a rank for the purpsoe of analyses.  For post-processing/visualization, multiple partitions can be handled by a single rank (due to the lower computational cost compare to the analysis).
@@ -129,9 +131,9 @@ To perform a finite element analysis on a very large mesh, a high-performance co
 To partition a mesh with METIS:
 ```cpp
 // Relevant includes:
-#include "mesh/algorithms/Creation.h"
-#include "mesh/algorithms/IO.h"
-#include "mesh/algorithms/Partitioning.h"
+###include "mesh/algorithms/Creation.h"
+###include "mesh/algorithms/IO.h"
+###include "mesh/algorithms/Partitioning.h"
 // End includes
 
 std::vector<double> coordinates(5);
@@ -147,13 +149,13 @@ mesh::partition_metis(mesh, 3);
 auto mesh_partition_0 = extract_partition_mesh(mesh, 0);
 ```
 
-## Reading/writing the mesh
+#### Reading/writing the mesh
 
-### Write to VTK
+##### Write to VTK
 ```cpp
 // Relevant includes:
-#include "mesh/Mesh.h"
-#include "mesh/algorithms/IO.h"
+###include "mesh/Mesh.h"
+###include "mesh/algorithms/IO.h"
 // End includes
 
 mesh::Mesh m;
@@ -161,12 +163,12 @@ mesh::Mesh m;
 mesh::write_vtk(m, "mesh.vtk");
 ```
 
-### Reading/writing to fea_io format
+##### Reading/writing to fea_io format
 ```cpp
 // Relevant includes:
-#include "mesh/Mesh.h"
-#include "mesh/algorithms/IO.h"
-#include "mesh/algorithms/Partitioning.h"
+###include "mesh/Mesh.h"
+###include "mesh/algorithms/IO.h"
+###include "mesh/algorithms/Partitioning.h"
 // End includes
 
 mesh::Mesh m;
@@ -193,12 +195,12 @@ mesh::write_fea_io_distributed(/*args*/);
 // to write the mesh in parallel.
 ```
 
-### Reading PFEC format
+##### Reading PFEC format
 The PFEC (partitioned finite element compressed) file format was developed by Keith Ballard during his doctoral work.  The format has been replaced by serialized and fea_io formats (each accomplish a different goal), but several tools still exist for creating fiber/matrix, multiscale laminated composite, and 3D textile composite models that only write to the PFEC format.  You can read those files in using:
 ```cpp
 // Relevant includes:
-#include "mesh/Mesh.h"
-#include "mesh/algorithms/IO.h"
+###include "mesh/Mesh.h"
+###include "mesh/algorithms/IO.h"
 // End includes
 
 // Reads partition 0 from the mesh for the first time step of the meta file "example.pfecx"
@@ -208,19 +210,19 @@ The PFEC (partitioned finite element compressed) file format was developed by Ke
 auto m = mesh::read_pfec("example.pfecx", 0);
 ```
 
-### Reading Abaqus .inp files
+##### Reading Abaqus .inp files
 Abaqus input scripts have quite a large set of commands that can be used within them.  Currently, we have a reader that can read simple Abaqus input scripts, but we intend to extend this functionality as needed going forward.  So feel free to contribute or suggest improvements to this algorithm especially.
 
 ```cpp
 // Relevant includes:
-#include "mesh/Mesh.h"
-#include "mesh/algorithms/IO.h"
+###include "mesh/Mesh.h"
+###include "mesh/algorithms/IO.h"
 // End includes
 
 auto m = mesh::read_abaqus("example.inp");
 ```
 
-### Serialization and deserailization
+##### Serialization and deserailization
 The utility module provides serialization functionality (refer to documentation in that module for more info), but the mesh module supports serialization for all classes that store data (and a few that do not for convenience to write information to JSON for debugging).  Serialization is a great way to:
 * Store the mesh in a compact binary format (though reading the file without the mesh module in a 3rd party code would be difficult)
 * Tranfer the mesh as data over a network (deserializing it on the client side)
@@ -228,11 +230,11 @@ The utility module provides serialization functionality (refer to documentation 
 
 ```cpp
 // Relevant includes:
-#include "mesh/Mesh.h"
-#include "mesh/algorithms/Creation.h"
-#include "utility/serialization/Serialization.h"
-#include <iostream>
-#include <sstream>
+###include "mesh/Mesh.h"
+###include "mesh/algorithms/Creation.h"
+###include "utility/serialization/Serialization.h"
+###include <iostream>
+###include <sstream>
 // End includes
 
 // Create some mesh for an example
@@ -264,3 +266,6 @@ input_from_ss(linear_grid_deserialized);
 // Note: linear_grid_deserialized will be the same as linear_grid
 ```
 
+### Third-Party Mesh Libraries
+
+* @subpage nanoflann A fast K-D tree data structure

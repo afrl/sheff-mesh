@@ -50,4 +50,6 @@ std::vector<std::pair<ConnIndex, ConnIndex>> find_shared_node_positions(
 /// Returns a mean coordinate of the nodes which should be interior to the element in most cases.
 Point calc_mean_coordinate(const ElementConstAccessor element);
 
+/// Returns a mean coordinate of the nodes which should be interior to the element in most cases.
+Point calc_mean_coordinate(const std::vector<Point>& points);
 }

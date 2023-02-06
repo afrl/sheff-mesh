@@ -135,4 +135,16 @@ Point calc_mean_coordinate(const ElementConstAccessor element)
     mean = (1.0 / num_nodes) * mean;
     return mean;
 }
+
+Point calc_mean_coordinate(const std::vector<Point>& points)
+{
+    Point mean                = { 0, 0, 0 };
+    const FloatType num_nodes = static_cast<FloatType>(points.size());
+    for (auto& p : points)
+    {
+        mean = mean + p;
+    }
+    mean = (1.0 / num_nodes) * mean;
+    return mean;
+}
 }

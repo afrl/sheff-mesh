@@ -5,19 +5,26 @@
 
 namespace mesh
 {
-/// Creates a mesh that describes the input to tetgen.
-Mesh get_mesh_from_tetgen_input(tetgen::tetgenio& in);
+/// Extracts surface mesh from tetgenio.
+Mesh get_surface_from_tetgenio(tetgen::tetgenio& io);
 
-/// Creates a mesh that describes the output from tetgen.
-Mesh get_mesh_from_tetgen_output(tetgen::tetgenio& out);
+/// Extracts volume mesh from tetgenio.
+Mesh get_volume_from_tetgenio(tetgen::tetgenio& io);
+
+/// @brief Populates an input struct that TetGen can tetrahedralize from a surface mesh.
+std::unique_ptr<tetgen::tetgenio> surface_to_tetgen_input(const Mesh& surface_mesh);
 
 /// @brief Creates a tetrahedralization given a surface mesh using TetGen.
 /// Currently, this only supports triangular surface meshes, so every element in the surface mesh
 /// must be a triangle.
 Mesh tetrahedralize_surface(const Mesh& surface_mesh, const bool delaunay = false);
 
-/// @brief Populates an input struct that TetGen can tetrahedralize from a surface mesh.
-std::unique_ptr<tetgen::tetgenio> surface_to_tetgen_input(const Mesh& surface_mesh);
+/// @brief Populates an input struct that TetGen can tetrahedralize from a volume mesh.
+std::unique_ptr<tetgen::tetgenio> volume_to_tetgen_input(const Mesh& volume_mesh);
+
+/// @brief Improves a given a tetrahedralization using TetGen.
+/// Currently, this only supports 4-node tetrahedra as an input element type.
+Mesh improve_tetrahedralization(const Mesh& volume_mesh);
 
 /// @brief Calculates the volume of a single tetrahedra (sign indicates inversion)
 double tetrahedron_signed_volume(const Eigen::RowVector3d& p1,

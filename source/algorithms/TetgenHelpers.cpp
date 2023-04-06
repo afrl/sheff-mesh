@@ -8,23 +8,23 @@
 namespace mesh
 {
 
-Mesh get_mesh_from_tetgen_input(tetgen::tetgenio& in)
+Mesh get_surface_from_tetgenio(tetgen::tetgenio& io)
 {
     Mesh mesh;
 
     // Create nodes
-    for (int i = 0; i < in.numberofpoints; i++)
+    for (int i = 0; i < io.numberofpoints; i++)
     {
-        mesh.nodes().add({ in.pointlist[i * 3], in.pointlist[i * 3 + 1], in.pointlist[i * 3 + 2] });
+        mesh.nodes().add({ io.pointlist[i * 3], io.pointlist[i * 3 + 1], io.pointlist[i * 3 + 2] });
     }
 
     // Create elements
     tetgen::tetgenio::facet* f;
     tetgen::tetgenio::polygon* p;
-    for (int i = 0; i < in.numberoffacets; i++)
+    for (int i = 0; i < io.numberoffacets; i++)
     {
-        f           = &in.facetlist[i];
-        auto marker = in.facetmarkerlist[i];
+        f           = &io.facetlist[i];
+        auto marker = io.facetmarkerlist[i];
         for (int j = 0; j < f->numberofpolygons; j++)
         {
             p = &f->polygonlist[j];
@@ -41,27 +41,36 @@ Mesh get_mesh_from_tetgen_input(tetgen::tetgenio& in)
     return mesh;
 }
 
-Mesh get_mesh_from_tetgen_output(tetgen::tetgenio& out)
+Mesh get_volume_from_tetgenio(tetgen::tetgenio& io)
 {
     Mesh mesh;
 
     // Create nodes
-    for (int i = 0; i < out.numberofpoints; i++)
+    for (int i = 0; i < io.numberofpoints; i++)
     {
         mesh.nodes().add(
-          { out.pointlist[i * 3], out.pointlist[i * 3 + 1], out.pointlist[i * 3 + 2] });
+          { io.pointlist[i * 3], io.pointlist[i * 3 + 1], io.pointlist[i * 3 + 2] });
     }
 
     // Create elements
     std::vector<LocalIndex> element_connectivity(4);
-    for (int i = 0; i < out.numberoftetrahedra; i++)
+    for (int i = 0; i < io.numberoftetrahedra; i++)
     {
         for (int j = 0; j < 4; j++)
         {
-            element_connectivity[j] = out.tetrahedronlist[i * 4 + j];
+            element_connectivity[j] = io.tetrahedronlist[i * 4 + j];
         }
         mesh.elements().add(ElementType::T3D4N, element_connectivity);
     }
+
+    if (io.numberoftetrahedronattributes == 1)
+    {
+        for (int i = 0; i < io.numberoftetrahedra; i++)
+        {
+            mesh.elements()[i].component_id() = io.tetrahedronattributelist[i];
+        }
+    }
+
     return mesh;
 }
 
@@ -109,7 +118,7 @@ Mesh tetrahedralize_surface(const Mesh& surface_mesh, const bool delaunay)
     tetgen::tetgenio out;
     tetgen::tetrahedralize(&flags, in_ptr.get(), &out);
 
-    auto tetrahedral_mesh = get_mesh_from_tetgen_output(out);
+    auto tetrahedral_mesh = get_volume_from_tetgenio(out);
 
     return tetrahedral_mesh;
 }
@@ -142,7 +151,7 @@ std::unique_ptr<tetgen::tetgenio> surface_to_tetgen_input(const Mesh& surface_me
     // Create the facets (each will have one polygon)
     tetgen::tetgenio::facet* f;
     tetgen::tetgenio::polygon* p;
-    for (auto e : surface_mesh.elements())
+    for (auto& e : surface_mesh.elements())
     {
         auto& i = e.local_index();
 
@@ -162,6 +171,44 @@ std::unique_ptr<tetgen::tetgenio> surface_to_tetgen_input(const Mesh& surface_me
         {
             p->vertexlist[j] = conn[j];
         }
+    }
+
+    return std::move(in_ptr);
+}
+
+std::unique_ptr<tetgen::tetgenio> volume_to_tetgen_input(const Mesh& volume_mesh)
+{
+    std::unique_ptr<tetgen::tetgenio> in_ptr = std::make_unique<tetgen::tetgenio>();
+    tetgen::tetgenio& in                     = *in_ptr;
+
+    // Indicate indices should be zero-based
+    in.firstnumber = 0;
+
+    // Copy the node coordinates into the tetgenio struct
+    in.numberofpoints = static_cast<int>(volume_mesh.nodes().size());
+    in.pointlist      = new REAL[in.numberofpoints * 3];
+    for (auto n : volume_mesh.nodes())
+    {
+        for (unsigned int j = 0; j < 3; j++)
+        {
+            in.pointlist[3 * n.local_index() + j] = n.point(j);
+        }
+    }
+
+    // Copy tetrahedra
+    in.numberoftetrahedra            = volume_mesh.elements().size();
+    in.tetrahedronlist               = new int[4 * in.numberoftetrahedra];
+    in.numberoftetrahedronattributes = 1;
+    in.tetrahedronattributelist      = new double[in.numberoftetrahedra];
+    for (auto& e : volume_mesh.elements())
+    {
+        auto& i = e.local_index();
+
+        for (unsigned int j = 0; j < 4; j++)
+        {
+            in.tetrahedronlist[4 * i + j] = e.connectivity()[j];
+        }
+        in.tetrahedronattributelist[i] = e.component_id();
     }
 
     return std::move(in_ptr);
@@ -265,7 +312,7 @@ SegmentedTetrahedralization segmented_tetrahedralization(const Mesh& surface_mes
     std::vector<double> max_volume_tet_by_region(n_regions, 0.0);
 
     // Assign the region ID to the component ID
-    auto tetrahedral_mesh = get_mesh_from_tetgen_output(out);
+    auto tetrahedral_mesh = get_volume_from_tetgenio(out);
     for (auto e : tetrahedral_mesh.elements())
     {
         e.component_id() = tet_region_ids[e.local_index()];

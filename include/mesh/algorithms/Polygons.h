@@ -62,7 +62,7 @@ std::pair<std::vector<LocalIndex>, std::vector<LocalIndex>> triangulate_all_poly
 
 namespace detail
 {
-triangulateio triangle_polygon_kernel(
+triangle::triangulateio triangle_polygon_kernel(
   const std::vector<Point>& points,
   const std::vector<int>& point_markers,
   const std::vector<std::pair<LocalIndex, LocalIndex>>& boundary_segments,

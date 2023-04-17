@@ -36,7 +36,7 @@ namespace detail
 /// @param allow_new_nodes_on_boundary
 /// @param max_triangle_area
 /// @param min_angle
-triangulateio triangle_polygon_kernel(
+triangle::triangulateio triangle_polygon_kernel(
   const std::vector<Point>& points,
   const std::vector<int>& point_markers,
   const std::vector<std::pair<LocalIndex, LocalIndex>>& boundary_segments,
@@ -51,7 +51,7 @@ triangulateio triangle_polygon_kernel(
     // Note - This method uses Triangle, a program by Jonathan Richard Shewchuk at Berkely
     // See his website at http://www.cs.cmu.edu/~quake/triangle.html for more information
     // This method is fashioned after tricall.c
-    struct triangulateio in;
+    struct triangle::triangulateio in;
 
     in.numberofpoints          = static_cast<int>(points.size());
     in.numberofpointattributes = 0;
@@ -117,7 +117,7 @@ triangulateio triangle_polygon_kernel(
         in.regionlist[i * 4 + 3] = -1.0; // Area constraint, negative means none applied.
     }
 
-    triangulateio output;
+    triangle::triangulateio output;
     output.pointlist             = NULL;
     output.pointattributelist    = NULL;
     output.pointmarkerlist       = NULL;
@@ -154,7 +154,7 @@ triangulateio triangle_polygon_kernel(
     char args[50];
     strcpy(args, tri_arg_stream.str().c_str());
 
-    triangulate(args, &in, &output, (struct triangulateio*)NULL);
+    triangulate(args, &in, &output, (struct triangle::triangulateio*)NULL);
 
     // frees memory used by triangle
     delete[] in.pointlist;
@@ -707,7 +707,7 @@ std::vector<LocalIndex> triangulate_polygon(Mesh& total_mesh,
     }
 
     // Call triangle
-    triangulateio output;
+    triangle::triangulateio output;
     try
     {
         output = detail::triangle_polygon_kernel(transformed_points,

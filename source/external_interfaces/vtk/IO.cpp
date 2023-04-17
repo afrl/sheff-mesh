@@ -374,6 +374,9 @@ void write_vtk(const Mesh& mesh, const std::string& file_path, const MeshAssocia
     {
         for (auto& data_field : data.get<DataFieldType::ELEMENT, double>())
         {
+            _UTIL_ASSERT(data_field.data().cols() == data_field.component_names.size(),
+                         "The # of columns for the cell data did not match the number of names.");
+
             fout << "SCALARS " << data_field.name << " float " << data_field.component_names.size()
                  << "\n";
             fout << "LOOKUP_TABLE default\n";
@@ -392,6 +395,9 @@ void write_vtk(const Mesh& mesh, const std::string& file_path, const MeshAssocia
 
         for (auto& data_field : data.get<DataFieldType::ELEMENT, uint32_t>())
         {
+            _UTIL_ASSERT(data_field.data().cols() == data_field.component_names.size(),
+                         "The # of columns for the cell data did not match the number of names.");
+
             fout << "SCALARS " << data_field.name << " unsigned_int " << data_field.component_names.size()
                  << "\n";
             fout << "LOOKUP_TABLE default\n";
@@ -430,11 +436,14 @@ void write_vtk(const Mesh& mesh, const std::string& file_path, const MeshAssocia
     {
         for (auto& data_field : data.get<DataFieldType::NODE, double>())
         {
+            _UTIL_ASSERT(data_field.data().cols() == data_field.component_names.size(),
+                         "The # of columns for the point data did not match the number of names.");
+
             fout << "SCALARS " << data_field.name << " float " << data_field.component_names.size()
                  << "\n";
             fout << "LOOKUP_TABLE default\n";
             _UTIL_ASSERT(data_field.data().rows() == mesh.nodes().size(),
-                         "The size of the given cell data did not match the number of nodes.");
+                         "The size of the given point data did not match the number of nodes.");
             auto& data_field_matrix = data_field.data();
             for (auto row : utility::range(data_field_matrix.rows()))
             {
@@ -448,6 +457,9 @@ void write_vtk(const Mesh& mesh, const std::string& file_path, const MeshAssocia
 
         for (auto& data_field : data.get<DataFieldType::NODE, uint32_t>())
         {
+            _UTIL_ASSERT(data_field.data().cols() == data_field.component_names.size(),
+                         "The # of columns for the point data did not match the number of names.");
+
             fout << "SCALARS " << data_field.name << " unsigned_int "
                  << data_field.component_names.size() << "\n";
             fout << "LOOKUP_TABLE default\n";

@@ -144,7 +144,7 @@ struct DataField
     }
     static DataField<T> cref(const std::string& name,
                              const std::vector<std::string>& component_names,
-                             const T*& data,
+                             const T* data,
                              const std::size_t& n_rows,
                              const std::size_t& n_cols)
     {

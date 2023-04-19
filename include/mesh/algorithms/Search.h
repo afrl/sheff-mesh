@@ -17,6 +17,11 @@ std::pair<Point, Point> find_extent(const std::vector<simple_math::Point>& point
 /// @returns A pair of points with most negative point being first and most positive being second.
 std::pair<Point, Point> find_extent(const Mesh& mesh);
 
+/// @brief Finds extent of the mesh (most negative and positive point forming the bounding box of
+/// the mesh).
+/// @returns A pair of points with most negative point being first and most positive being second.
+std::pair<Point, Point> find_extent(const Eigen::Map<simple_math::DynamicDoubleMatrix>& points);
+
 /// @brief Returns the extent of multiple extents.
 std::pair<Point, Point> find_extent(const std::vector<std::pair<Point, Point>>& extents);
 
@@ -40,8 +45,7 @@ bool do_bounding_boxes_intersect(const std::pair<Point, Point>& bb1,
 /// @brief Detects if two bounding boxes that are aligned with the coordinate axes intersect
 ///
 /// The algorithm leverages the separate axis theorem.
-bool do_bounding_boxes_intersect(const std::array<Point, 2>& bb1,
-                                 const std::array<Point, 2>& bb2);
+bool do_bounding_boxes_intersect(const std::array<Point, 2>& bb1, const std::array<Point, 2>& bb2);
 
 double bounding_box_volume(const std::pair<Point, Point>& bb);
 double bounding_box_volume(const std::array<Point, 2>& bb);

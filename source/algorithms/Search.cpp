@@ -54,6 +54,28 @@ std::pair<Point, Point> find_extent(const Mesh& mesh)
     }
     return { neg_point, pos_point };
 }
+
+std::pair<Point, Point> find_extent(const Eigen::Map<simple_math::DynamicDoubleMatrix>& points)
+{
+    Point neg_point = { INFINITY, INFINITY, INFINITY };
+    Point pos_point = { -INFINITY, -INFINITY, -INFINITY };
+    for (auto p_i : utility::range(points.rows()))
+    {
+        for (auto i = 0; i < neg_point.size(); i++)
+        {
+            if (points(p_i, i) < neg_point[i])
+            {
+                neg_point[i] = points(p_i, i);
+            }
+            if (points(p_i, i) > pos_point[i])
+            {
+                pos_point[i] = points(p_i, i);
+            }
+        }
+    }
+    return { neg_point, pos_point };
+}
+
 std::pair<Point, Point> find_extent(const std::vector<std::pair<Point, Point>>& extents)
 {
     Point neg_point = { INFINITY, INFINITY, INFINITY };

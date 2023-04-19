@@ -1,6 +1,7 @@
 #include "mesh/algorithms/TetgenHelpers.h"
 
 #include "mesh/algorithms/IO.h"
+#include "mesh/algorithms/Search.h"
 #include "simple_math/Utility.h"
 
 #include <deque>
@@ -48,8 +49,7 @@ Mesh get_volume_from_tetgenio(tetgen::tetgenio& io)
     // Create nodes
     for (int i = 0; i < io.numberofpoints; i++)
     {
-        mesh.nodes().add(
-          { io.pointlist[i * 3], io.pointlist[i * 3 + 1], io.pointlist[i * 3 + 2] });
+        mesh.nodes().add({ io.pointlist[i * 3], io.pointlist[i * 3 + 1], io.pointlist[i * 3 + 2] });
     }
 
     // Create elements
@@ -90,13 +90,13 @@ Mesh tetrahedralize_surface(const Mesh& surface_mesh, const bool delaunay)
 
     if (delaunay)
     {
-        flags.quality                = 0;
-        flags.steinerleft            = 0;
-        flags.smooth_maxiter         = 0;
-        flags.noimprove              = 1;
-        flags.epsilon                = 1e-20;
-        //flags.facet_separate_ang_tol = 0.0;
-        //flags.collinear_ang_tol      = 180.0;
+        flags.quality        = 0;
+        flags.steinerleft    = 0;
+        flags.smooth_maxiter = 0;
+        flags.noimprove      = 1;
+        flags.epsilon        = 1e-20;
+        // flags.facet_separate_ang_tol = 0.0;
+        // flags.collinear_ang_tol      = 180.0;
     }
     else
     {
@@ -212,6 +212,57 @@ std::unique_ptr<tetgen::tetgenio> volume_to_tetgen_input(const Mesh& volume_mesh
     }
 
     return std::move(in_ptr);
+}
+
+Mesh improve_tetrahedralization(const Mesh& volume_mesh, const ImproveTetParameters& params)
+{
+    auto in_ptr = volume_to_tetgen_input(volume_mesh);
+
+    return improve_tetrahedralization(*in_ptr, params);
+}
+
+Mesh improve_tetrahedralization(tetgen::tetgenio& input, const ImproveTetParameters& params)
+{
+
+    // Create tetrahedral mesh structure
+    tetgen::tetgenbehavior flags;
+    flags.object = tetgen::tetgenbehavior::MESH;
+    // I think we always want facets and vertices to be merged? We can add it to the parameter
+    // struct if it needs to be an option.
+    //
+    // flags.nomergefacet  = 1;
+    // flags.nomergevertex = 1;
+    flags.refine  = 1; // reconstructs tetrahedralization and refines
+    flags.quiet   = 0;
+    flags.quality = 1;
+
+    if (params.rel_target_edge_length > 0.0)
+    {
+        auto extent = mesh::find_extent(
+          Eigen::Map<simple_math::DynamicDoubleMatrix>(input.pointlist, input.numberofpoints, 3));
+        auto bounding_box_diagonal = simple_math::distance(extent.first, extent.second);
+        auto target_edge_length    = params.rel_target_edge_length * bounding_box_diagonal;
+        // Based on volume of a "regular" tetrahedron, see
+        // https://mathworld.wolfram.com/RegularTetrahedron.html
+        flags.maxvolume   = sqrt(2.0) / 12.0 * pow(target_edge_length, 3);
+        flags.fixedvolume = 1;
+    }
+    else
+    {
+        flags.maxvolume   = -1.0;
+        flags.fixedvolume = 0;
+    }
+    flags.minratio    = params.max_radius_edge_ratio;
+    flags.mindihedral = params.min_dihedral_angle;
+    flags.steinerleft = params.max_inserted_points;
+
+    // The external call
+    tetgen::tetgenio out;
+    tetgen::tetrahedralize(&flags, &input, &out);
+
+    auto tetrahedral_mesh = mesh::get_volume_from_tetgenio(out);
+
+    return tetrahedral_mesh;
 }
 
 double tetrahedron_signed_volume(const Eigen::RowVector3d& p1,

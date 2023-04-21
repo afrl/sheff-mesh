@@ -1,6 +1,6 @@
 #include "mesh/Mesh.h"
 
-#include "mesh/common/Permutation.h"
+#include "utility/Permutation.h"
 #include "utility/MPIUtils.h"
 
 #include <unordered_map>
@@ -340,7 +340,7 @@ void Mesh::sort()
                   nodes[lhs_index].global_index() < nodes[rhs_index].global_index());
       });
     nodes.permute(backward_node_permutation);
-    elements.permute_connectivity(detail::get_inverse_map(backward_node_permutation));
+    elements.permute_connectivity(utility::get_inverse_map(backward_node_permutation));
 
     PartitionIndex this_partition = this_partition_id_;
     if (contains_all_partitions())

@@ -232,9 +232,12 @@ Mesh improve_tetrahedralization(tetgen::tetgenio& input, const ImproveTetParamet
     //
     // flags.nomergefacet  = 1;
     // flags.nomergevertex = 1;
-    flags.refine  = 1; // reconstructs tetrahedralization and refines
-    flags.quiet   = 0;
-    flags.quality = 1;
+    flags.refine   = 1; // reconstructs tetrahedralization and refines
+    flags.quiet    = 0;
+    flags.quality  = 1;
+    flags.diagnose = 1;
+    flags.docheck  = 1;
+    flags.verbose  = 1;
 
     if (params.rel_target_edge_length > 0.0)
     {

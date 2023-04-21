@@ -1,6 +1,6 @@
 #include "mesh/element/ElementContainer.h"
 
-#include "mesh/common/Permutation.h"
+#include "utility/Permutation.h"
 #include "mesh/element/ElementAccessor.h"
 #include "mesh/element/ElementIterator.h"
 #include "mesh/node/NodeAccessor.h"
@@ -252,10 +252,10 @@ void ElementContainer::swap(ElementContainer& other)
 }
 void ElementContainer::permute(const std::vector<LocalIndex>& backward_permutation_indices)
 {
-    detail::apply_permutation(global_indices_, backward_permutation_indices);
-    detail::apply_permutation(types_, backward_permutation_indices);
-    detail::apply_permutation(parent_partitions_, backward_permutation_indices);
-    detail::apply_permutation(component_ids_, backward_permutation_indices);
+    utility::apply_permutation(global_indices_, backward_permutation_indices);
+    utility::apply_permutation(types_, backward_permutation_indices);
+    utility::apply_permutation(parent_partitions_, backward_permutation_indices);
+    utility::apply_permutation(component_ids_, backward_permutation_indices);
 
     // Connectivities have to be permuted specially
     std::vector<LocalIndex> new_connectivities;
@@ -284,7 +284,7 @@ void ElementContainer::permute(const std::vector<LocalIndex>& backward_permutati
 
     if (!lcs_.empty())
     {
-        detail::apply_permutation(lcs_, backward_permutation_indices);
+        utility::apply_permutation(lcs_, backward_permutation_indices);
     }
 }
 

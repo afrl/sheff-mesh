@@ -1,6 +1,6 @@
 #include "mesh/node/NodeContainer.h"
 
-#include "mesh/common/Permutation.h"
+#include "utility/Permutation.h"
 #include "mesh/node/NodeAccessor.h"
 #include "mesh/node/NodeIterator.h"
 
@@ -156,9 +156,9 @@ void NodeContainer::swap(NodeContainer& other)
 
 void NodeContainer::permute(const std::vector<LocalIndex>& backward_permutation_indices)
 {
-    detail::apply_permutation(global_indices_, backward_permutation_indices);
-    detail::apply_permutation(points_, backward_permutation_indices);
-    detail::apply_permutation(parent_partitions_, backward_permutation_indices);
+    utility::apply_permutation(global_indices_, backward_permutation_indices);
+    utility::apply_permutation(points_, backward_permutation_indices);
+    utility::apply_permutation(parent_partitions_, backward_permutation_indices);
     if (groups_.size() > 0)
     {
         throw _UTIL_MSG_EXCEPT_C("TODO implement permutation of node indices within node groups.");

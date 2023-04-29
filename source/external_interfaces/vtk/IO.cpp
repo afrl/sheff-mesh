@@ -22,15 +22,15 @@ void write_vtk(const Mesh& mesh,
         throw _UTIL_MSG_EXCEPT("Could not create file " + file_path);
     }
 
-    fout << "# vtk DataFile Version 2.0" << std::endl;
-    fout << "Mesh exported from mesh module of SHEFF framework" << std::endl;
-    fout << "ASCII" << std::endl;
-    fout << "DATASET UNSTRUCTURED_GRID" << std::endl;
-    fout << "POINTS " << mesh.nodes().size() << " double" << std::endl;
+    fout << "# vtk DataFile Version 2.0\n";
+    fout << "Mesh exported from mesh module of SHEFF framework\n";
+    fout << "ASCII\n";
+    fout << "DATASET UNSTRUCTURED_GRID\n";
+    fout << "POINTS " << mesh.nodes().size() << " double\n";
 
     for (auto node : mesh.nodes())
     {
-        fout << node.x() << " " << node.y() << " " << node.z() << std::endl;
+        fout << node.x() << " " << node.y() << " " << node.z() << "\n";
     }
 
     int total_num_cell_conn_entries = 0;
@@ -40,7 +40,7 @@ void write_vtk(const Mesh& mesh,
         total_num_cell_conn_entries += static_cast<int>(element.connectivity().size());
     }
 
-    fout << "CELLS " << mesh.elements().size() << " " << total_num_cell_conn_entries << std::endl;
+    fout << "CELLS " << mesh.elements().size() << " " << total_num_cell_conn_entries << "\n";
 
     for (auto& element : mesh.elements())
     {
@@ -63,20 +63,20 @@ void write_vtk(const Mesh& mesh,
             // How do we handle polygons and polyhedrons?
             throw _UTIL_MSG_EXCEPT("Element type unsupported.");
         }
-        fout << std::endl;
+        fout << "\n";
     }
 
-    fout << "CELL_TYPES " << mesh.elements().size() << std::endl;
+    fout << "CELL_TYPES " << mesh.elements().size() << "\n";
 
     for (auto& element : mesh.elements())
     {
-        fout << get_vtk_element_type(element.type()) << std::endl;
+        fout << get_vtk_element_type(element.type()) << "\n";
     }
 
     // Write data
 
     // Note: the cell data has to all be together in the VTK file
-    fout << "CELL_DATA " << mesh.elements().size() << std::endl;
+    fout << "CELL_DATA " << mesh.elements().size() << "\n";
 
     // Write orientation data
     if (write_lcs)
@@ -87,7 +87,7 @@ void write_vtk(const Mesh& mesh,
             auto axis_in_global = element.local_coord_sys()[0]._transformVector(Vector3D::Unit(0));
             for (auto i = 0; i < axis_in_global.size(); i++)
                 fout << axis_in_global(i) << " ";
-            fout << std::endl;
+            fout << "\n";
         }
         fout << "VECTORS LocalMaterialY float\n";
         for (auto& element : mesh.elements())
@@ -95,7 +95,7 @@ void write_vtk(const Mesh& mesh,
             auto axis_in_global = element.local_coord_sys()[0]._transformVector(Vector3D::Unit(1));
             for (auto i = 0; i < axis_in_global.size(); i++)
                 fout << axis_in_global(i) << " ";
-            fout << std::endl;
+            fout << "\n";
         }
         fout << "VECTORS LocalMaterialZ float\n";
         for (auto& element : mesh.elements())
@@ -103,7 +103,7 @@ void write_vtk(const Mesh& mesh,
             auto axis_in_global = element.local_coord_sys()[0]._transformVector(Vector3D::Unit(2));
             for (auto i = 0; i < axis_in_global.size(); i++)
                 fout << axis_in_global(i) << " ";
-            fout << std::endl;
+            fout << "\n";
         }
     }
 
@@ -111,21 +111,21 @@ void write_vtk(const Mesh& mesh,
     fout << "LOOKUP_TABLE default\n";
     for (auto& element : mesh.elements())
     {
-        fout << element.global_index() << std::endl;
+        fout << element.global_index() << "\n";
     }
 
     fout << "SCALARS PartitionIDs int 1\n";
     fout << "LOOKUP_TABLE default\n";
     for (auto& element : mesh.elements())
     {
-        fout << element.parent_partition() << std::endl;
+        fout << element.parent_partition() << "\n";
     }
 
     fout << "SCALARS ComponentIDs int 1\n";
     fout << "LOOKUP_TABLE default\n";
     for (auto& element : mesh.elements())
     {
-        fout << element.component_id() << std::endl;
+        fout << element.component_id() << "\n";
     }
 
     if (!element_data.empty())
@@ -140,7 +140,7 @@ void write_vtk(const Mesh& mesh,
         fout << "LOOKUP_TABLE default\n";
         for (auto& value : element_data)
         {
-            fout << value << std::endl;
+            fout << value << "\n";
         }
     }
 
@@ -156,7 +156,7 @@ void write_vtk(const Mesh& mesh,
         fout << "LOOKUP_TABLE default\n";
         for (auto& value : element_attributes)
         {
-            fout << value << std::endl;
+            fout << value << "\n";
         }
     }
 
@@ -175,26 +175,26 @@ void write_vtk(const Mesh& mesh,
             {
                 fout << element_vector_data(i, j) << " ";
             }
-            fout << std::endl;
+            fout << "\n";
         }
     }
 
 
     // Start of writing point data
-    fout << "POINT_DATA " << mesh.nodes().size() << std::endl;
+    fout << "POINT_DATA " << mesh.nodes().size() << "\n";
 
     fout << "SCALARS GlobalIDs int 1\n";
     fout << "LOOKUP_TABLE default\n";
     for (auto node : mesh.nodes())
     {
-        fout << node.global_index() << std::endl;
+        fout << node.global_index() << "\n";
     }
 
     fout << "SCALARS PartitionIDs int 1\n";
     fout << "LOOKUP_TABLE default\n";
     for (auto node : mesh.nodes())
     {
-        fout << node.parent_partition() << std::endl;
+        fout << node.parent_partition() << "\n";
     }
 
     if (!point_data.empty())
@@ -209,7 +209,7 @@ void write_vtk(const Mesh& mesh,
         fout << "LOOKUP_TABLE default\n";
         for (auto& value : point_data)
         {
-            fout << value << std::endl;
+            fout << value << "\n";
         }
     }
 
@@ -225,7 +225,7 @@ void write_vtk(const Mesh& mesh,
         fout << "LOOKUP_TABLE default\n";
         for (auto& value : point_attributes)
         {
-            fout << value << std::endl;
+            fout << value << "\n";
         }
     }
 
@@ -243,7 +243,7 @@ void write_vtk(const Mesh& mesh,
             {
                 fout << point_vector_data(i, j) << " ";
             }
-            fout << std::endl;
+            fout << "\n";
         }
     }
 
@@ -258,15 +258,15 @@ void write_vtk(const Mesh& mesh, const std::string& file_path, const MeshAssocia
         throw _UTIL_MSG_EXCEPT("Could not create file " + file_path);
     }
 
-    fout << "# vtk DataFile Version 2.0" << std::endl;
-    fout << "Mesh exported from mesh module of SHEFF framework" << std::endl;
-    fout << "ASCII" << std::endl;
-    fout << "DATASET UNSTRUCTURED_GRID" << std::endl;
-    fout << "POINTS " << mesh.nodes().size() << " double" << std::endl;
+    fout << "# vtk DataFile Version 2.0\n";
+    fout << "Mesh exported from mesh module of SHEFF framework\n";
+    fout << "ASCII\n";
+    fout << "DATASET UNSTRUCTURED_GRID\n";
+    fout << "POINTS " << mesh.nodes().size() << " double\n";
 
     for (auto node : mesh.nodes())
     {
-        fout << node.x() << " " << node.y() << " " << node.z() << std::endl;
+        fout << node.x() << " " << node.y() << " " << node.z() << "\n";
     }
 
     int total_num_cell_conn_entries = 0;
@@ -276,7 +276,7 @@ void write_vtk(const Mesh& mesh, const std::string& file_path, const MeshAssocia
         total_num_cell_conn_entries += static_cast<int>(element.connectivity().size());
     }
 
-    fout << "CELLS " << mesh.elements().size() << " " << total_num_cell_conn_entries << std::endl;
+    fout << "CELLS " << mesh.elements().size() << " " << total_num_cell_conn_entries << "\n";
 
     for (auto& element : mesh.elements())
     {
@@ -299,20 +299,20 @@ void write_vtk(const Mesh& mesh, const std::string& file_path, const MeshAssocia
             // How do we handle polygons and polyhedrons?
             throw _UTIL_MSG_EXCEPT("Element type unsupported.");
         }
-        fout << std::endl;
+        fout << "\n";
     }
 
-    fout << "CELL_TYPES " << mesh.elements().size() << std::endl;
+    fout << "CELL_TYPES " << mesh.elements().size() << "\n";
 
     for (auto& element : mesh.elements())
     {
-        fout << get_vtk_element_type(element.type()) << std::endl;
+        fout << get_vtk_element_type(element.type()) << "\n";
     }
 
     // Write data
 
     // Note: the cell data has to all be together in the VTK file
-    fout << "CELL_DATA " << mesh.elements().size() << std::endl;
+    fout << "CELL_DATA " << mesh.elements().size() << "\n";
 
     // Write orientation data
     bool has_local_coordinate_systems = false;
@@ -329,7 +329,7 @@ void write_vtk(const Mesh& mesh, const std::string& file_path, const MeshAssocia
             auto axis_in_global = element.local_coord_sys()[0]._transformVector(Vector3D::Unit(0));
             for (auto i = 0; i < axis_in_global.size(); i++)
                 fout << axis_in_global(i) << " ";
-            fout << std::endl;
+            fout << "\n";
         }
         fout << "VECTORS LocalY float\n";
         for (auto& element : mesh.elements())
@@ -337,7 +337,7 @@ void write_vtk(const Mesh& mesh, const std::string& file_path, const MeshAssocia
             auto axis_in_global = element.local_coord_sys()[0]._transformVector(Vector3D::Unit(1));
             for (auto i = 0; i < axis_in_global.size(); i++)
                 fout << axis_in_global(i) << " ";
-            fout << std::endl;
+            fout << "\n";
         }
         fout << "VECTORS LocalZ float\n";
         for (auto& element : mesh.elements())
@@ -345,7 +345,7 @@ void write_vtk(const Mesh& mesh, const std::string& file_path, const MeshAssocia
             auto axis_in_global = element.local_coord_sys()[0]._transformVector(Vector3D::Unit(2));
             for (auto i = 0; i < axis_in_global.size(); i++)
                 fout << axis_in_global(i) << " ";
-            fout << std::endl;
+            fout << "\n";
         }
     }
 
@@ -353,21 +353,21 @@ void write_vtk(const Mesh& mesh, const std::string& file_path, const MeshAssocia
     fout << "LOOKUP_TABLE default\n";
     for (auto& element : mesh.elements())
     {
-        fout << element.global_index() << std::endl;
+        fout << element.global_index() << "\n";
     }
 
     fout << "SCALARS PartitionIDs int 1\n";
     fout << "LOOKUP_TABLE default\n";
     for (auto& element : mesh.elements())
     {
-        fout << element.parent_partition() << std::endl;
+        fout << element.parent_partition() << "\n";
     }
 
     fout << "SCALARS ComponentIDs int 1\n";
     fout << "LOOKUP_TABLE default\n";
     for (auto& element : mesh.elements())
     {
-        fout << element.component_id() << std::endl;
+        fout << element.component_id() << "\n";
     }
 
     if (!data.empty())
@@ -389,7 +389,7 @@ void write_vtk(const Mesh& mesh, const std::string& file_path, const MeshAssocia
                 {
                     fout << data_field_matrix(row, col) << " ";
                 }
-                fout << std::endl;
+                fout << "\n";
             }
         }
 
@@ -410,26 +410,26 @@ void write_vtk(const Mesh& mesh, const std::string& file_path, const MeshAssocia
                 {
                     fout << data_field_matrix(row, col) << " ";
                 }
-                fout << std::endl;
+                fout << "\n";
             }
         }
     }
 
     // Start of writing point data
-    fout << "POINT_DATA " << mesh.nodes().size() << std::endl;
+    fout << "POINT_DATA " << mesh.nodes().size() << "\n";
 
     fout << "SCALARS GlobalIDs int 1\n";
     fout << "LOOKUP_TABLE default\n";
     for (auto node : mesh.nodes())
     {
-        fout << node.global_index() << std::endl;
+        fout << node.global_index() << "\n";
     }
 
     fout << "SCALARS PartitionIDs int 1\n";
     fout << "LOOKUP_TABLE default\n";
     for (auto node : mesh.nodes())
     {
-        fout << node.parent_partition() << std::endl;
+        fout << node.parent_partition() << "\n";
     }
 
     if (!data.empty())
@@ -451,7 +451,7 @@ void write_vtk(const Mesh& mesh, const std::string& file_path, const MeshAssocia
                 {
                     fout << data_field_matrix(row, col) << " ";
                 }
-                fout << std::endl;
+                fout << "\n";
             }
         }
 
@@ -472,7 +472,7 @@ void write_vtk(const Mesh& mesh, const std::string& file_path, const MeshAssocia
                 {
                     fout << data_field_matrix(row, col) << " ";
                 }
-                fout << std::endl;
+                fout << "\n";
             }
         }
     }

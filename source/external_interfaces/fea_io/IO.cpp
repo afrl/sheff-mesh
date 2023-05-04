@@ -768,8 +768,12 @@ void write_fea_io(const Mesh& mesh,
                   const std::string& mesh_name,
                   const std::string meta_file_name)
 {
+    _F_BEGIN();
+
     MeshAssociatedData data;
     write_fea_io(mesh, data, base_directory, mesh_name, meta_file_name);
+
+    _F_END();
 }
 
 void write_fea_io(const Mesh& mesh,

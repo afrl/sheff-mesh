@@ -720,6 +720,40 @@ std::vector<LocalIndex> triangulate_polygon(Mesh& total_mesh,
                                                  false,
                                                  max_area,
                                                  10.0);
+
+        /* Sometimes useful for debugging
+        { 
+            Mesh tmp;
+            for (auto i : utility::range(output.numberofpoints))
+            {
+                tmp.nodes().add(transformed_points[i]);
+            }
+            for (auto& s : boundary_segments)
+            {
+                tmp.elements().add(ElementType::L1D2N, { s.first, s.second });
+            }
+            for (auto i : utility::range(output.numberoftriangles))
+            {
+                tmp.elements().add(ElementType::T2D3N,
+                                   { (LocalIndex)output.trianglelist[3 * i],
+                                     (LocalIndex)output.trianglelist[3 * i + 1],
+                                     (LocalIndex)output.trianglelist[3 * i + 2] });
+            }
+            write_vtk(tmp, "triangle_input_global.vtk", false);
+        }
+        {
+            Mesh tmp;
+            for (auto i : utility::range(output.numberofpoints))
+            {
+                tmp.nodes().add({ output.pointlist[2 * i], output.pointlist[2 * i + 1] });
+            }
+            for (auto& s : boundary_segments)
+            {
+                tmp.elements().add(ElementType::L1D2N, { s.first, s.second });
+            }
+            write_vtk(tmp, "triangle_input_2D.vtk", false);
+        }
+        */
     }
     catch (...)
     {

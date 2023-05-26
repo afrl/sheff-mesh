@@ -9,7 +9,7 @@
 
 namespace mesh
 {
-using ConnIndex      = uint8_t;
+using ConnIndex      = uint16_t;
 using LocalIndex     = uint32_t;
 using GlobalIndex    = uint32_t;
 using PartitionIndex = uint16_t;

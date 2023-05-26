@@ -148,7 +148,7 @@ static const std::vector<FacetInfo> get_facet_info_helper_linear(
     for (auto& face : face_info)
     {
         facet_info.push_back(
-          { face.connectivity, std::vector<int8_t>(face.edges.begin(), face.edges.end()) });
+          { face.connectivity, std::vector<ConnIndex>(face.edges.begin(), face.edges.end()) });
     }
     return facet_info;
 }
@@ -160,12 +160,12 @@ static const std::vector<FacetInfo> get_facet_info_helper_quadratic(
     facet_info.reserve(face_info.size());
     for (auto& face : face_info)
     {
-        std::vector<int8_t> segment_markers;
+        std::vector<ConnIndex> segment_markers;
         segment_markers.reserve(2 * face.edges.size());
         for (auto& edge_index : face.edges)
         {
-            segment_markers.push_back(static_cast<int8_t>(edge_index));
-            segment_markers.push_back(static_cast<int8_t>(edge_index));
+            segment_markers.push_back(static_cast<ConnIndex>(edge_index));
+            segment_markers.push_back(static_cast<ConnIndex>(edge_index));
         }
 
         facet_info.push_back({ face.connectivity, segment_markers });

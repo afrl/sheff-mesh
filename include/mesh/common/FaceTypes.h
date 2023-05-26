@@ -61,7 +61,7 @@ struct FacetInfo
     /// Clock-wise points of the facet (relative to element connectivity)
     std::vector<ConnIndex> points;
     /// The edge index that the segment is a part of
-    std::vector<int8_t> segment_markers;
+    std::vector<ConnIndex> segment_markers;
 };
 
 //////////////////

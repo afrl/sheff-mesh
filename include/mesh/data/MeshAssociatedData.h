@@ -102,12 +102,29 @@ struct MeshAssociatedData
     template<DataFieldType DFT, typename T>
     void add(DataField<T>&& data);
 
+    /// @brief Helper method to add double precision floating point data at node level
+    ///
+    /// Note: same as calling the templated add and this only refers to the data (does not make a
+    /// copy) so make sure it stays in scope
     void add_node_double(const std::string& name,
                          const std::vector<std::string>& component_names,
-                         const simple_math::DynamicDoubleMatrix& data)
-    {
-        //add<DataFieldType::NODE, double>(DataField<double>::copy(name, component_names, data));
-    }
+                         const simple_math::DynamicDoubleMatrix& data);
+
+    /// @brief Helper method to add uint32 data at node level
+    ///
+    /// Note: same as calling the templated add and this only refers to the data (does not make a
+    /// copy) so make sure it stays in scope
+    void add_node_uint32(const std::string& name,
+                         const std::vector<std::string>& component_names,
+                         const simple_math::DynamicUInt32Matrix& data);
+
+    /// @brief Helper method to add uint32 data at node level
+    ///
+    /// Note: same as calling the templated add and this only refers to the data (does not make a
+    /// copy) so make sure it stays in scope
+    void add_node_uint32(const std::string& name, const std::vector<uint32_t>& data);
+
+    // TODO add other helper methods
 
     //////////////////////////////////////////////////////////////////////////////////////
     // Query Methods
@@ -134,7 +151,7 @@ struct MeshAssociatedData
     template<DataFieldType DFT, typename T>
     std::vector<DataField<T>>& get()
     {
-        return const_cast<std::vector<DataField<T>>&>(std::as_const(*this).get<DFT , T>());
+        return const_cast<std::vector<DataField<T>>&>(std::as_const(*this).get<DFT, T>());
     }
 
     /// @brief Access data field by name as const for the templated type.
@@ -219,7 +236,8 @@ void MeshAssociatedDataType<T>::serialize(SerializerType& s) const
       utility::named_value("n_node_group_data_fields", node_group_data_fields.size()),
       utility::named_value("node_group_data_fields", utility::slice_c(node_group_data_fields)),
       utility::named_value("n_element_group_data_fields", element_group_data_fields.size()),
-      utility::named_value("element_group_data_fields", utility::slice_c(element_group_data_fields)));
+      utility::named_value("element_group_data_fields",
+                           utility::slice_c(element_group_data_fields)));
 }
 
 template<typename T>
@@ -354,6 +372,28 @@ inline void MeshAssociatedData::add<DataFieldType::QUAD, double>(DataField<doubl
     double_data.quad_point_data_fields.push_back(std::move(data));
 }
 
+// Definitions for add helpers
+
+inline void MeshAssociatedData::add_node_double(const std::string& name,
+                                                const std::vector<std::string>& component_names,
+                                                const simple_math::DynamicDoubleMatrix& data)
+{
+    add<DataFieldType::NODE, double>(DataField<double>::cref(name, component_names, data));
+}
+
+inline void MeshAssociatedData::add_node_uint32(const std::string& name,
+                                                const std::vector<std::string>& component_names,
+                                                const simple_math::DynamicUInt32Matrix& data)
+{
+    add<DataFieldType::NODE, uint32_t>(DataField<uint32_t>::cref(name, component_names, data));
+}
+
+inline void MeshAssociatedData::add_node_uint32(const std::string& name,
+                                                const std::vector<uint32_t>& data)
+{
+    add<DataFieldType::NODE, uint32_t>(DataField<uint32_t>::cref(name, data));
+}
+
 inline bool MeshAssociatedData::empty() const
 {
     return uint32_data.empty() && double_data.empty();
@@ -466,7 +506,8 @@ void MeshAssociatedData::serialize(SerializerType& s) const
     s(utility::named_value("n_node_by_element_offsets", node_by_element_offsets.size()),
       utility::named_value("node_by_element_offsets", utility::slice_c(node_by_element_offsets)),
       utility::named_value("n_node_by_component_offsets", node_by_component_offsets.size()),
-      utility::named_value("node_by_component_offsets", utility::slice_c(node_by_component_offsets)),
+      utility::named_value("node_by_component_offsets",
+                           utility::slice_c(node_by_component_offsets)),
       utility::named_value("n_quad_point_offsets", quad_point_offsets.size()),
       utility::named_value("quad_point_offsets", utility::slice_c(quad_point_offsets)),
       utility::named_ref("uint32_data", uint32_data),

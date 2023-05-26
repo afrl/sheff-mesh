@@ -67,7 +67,8 @@ Mesh get_volume_from_tetgenio(tetgen::tetgenio& io)
     {
         for (int i = 0; i < io.numberoftetrahedra; i++)
         {
-            mesh.elements()[i].component_id() = io.tetrahedronattributelist[i];
+            mesh.elements()[i].component_id() =
+              static_cast<ComponentIndex>(io.tetrahedronattributelist[i]);
         }
     }
 

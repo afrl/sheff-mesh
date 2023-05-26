@@ -1,8 +1,8 @@
 #include "mesh/node/NodeContainer.h"
 
-#include "utility/Permutation.h"
 #include "mesh/node/NodeAccessor.h"
 #include "mesh/node/NodeIterator.h"
+#include "utility/Permutation.h"
 
 namespace mesh
 {
@@ -46,12 +46,12 @@ NodeConstAccessor NodeContainer::operator[](LocalIndex i) const
 
 NodeAccessor NodeContainer::back()
 {
-    return NodeAccessor(*this, global_indices_.size() - 1);
+    return NodeAccessor(*this, static_cast<LocalIndex>(global_indices_.size() - 1));
 }
 
 NodeConstAccessor NodeContainer::back() const
 {
-    return NodeConstAccessor(*this, global_indices_.size() - 1);
+    return NodeConstAccessor(*this, static_cast<LocalIndex>(global_indices_.size() - 1));
 }
 
 LocalIndex NodeContainer::size() const

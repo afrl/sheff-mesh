@@ -110,6 +110,12 @@ struct MeshAssociatedData
                          const std::vector<std::string>& component_names,
                          const simple_math::DynamicDoubleMatrix& data);
 
+    /// @brief Helper method to add double data at node level
+    ///
+    /// Note: same as calling the templated add and this only refers to the data (does not make a
+    /// copy) so make sure it stays in scope
+    void add_node_double(const std::string& name, const std::vector<double>& data);
+
     /// @brief Helper method to add uint32 data at node level
     ///
     /// Note: same as calling the templated add and this only refers to the data (does not make a
@@ -379,6 +385,12 @@ inline void MeshAssociatedData::add_node_double(const std::string& name,
                                                 const simple_math::DynamicDoubleMatrix& data)
 {
     add<DataFieldType::NODE, double>(DataField<double>::cref(name, component_names, data));
+}
+
+inline void MeshAssociatedData::add_node_double(const std::string& name,
+                                                const std::vector<double>& data)
+{
+    add<DataFieldType::NODE, double>(DataField<double>::cref(name, data));
 }
 
 inline void MeshAssociatedData::add_node_uint32(const std::string& name,

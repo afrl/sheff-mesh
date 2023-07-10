@@ -1,9 +1,9 @@
 #pragma once
 
 #include "mesh/Mesh.h"
+#include "second_party_mesh/triangle/triangle.h"
 #include "simple_math/EigenDefines.h"
 #include "utility/DynamicBitset.h"
-#include "second_party_mesh/triangle/triangle.h"
 
 #include <unordered_map>
 
@@ -22,6 +22,17 @@ std::vector<std::pair<ConnIndex, ConnIndex>> polygon_segments(
 std::vector<std::pair<ConnIndex, ConnIndex>> polygon_segments(
   const utility::Slice<LocalIndex, ConnIndex>& connectivity);
 
+template<typename T>
+std::vector<std::array<LocalIndex, 2>> range_polygon_segments(const T& polygon_connectivity)
+{
+    std::vector<std::array<LocalIndex, 2>> segments;
+    for (LocalIndex i = 0; i < polygon_connectivity.size() - 1; i++)
+    {
+        segments.push_back({ i, i + 1 });
+    }
+    segments.push_back({ static_cast<LocalIndex>(polygon_connectivity.size() - 1), 0 });
+    return segments;
+}
 
 // Implements Newell's method to calculate a polygons normal vector
 simple_math::Vector3D calc_polygon_unit_normal(const ElementConstAccessor& polygon_element);

@@ -17,10 +17,11 @@ using ComponentIndex = uint16_t;
 using FloatType      = simple_math::FloatType;
 using Point          = simple_math::Point;
 using Vector3D       = simple_math::Vector3D;
+using Point2D        = std::array<FloatType, 2>;
 
 /// A value used to indicate an index is not set
-constexpr LocalIndex NOT_SET_LocalIndex = std::numeric_limits<LocalIndex>::max();
-constexpr GlobalIndex NOT_SET_GlobalIndex = std::numeric_limits<GlobalIndex>::max();
+constexpr LocalIndex NOT_SET_LocalIndex         = std::numeric_limits<LocalIndex>::max();
+constexpr GlobalIndex NOT_SET_GlobalIndex       = std::numeric_limits<GlobalIndex>::max();
 constexpr ComponentIndex NOT_SET_ComponentIndex = std::numeric_limits<ComponentIndex>::max();
 
 enum class TopologyType

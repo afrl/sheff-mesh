@@ -806,7 +806,7 @@ Mesh mesh_rve(const FiberMatrixRVEDescription& rve, const double target_edge_len
         utility::erase_by_indices(is_point_on_intersection, points_to_erase);
         points_to_erase.clear();
 
-        std::size_t last_non_erased_j = points.size() - 1;
+        last_non_erased_j = points.size() - 1;
         for (auto j : utility::reversed_range_as<std::size_t>(1, points.size() - 1))
         {
             if (!is_point_on_intersection[j])

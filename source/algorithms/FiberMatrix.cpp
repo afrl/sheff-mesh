@@ -435,7 +435,7 @@ TriangleInput get_initial_triangle_input(const FiberMatrixRVEDescription& rve,
         }
 
         // Create segments around fiber (except boundaries)
-        for (auto& s : utility::closed_range((LocalIndex)result.points.size()))
+        for (auto s : utility::closed_range((LocalIndex)result.points.size()))
         {
             if (!result.is_point_on_boundary[s.i] || !result.is_point_on_boundary[s.j])
             {
@@ -466,7 +466,7 @@ TriangleInput get_initial_triangle_input(const FiberMatrixRVEDescription& rve,
                                                                      points_for_segment);
         utility::apply_permutation(p_indices_for_segment, permutation);
 
-        for (auto& s : utility::open_range(permutation.size()))
+        for (auto s : utility::open_range(permutation.size()))
         {
             triangle_mesher_input.elements().add(
               ElementType::L1D2N,
@@ -520,7 +520,7 @@ void move_points_to_fibers(const FiberMatrixRVEDescription& rve, Mesh& boundary_
         }
     }
 }
-
+/*
 template<typename MeshType>
 void get_refined_boundary(std::vector<std::vector<double>>& NodeCoords,
                           std::vector<std::vector<int>>& BoundarySegments,
@@ -673,7 +673,7 @@ void get_refined_boundary(std::vector<std::vector<double>>& NodeCoords,
 
     SegmentMarkers = refined_edge_markers;
 }
-
+*/
 Mesh mesh_rve(const FiberMatrixRVEDescription& rve, const double target_edge_length)
 {
     // Note: component IDs in triangle_mesher_input will be used to track the corresponding fiber or

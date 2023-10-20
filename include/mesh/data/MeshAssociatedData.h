@@ -10,6 +10,35 @@
 #include <string>
 #include <vector>
 
+#define ADD_DATA_HELPERS_DECL(TYPE_NAME, TYPE, LEVEL)                                             \
+    /** @brief Helper method to add ##TYPE## data at ##LEVEL## level */                           \
+    /** */                                                                                        \
+    /** Note: same as calling the templated add and this only refers to the data (does not */     \
+    /**       make a copy) so make sure it stays in scope */                                      \
+    void add_##LEVEL##_##TYPE_NAME##(const std::string& name,                                     \
+                                     const std::vector<std::string>& component_names,             \
+                                     const simple_math::DynamicMatrix<##TYPE##>& data);           \
+                                                                                                  \
+    /** @brief Helper method to add ##TYPE## data at ##LEVEL## level */                           \
+    /** */                                                                                        \
+    /** Note: same as calling the templated add and this only refers to the data (does not */     \
+    /**       make a copy) so make sure it stays in scope */                                      \
+    void add_##LEVEL##_##TYPE_NAME##(const std::string& name, const std::vector<##TYPE##>& data); \
+                                                                                                  \
+    /** @brief Helper method to add ##TYPE## data at ##LEVEL## level */                           \
+    /** */                                                                                        \
+    /** Note: data is initialized to zero's and will own the memory internally */                 \
+    void add_##LEVEL##_##TYPE_NAME##(const std::string& name, const int n_rows);                  \
+                                                                                                  \
+    /** @brief Helper method to add ##TYPE## data at ##LEVEL## level */                           \
+    /** */                                                                                        \
+    /** Note: data is initialized to zero's and will own the memory internally */                 \
+    void add_##LEVEL##_##TYPE_NAME##(const std::string& name,                                     \
+                                     const std::vector<std::string>& component_names,             \
+                                     const int n_rows,                                            \
+                                     const int n_cols);
+
+
 namespace mesh
 {
 /// @brief Helper class for MeshAssociatedData. Holds data for a particular data type (uint32_t,
@@ -84,9 +113,15 @@ struct MeshAssociatedData
     std::vector<std::size_t> quad_point_offsets;
 
     /// Integral data for the mesh
+    MeshAssociatedDataType<int16_t> int16_data;
+    MeshAssociatedDataType<uint16_t> uint16_data;
+    MeshAssociatedDataType<int32_t> int32_data;
     MeshAssociatedDataType<uint32_t> uint32_data;
+    MeshAssociatedDataType<int64_t> int64_data;
+    MeshAssociatedDataType<uint64_t> uint64_data;
 
-    /// Double floating-point data for the mesh
+    /// Floating-point data for the mesh
+    MeshAssociatedDataType<float> float_data;
     MeshAssociatedDataType<double> double_data;
 
 
@@ -102,35 +137,50 @@ struct MeshAssociatedData
     template<DataFieldType DFT, typename T>
     void add(DataField<T>&& data);
 
-    /// @brief Helper method to add double precision floating point data at node level
-    ///
-    /// Note: same as calling the templated add and this only refers to the data (does not make a
-    /// copy) so make sure it stays in scope
-    void add_node_double(const std::string& name,
-                         const std::vector<std::string>& component_names,
-                         const simple_math::DynamicDoubleMatrix& data);
+    ADD_DATA_HELPERS_DECL(int16, int16_t, node)
+    ADD_DATA_HELPERS_DECL(uint16, uint16_t, node)
+    ADD_DATA_HELPERS_DECL(int32, int32_t, node)
+    ADD_DATA_HELPERS_DECL(uint32, uint32_t, node)
+    ADD_DATA_HELPERS_DECL(int64, int64_t, node)
+    ADD_DATA_HELPERS_DECL(uint64, uint64_t, node)
+    ADD_DATA_HELPERS_DECL(float, float, node)
+    ADD_DATA_HELPERS_DECL(double, double, node)
 
-    /// @brief Helper method to add double data at node level
-    ///
-    /// Note: same as calling the templated add and this only refers to the data (does not make a
-    /// copy) so make sure it stays in scope
-    void add_node_double(const std::string& name, const std::vector<double>& data);
+    ADD_DATA_HELPERS_DECL(int16, int16_t, element)
+    ADD_DATA_HELPERS_DECL(uint16, uint16_t, element)
+    ADD_DATA_HELPERS_DECL(int32, int32_t, element)
+    ADD_DATA_HELPERS_DECL(uint32, uint32_t, element)
+    ADD_DATA_HELPERS_DECL(int64, int64_t, element)
+    ADD_DATA_HELPERS_DECL(uint64, uint64_t, element)
+    ADD_DATA_HELPERS_DECL(float, float, element)
+    ADD_DATA_HELPERS_DECL(double, double, element)
 
-    /// @brief Helper method to add uint32 data at node level
-    ///
-    /// Note: same as calling the templated add and this only refers to the data (does not make a
-    /// copy) so make sure it stays in scope
-    void add_node_uint32(const std::string& name,
-                         const std::vector<std::string>& component_names,
-                         const simple_math::DynamicUInt32Matrix& data);
+    ADD_DATA_HELPERS_DECL(int16, int16_t, node_by_element)
+    ADD_DATA_HELPERS_DECL(uint16, uint16_t, node_by_element)
+    ADD_DATA_HELPERS_DECL(int32, int32_t, node_by_element)
+    ADD_DATA_HELPERS_DECL(uint32, uint32_t, node_by_element)
+    ADD_DATA_HELPERS_DECL(int64, int64_t, node_by_element)
+    ADD_DATA_HELPERS_DECL(uint64, uint64_t, node_by_element)
+    ADD_DATA_HELPERS_DECL(float, float, node_by_element)
+    ADD_DATA_HELPERS_DECL(double, double, node_by_element)
 
-    /// @brief Helper method to add uint32 data at node level
-    ///
-    /// Note: same as calling the templated add and this only refers to the data (does not make a
-    /// copy) so make sure it stays in scope
-    void add_node_uint32(const std::string& name, const std::vector<uint32_t>& data);
+    ADD_DATA_HELPERS_DECL(int16, int16_t, node_by_component)
+    ADD_DATA_HELPERS_DECL(uint16, uint16_t, node_by_component)
+    ADD_DATA_HELPERS_DECL(int32, int32_t, node_by_component)
+    ADD_DATA_HELPERS_DECL(uint32, uint32_t, node_by_component)
+    ADD_DATA_HELPERS_DECL(int64, int64_t, node_by_component)
+    ADD_DATA_HELPERS_DECL(uint64, uint64_t, node_by_component)
+    ADD_DATA_HELPERS_DECL(float, float, node_by_component)
+    ADD_DATA_HELPERS_DECL(double, double, node_by_component)
 
-    // TODO add other helper methods
+    ADD_DATA_HELPERS_DECL(int16, int16_t, quad_point)
+    ADD_DATA_HELPERS_DECL(uint16, uint16_t, quad_point)
+    ADD_DATA_HELPERS_DECL(int32, int32_t, quad_point)
+    ADD_DATA_HELPERS_DECL(uint32, uint32_t, quad_point)
+    ADD_DATA_HELPERS_DECL(int64, int64_t, quad_point)
+    ADD_DATA_HELPERS_DECL(uint64, uint64_t, quad_point)
+    ADD_DATA_HELPERS_DECL(float, float, quad_point)
+    ADD_DATA_HELPERS_DECL(double, double, quad_point)
 
     //////////////////////////////////////////////////////////////////////////////////////
     // Query Methods
@@ -140,7 +190,7 @@ struct MeshAssociatedData
 
     /// @brief Tests if this instance the exact same data as another (does not test if they are the
     /// same instance)
-    inline bool operator==(const MeshAssociatedData& other) const;
+    bool operator==(const MeshAssociatedData& other) const = default;
 
     //////////////////////////////////////////////////////////////////////////////////////
     // Accessor Methods
@@ -310,193 +360,111 @@ void add(const DataField<T>& data)
     throw _UTIL_MSG_EXCEPT("Specialization for given types is not implemented.");
 }
 
-// Specializations for uint32_t data
-
-template<>
-inline void MeshAssociatedData::add<DataFieldType::NODE, uint32_t>(DataField<uint32_t>&& data)
-{
-    uint32_data.node_data_fields.push_back(std::move(data));
-}
-
-template<>
-inline void MeshAssociatedData::add<DataFieldType::ELEMENT, uint32_t>(DataField<uint32_t>&& data)
-{
-    uint32_data.element_data_fields.push_back(std::move(data));
-}
-
-template<>
-inline void MeshAssociatedData::add<DataFieldType::NODE_BY_ELEMENT, uint32_t>(
-  DataField<uint32_t>&& data)
-{
-    uint32_data.node_by_element_data_fields.push_back(std::move(data));
-}
-
-template<>
-inline void MeshAssociatedData::add<DataFieldType::NODE_BY_COMPONENT, uint32_t>(
-  DataField<uint32_t>&& data)
-{
-    uint32_data.node_by_component_data_fields.push_back(std::move(data));
-}
-
-template<>
-inline void MeshAssociatedData::add<DataFieldType::QUAD, uint32_t>(DataField<uint32_t>&& data)
-{
-    uint32_data.quad_point_data_fields.push_back(std::move(data));
-}
-
-// Specializations for double data
-
-template<>
-inline void MeshAssociatedData::add<DataFieldType::NODE, double>(DataField<double>&& data)
-{
-    double_data.node_data_fields.push_back(std::move(data));
-}
-
-template<>
-inline void MeshAssociatedData::add<DataFieldType::ELEMENT, double>(DataField<double>&& data)
-{
-    double_data.element_data_fields.push_back(std::move(data));
-}
-
-template<>
-inline void MeshAssociatedData::add<DataFieldType::NODE_BY_ELEMENT, double>(
-  DataField<double>&& data)
-{
-    double_data.node_by_element_data_fields.push_back(std::move(data));
-}
-
-template<>
-inline void MeshAssociatedData::add<DataFieldType::NODE_BY_COMPONENT, double>(
-  DataField<double>&& data)
-{
-    double_data.node_by_component_data_fields.push_back(std::move(data));
-}
-
-template<>
-inline void MeshAssociatedData::add<DataFieldType::QUAD, double>(DataField<double>&& data)
-{
-    double_data.quad_point_data_fields.push_back(std::move(data));
-}
-
-// Definitions for add helpers
-
-inline void MeshAssociatedData::add_node_double(const std::string& name,
-                                                const std::vector<std::string>& component_names,
-                                                const simple_math::DynamicDoubleMatrix& data)
-{
-    add<DataFieldType::NODE, double>(DataField<double>::cref(name, component_names, data));
-}
-
-inline void MeshAssociatedData::add_node_double(const std::string& name,
-                                                const std::vector<double>& data)
-{
-    add<DataFieldType::NODE, double>(DataField<double>::cref(name, data));
-}
-
-inline void MeshAssociatedData::add_node_uint32(const std::string& name,
-                                                const std::vector<std::string>& component_names,
-                                                const simple_math::DynamicUInt32Matrix& data)
-{
-    add<DataFieldType::NODE, uint32_t>(DataField<uint32_t>::cref(name, component_names, data));
-}
-
-inline void MeshAssociatedData::add_node_uint32(const std::string& name,
-                                                const std::vector<uint32_t>& data)
-{
-    add<DataFieldType::NODE, uint32_t>(DataField<uint32_t>::cref(name, data));
-}
-
-inline bool MeshAssociatedData::empty() const
-{
-    return uint32_data.empty() && double_data.empty();
-}
-
-inline bool MeshAssociatedData::operator==(const MeshAssociatedData& other) const
-{
-    return node_by_element_offsets == other.node_by_element_offsets &&
-           node_by_component_offsets == other.node_by_component_offsets &&
-           quad_point_offsets == other.quad_point_offsets && uint32_data == other.uint32_data &&
-           double_data == other.double_data;
-}
-
 template<DataFieldType DFT, typename T>
 inline const std::vector<DataField<T>>& MeshAssociatedData::get() const
 {
     throw _UTIL_MSG_EXCEPT("Specialization for given types is not implemented.");
 }
+// clang-format off
+#define ADD_DATA_HELPERS_DEF(TYPE_NAME, TYPE, LEVEL, LEVEL_ENUM)                                   \
+    template<>                                                                                     \
+    inline void MeshAssociatedData::add<DataFieldType::##LEVEL_ENUM##, ##TYPE##>(                  \
+      DataField<##TYPE##> && data)                                                                 \
+    {                                                                                              \
+        ##TYPE_NAME##_data.##LEVEL##_data_fields.push_back(std::move(data));                       \
+    }                                                                                              \
+                                                                                                   \
+    template<>                                                                                     \
+    inline const std::vector<DataField<##TYPE##>>&                                                 \
+    MeshAssociatedData::get<DataFieldType::##LEVEL_ENUM##, ##TYPE##>() const                       \
+    {                                                                                              \
+        return TYPE_NAME##_data.##LEVEL##_data_fields;                    \
+    }                                                                                              \
+                                                                                                   \
+    inline void MeshAssociatedData::add_##LEVEL##_##TYPE_NAME##(                                   \
+      const std::string& name,                                                                     \
+      const std::vector<std::string>& component_names,                                             \
+      const simple_math::DynamicMatrix<##TYPE##>& data)                                            \
+    {                                                                                              \
+        add<DataFieldType::##LEVEL_ENUM##, ##TYPE##>(                                              \
+          DataField<##TYPE##>::cref(name, component_names, data));                                 \
+    }                                                                                              \
+                                                                                                   \
+    inline void MeshAssociatedData::add_##LEVEL##_##TYPE_NAME##(const std::string& name,           \
+                                                                const std::vector<##TYPE##>& data) \
+    {                                                                                              \
+        add<DataFieldType::##LEVEL_ENUM##, ##TYPE##>(DataField<##TYPE##>::cref(name, data));       \
+    }                                                                                              \
+                                                                                                   \
+    inline void MeshAssociatedData::add_##LEVEL##_##TYPE_NAME##(const std::string& name,           \
+                                                                const int n_rows)                  \
+    {                                                                                              \
+        add<DataFieldType::##LEVEL_ENUM##, ##TYPE##>(                                              \
+          DataField<##TYPE##>::copy(name, std::vector<##TYPE##>(n_rows, 0.0)));                    \
+    }                                                                                              \
+                                                                                                   \
+    inline void MeshAssociatedData::add_##LEVEL##_##TYPE_NAME##(                                   \
+      const std::string& name,                                                                     \
+      const std::vector<std::string>& component_names,                                             \
+      const int n_rows,                                                                            \
+      const int n_cols)                                                                            \
+    {                                                                                              \
+        add<DataFieldType::##LEVEL_ENUM##, ##TYPE##>(                                              \
+          DataField<##TYPE##>::move(name,                                                          \
+                                    component_names,                                               \
+                                    simple_math::DynamicMatrix<##TYPE##>::Zero(n_rows, n_cols)));  \
+    }
+// clang-format on
 
-// Specializations for uint32_t
+ADD_DATA_HELPERS_DEF(int16, int16_t, node, NODE)
+ADD_DATA_HELPERS_DEF(uint16, uint16_t, node, NODE)
+ADD_DATA_HELPERS_DEF(int32, int32_t, node, NODE)
+ADD_DATA_HELPERS_DEF(uint32, uint32_t, node, NODE)
+ADD_DATA_HELPERS_DEF(int64, int64_t, node, NODE)
+ADD_DATA_HELPERS_DEF(uint64, uint64_t, node, NODE)
+ADD_DATA_HELPERS_DEF(float, float, node, NODE)
+ADD_DATA_HELPERS_DEF(double, double, node, NODE)
 
-template<>
-inline const std::vector<DataField<uint32_t>>&
-MeshAssociatedData::get<DataFieldType::NODE, uint32_t>() const
+ADD_DATA_HELPERS_DEF(int16, int16_t, element, ELEMENT)
+ADD_DATA_HELPERS_DEF(uint16, uint16_t, element, ELEMENT)
+ADD_DATA_HELPERS_DEF(int32, int32_t, element, ELEMENT)
+ADD_DATA_HELPERS_DEF(uint32, uint32_t, element, ELEMENT)
+ADD_DATA_HELPERS_DEF(int64, int64_t, element, ELEMENT)
+ADD_DATA_HELPERS_DEF(uint64, uint64_t, element, ELEMENT)
+ADD_DATA_HELPERS_DEF(float, float, element, ELEMENT)
+ADD_DATA_HELPERS_DEF(double, double, element, ELEMENT)
+
+ADD_DATA_HELPERS_DEF(int16, int16_t, node_by_element, NODE_BY_ELEMENT)
+ADD_DATA_HELPERS_DEF(uint16, uint16_t, node_by_element, NODE_BY_ELEMENT)
+ADD_DATA_HELPERS_DEF(int32, int32_t, node_by_element, NODE_BY_ELEMENT)
+ADD_DATA_HELPERS_DEF(uint32, uint32_t, node_by_element, NODE_BY_ELEMENT)
+ADD_DATA_HELPERS_DEF(int64, int64_t, node_by_element, NODE_BY_ELEMENT)
+ADD_DATA_HELPERS_DEF(uint64, uint64_t, node_by_element, NODE_BY_ELEMENT)
+ADD_DATA_HELPERS_DEF(float, float, node_by_element, NODE_BY_ELEMENT)
+ADD_DATA_HELPERS_DEF(double, double, node_by_element, NODE_BY_ELEMENT)
+
+ADD_DATA_HELPERS_DEF(int16, int16_t, node_by_component, NODE_BY_COMPONENT)
+ADD_DATA_HELPERS_DEF(uint16, uint16_t, node_by_component, NODE_BY_COMPONENT)
+ADD_DATA_HELPERS_DEF(int32, int32_t, node_by_component, NODE_BY_COMPONENT)
+ADD_DATA_HELPERS_DEF(uint32, uint32_t, node_by_component, NODE_BY_COMPONENT)
+ADD_DATA_HELPERS_DEF(int64, int64_t, node_by_component, NODE_BY_COMPONENT)
+ADD_DATA_HELPERS_DEF(uint64, uint64_t, node_by_component, NODE_BY_COMPONENT)
+ADD_DATA_HELPERS_DEF(float, float, node_by_component, NODE_BY_COMPONENT)
+ADD_DATA_HELPERS_DEF(double, double, node_by_component, NODE_BY_COMPONENT)
+
+ADD_DATA_HELPERS_DEF(int16, int16_t, quad_point, QUAD)
+ADD_DATA_HELPERS_DEF(uint16, uint16_t, quad_point, QUAD)
+ADD_DATA_HELPERS_DEF(int32, int32_t, quad_point, QUAD)
+ADD_DATA_HELPERS_DEF(uint32, uint32_t, quad_point, QUAD)
+ADD_DATA_HELPERS_DEF(int64, int64_t, quad_point, QUAD)
+ADD_DATA_HELPERS_DEF(uint64, uint64_t, quad_point, QUAD)
+ADD_DATA_HELPERS_DEF(float, float, quad_point, QUAD)
+ADD_DATA_HELPERS_DEF(double, double, quad_point, QUAD)
+
+inline bool MeshAssociatedData::empty() const
 {
-    return uint32_data.node_data_fields;
-}
-
-template<>
-inline const std::vector<DataField<uint32_t>>&
-MeshAssociatedData::get<DataFieldType::ELEMENT, uint32_t>() const
-{
-    return uint32_data.element_data_fields;
-}
-
-template<>
-inline const std::vector<DataField<uint32_t>>&
-MeshAssociatedData::get<DataFieldType::NODE_BY_ELEMENT, uint32_t>() const
-{
-    return uint32_data.node_by_element_data_fields;
-}
-
-template<>
-inline const std::vector<DataField<uint32_t>>&
-MeshAssociatedData::get<DataFieldType::NODE_BY_COMPONENT, uint32_t>() const
-{
-    return uint32_data.node_by_component_data_fields;
-}
-
-template<>
-inline const std::vector<DataField<uint32_t>>&
-MeshAssociatedData::get<DataFieldType::QUAD, uint32_t>() const
-{
-    return uint32_data.quad_point_data_fields;
-}
-
-// Specializations for double
-
-template<>
-inline const std::vector<DataField<double>>& MeshAssociatedData::get<DataFieldType::NODE, double>()
-  const
-{
-    return double_data.node_data_fields;
-}
-
-template<>
-inline const std::vector<DataField<double>>&
-MeshAssociatedData::get<DataFieldType::ELEMENT, double>() const
-{
-    return double_data.element_data_fields;
-}
-
-template<>
-inline const std::vector<DataField<double>>&
-MeshAssociatedData::get<DataFieldType::NODE_BY_ELEMENT, double>() const
-{
-    return double_data.node_by_element_data_fields;
-}
-
-template<>
-inline const std::vector<DataField<double>>&
-MeshAssociatedData::get<DataFieldType::NODE_BY_COMPONENT, double>() const
-{
-    return double_data.node_by_component_data_fields;
-}
-
-template<>
-inline const std::vector<DataField<double>>& MeshAssociatedData::get<DataFieldType::QUAD, double>()
-  const
-{
-    return double_data.quad_point_data_fields;
+    return uint16_data.empty() && uint32_data.empty() && uint64_data.empty() &&
+           float_data.empty() && double_data.empty();
 }
 
 template<DataFieldType DFT, typename T>
@@ -522,7 +490,13 @@ void MeshAssociatedData::serialize(SerializerType& s) const
                            utility::slice_c(node_by_component_offsets)),
       utility::named_value("n_quad_point_offsets", quad_point_offsets.size()),
       utility::named_value("quad_point_offsets", utility::slice_c(quad_point_offsets)),
+      utility::named_ref("int16_data", int16_data),
+      utility::named_ref("uint16_data", uint16_data),
+      utility::named_ref("int32_data", int32_data),
       utility::named_ref("uint32_data", uint32_data),
+      utility::named_ref("int64_data", int64_data),
+      utility::named_ref("uint64_data", uint64_data),
+      utility::named_ref("float_data", float_data),
       utility::named_ref("double_data", double_data));
 }
 
@@ -543,10 +517,20 @@ void MeshAssociatedData::deserialize(SerializerType& s)
     quad_point_offsets.resize(n_offsets);
     s(utility::slice(quad_point_offsets));
 
-    s(uint32_data, double_data);
+    s(int16_data,
+      uint16_data,
+      int32_data,
+      uint32_data,
+      int64_data,
+      uint64_data,
+      float_data,
+      double_data);
 }
 
 #ifdef WIN32
 #pragma endregion
 #endif
 }
+
+#undef ADD_DATA_HELPERS_DECL
+#undef ADD_DATA_HELPERS_DEF

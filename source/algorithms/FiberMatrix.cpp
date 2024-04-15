@@ -74,7 +74,7 @@ Mesh extract_triangle_mesh(const triangle::triangulateio& io)
                            (LocalIndex)io.trianglelist[3 * i + 2] });
         if (io.numberoftriangleattributes > 0)
         {
-            m.elements().back().component_id() = io.triangleattributelist[i];
+            m.elements().back().component_id() = static_cast<PartitionIndex>(io.triangleattributelist[i]);
         }
     }
     return m;
@@ -99,7 +99,7 @@ triangle::triangulateio triangulate(const Mesh& input,
     in.numberofpointattributes = 0;
     in.pointlist               = new double[in.numberofpoints * 2];
     in.pointmarkerlist         = NULL;
-    for (unsigned int i = 0; i < in.numberofpoints; ++i)
+    for (int i = 0; i < in.numberofpoints; ++i)
     {
         in.pointlist[i * 2]     = input.nodes()[i].x();
         in.pointlist[i * 2 + 1] = input.nodes()[i].y();
@@ -114,9 +114,9 @@ triangle::triangulateio triangulate(const Mesh& input,
         in.segmentlist[i * 2 + 1] = input.elements()[i].node(1).local_index();
         in.segmentmarkerlist[i]   = input.elements()[i].component_id();
     }
-    in.numberofregions = attribute_points.size();
+    in.numberofregions = static_cast<int>(attribute_points.size());
     in.regionlist      = new double[in.numberofregions * 4];
-    for (unsigned int i = 0; i < attribute_points.size(); ++i)
+    for (int i = 0; i < attribute_points.size(); ++i)
     {
         in.regionlist[i * 4]     = attribute_points[i][0];
         in.regionlist[i * 4 + 1] = attribute_points[i][1];
@@ -197,7 +197,7 @@ Mesh make_rve_boundary(const std::vector<Point2D>& ordered_vertices, const doubl
     simple_math::Vector2D last_normal = get_segment_normal(0);
     ComponentIndex curr_marker        = 0;
     const double dot_tolerance        = cos(EIGEN_PI * angle_tolerance / 180.0);
-    for (auto i : utility::indices(segments))
+    for (auto i : utility::indices_as<LocalIndex>(segments))
     {
         auto normal    = get_segment_normal(i);
         const auto dot = normal.dot(last_normal);
@@ -340,7 +340,7 @@ PointsAroundFiber create_points_around_fiber(const StraightCircularFiber& fiber,
 
     // Create evenly space points around the fiber
     const double fiber_perimeter       = 2.0 * EIGEN_PI * fiber.radius;
-    int n_points_around_fiber          = fiber_perimeter / target_edge_length;
+    int n_points_around_fiber          = (int)(fiber_perimeter / target_edge_length);
     double adjusted_target_edge_length = target_edge_length;
     if (n_points_around_fiber < 8)
     {
@@ -410,7 +410,7 @@ TriangleInput get_initial_triangle_input(const FiberMatrixRVEDescription& rve,
     std::vector<Point> internal_fiber_point;
     std::vector<std::vector<LocalIndex>> boundary_segments_to_intersect_points_map(
       rve.rve_boundary.elements().size());
-    for (auto fiber_i : utility::indices(rve.fibers))
+    for (auto fiber_i : utility::indices_as<ComponentIndex>(rve.fibers))
     {
         auto& fiber = rve.fibers[fiber_i];
 
@@ -807,7 +807,7 @@ Mesh mesh_rve(const FiberMatrixRVEDescription& rve, const double target_edge_len
         points_to_erase.clear();
 
         last_non_erased_j = points.size() - 1;
-        for (auto j : utility::reversed_range_as<std::size_t>(1, points.size() - 1))
+        for (auto j : utility::reversed_range_as<int64_t>(1, points.size() - 1))
         {
             if (!is_point_on_intersection[j])
             {

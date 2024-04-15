@@ -80,9 +80,9 @@ void set_parent_partition(mesh::PartitionIndex i)
 }
 };
 
-//%attribute(mesh::NodeAccessorBase, mesh::GlobalIndex, g, global_index);
-
 %template(NodeAccessor) mesh::NodeAccessorBase<mesh::NodeContainer>;
+
+%attributeval(mesh::NodeAccessorBase<mesh::NodeContainer>, mesh::GlobalIndex, get_global_index, set_global_index);
 
 // End NodeAccessor
 //////////////////////////////////////////////////////////////////////////////////////////////

@@ -16,6 +16,17 @@ void assign_lcs(Mesh& m,
                 const simple_math::Point& x_vector,
                 const simple_math::Point& y_vector);
 
+
+/// @brief Assigns the local coordinate system for a set/group of elements.
+///
+/// @param element - element to assign the LCS
+/// @param x_vector - local x-axis expressed in terms of the global coordinate system.
+/// @param y_vector - local y-axis expressed in terms of the global coordinate system.
+void assign_lcs(ElementAccessor& element,
+                const simple_math::Point& x_vector,
+                const simple_math::Point& y_vector);
+
+
 /// @brief Creates a quaternion that transforms from the local to the global coordinate systems from
 /// two local vectors.
 ///

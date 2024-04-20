@@ -40,7 +40,7 @@ void add_to_group(Mesh& mesh, const std::string group_name, ElementSelection sel
 /// @param local_ids_to_add - node local indices to be added to the group
 void add_nodes_to_group(Mesh& mesh,
                         const std::string group_name,
-                        std::vector<mesh::LocalIndex>& local_ids_to_add);
+                        const std::vector<mesh::LocalIndex>& local_ids_to_add);
 
 /// @brief Adds the list of elements to a group (ensuring no duplicates)
 /// @param mesh - mesh to modify
@@ -49,5 +49,5 @@ void add_nodes_to_group(Mesh& mesh,
 /// @param local_ids_to_add - element local indices to be added to the group
 void add_elements_to_group(Mesh& mesh,
                            const std::string group_name,
-                           std::vector<mesh::LocalIndex>& local_ids_to_add);
+                           const std::vector<mesh::LocalIndex>& local_ids_to_add);
 }

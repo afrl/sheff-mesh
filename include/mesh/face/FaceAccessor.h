@@ -51,6 +51,15 @@ class FaceConstAccessor
         return conn;
     }
 
+    /// @brief Returns the number of nodes that compose the face (size of the connectivity).
+    inline ConnIndex n_nodes() const
+    {
+        const auto& conn_index_start = faces_.connectivity_offsets_[curr_face_index_];
+        const auto& conn_size =
+          faces_.connectivity_offsets_[curr_face_index_ + 1] - conn_index_start;
+        return conn_size;
+    }
+
     /// Returns a slice of the ordered connectivity of the face with indices relative to the parent
     /// element's connectivity.
     inline utility::Slice<const mesh::ConnIndex> element_conn_indices() const

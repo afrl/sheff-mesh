@@ -23,6 +23,21 @@ void assign_lcs(Mesh& m,
     }
 }
 
+void assign_lcs(ElementAccessor& element,
+                const simple_math::Point& x_vector,
+                const simple_math::Point& y_vector)
+{
+    simple_math::Quaternion local_to_global_q = x_y_to_quaterion(x_vector, y_vector);
+    if (element.local_coord_sys().size() == 0)
+    {
+        element.local_coord_sys().initialize(LCSAssignmentType::Element);
+    }
+    for (auto& q : element.local_coord_sys())
+    {
+        q = local_to_global_q;
+    }
+}
+
 simple_math::Quaternion x_y_to_quaterion(const simple_math::Point& local_x_vector,
                                          const simple_math::Point& local_y_vector)
 {

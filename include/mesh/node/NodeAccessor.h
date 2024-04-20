@@ -20,8 +20,8 @@ class NodeAccessorBase
     using FloatTypeType =
       typename std::conditional<std::is_const<NC>::value, const FloatType, FloatType>::type;
     using PointType = typename std::conditional<std::is_const<NC>::value, const Point, Point>::type;
-    using PartitionIndexType = typename std::
-      conditional<std::is_const<NC>::value, const PartitionIndex, PartitionIndex>::type;
+    using PartitionIndexType = 
+      typename std::conditional<std::is_const<NC>::value, const PartitionIndex, PartitionIndex>::type;
     using MapCoordType = typename std::
       conditional<std::is_const<NC>::value, const Eigen::Vector3d, Eigen::Vector3d>::type;
 

@@ -66,6 +66,18 @@ class ElementIteratorBase
     {
         return accessor_;
     }
+    
+    /// @brief Returns true if the iterator is at the last node in the container already
+    inline bool is_end() const
+    {
+        return accessor_.is_end();
+    }
+
+    /// @brief Non-const access to underlying NodeAccessor (useful for Python)
+    value_type get()
+    {
+        return accessor_;
+    }
 
   protected:
     ElementAccessorType accessor_;

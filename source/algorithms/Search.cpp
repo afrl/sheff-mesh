@@ -37,9 +37,9 @@ std::pair<Point, Point> find_extent(const Mesh& mesh)
 {
     Point neg_point = { INFINITY, INFINITY, INFINITY };
     Point pos_point = { -INFINITY, -INFINITY, -INFINITY };
-    for (auto node : mesh.nodes())
+    for (auto& node : mesh.nodes())
     {
-        auto p = node.point();
+        const auto& p = node.point();
         for (auto i = 0; i < neg_point.size(); i++)
         {
             if (p[i] < neg_point[i])
@@ -103,7 +103,7 @@ std::pair<Point, Point> find_extent(const std::vector<std::pair<Point, Point>>& 
 std::vector<LocalIndex> find_nodes_in_box(const Mesh& mesh, const Point& min, const Point& max)
 {
     std::vector<LocalIndex> node_indices;
-    for (auto n : mesh.nodes())
+    for (auto& n : mesh.nodes())
     {
         bool inside = true;
         for (auto i : utility::range(3))
@@ -121,7 +121,7 @@ std::vector<LocalIndex> find_nodes_in_box(const Mesh& mesh, const Point& min, co
 std::vector<LocalIndex> find_elements_in_box(const Mesh& mesh, const Point& min, const Point& max)
 {
     std::vector<LocalIndex> element_indices;
-    for (auto e : mesh.elements())
+    for (auto& e : mesh.elements())
     {
         auto m      = calc_mean_coordinate(e);
         bool inside = true;
@@ -165,7 +165,7 @@ namespace detail
 ///
 /// a:    x-----x
 /// b: x-----------x
-bool do_segments_overlap(const double& a1, const double& a2, const double& b1, const double& b2)
+static bool do_segments_overlap(const double& a1, const double& a2, const double& b1, const double& b2)
 {
     const double t = 1e-6 * std::min(a2 - a1, b2 - b1);
     if ((a1 >= b1 - t && a1 <= b2 + t) || (a2 >= b1 - t && a2 <= b2 + t) ||
@@ -290,7 +290,7 @@ BoundaryInfo extract_boundary(const Mesh& mesh, const std::vector<LocalIndex>& e
 Mesh extract_component(const Mesh& mesh, const ComponentIndex& component_id)
 {
     std::vector<LocalIndex> elements_in_component;
-    for (auto e : mesh.elements())
+    for (auto& e : mesh.elements())
     {
         elements_in_component.push_back(e.local_index());
     }
@@ -309,7 +309,7 @@ UnmatchedEdgeInfo find_unmatched_edges(const Mesh& mesh)
     // edge, and the connectivity of the edge.
     std::unordered_map<std::size_t, std::tuple<int, LocalIndex, EdgeType, std::vector<LocalIndex>>>
       edge_hash_to_count_and_info;
-    for (auto e : mesh.elements())
+    for (auto& e : mesh.elements())
     {
         auto e_conn = e.connectivity();
         for (auto& edge : get_edge_info(e.type()))

@@ -80,7 +80,7 @@ void add_to_group(Mesh& mesh, const std::string group_name, ElementSelection sel
 
 void add_nodes_to_group(Mesh& mesh,
                         const std::string group_name,
-                        std::vector<mesh::LocalIndex>& local_ids_to_add)
+                        const std::vector<mesh::LocalIndex>& local_ids_to_add)
 {
     auto& group = mesh.nodes().group(group_name);
     std::set<mesh::LocalIndex> ids_in_group(group.node_indices.begin(), group.node_indices.end());
@@ -93,7 +93,7 @@ void add_nodes_to_group(Mesh& mesh,
 
 void add_elements_to_group(Mesh& mesh,
                            const std::string group_name,
-                           std::vector<mesh::LocalIndex>& local_ids_to_add)
+                           const std::vector<mesh::LocalIndex>& local_ids_to_add)
 {
     auto& group = mesh.elements().group(group_name);
     std::set<mesh::LocalIndex> ids_in_group(group.element_indices.begin(),

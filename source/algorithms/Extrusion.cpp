@@ -74,6 +74,9 @@ static Mesh extrude_2D_meshalong_path_linear(const Mesh& mesh,
             new_mesh.elements().add(infer_type(3, static_cast<unsigned int>(connectivity.size())),
                                     connectivity);
 
+            new_mesh.elements().back().component_id() = element.component_id();
+            new_mesh.elements().back().local_coord_sys().copy(element.local_coord_sys());
+
             // new_element->set_component_id(e_ptr->get_component_id());
         }
     }

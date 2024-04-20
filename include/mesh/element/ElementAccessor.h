@@ -184,6 +184,12 @@ class ElementAccessorBase
     {
         curr_index_ = i;
     }
+
+    /// @brief Returns true if the accessor is at the last node in the container already
+    inline bool is_end() const
+    {
+        return curr_index_ == elements_.size();
+    }
 };
 
 using ElementAccessor      = ElementAccessorBase<NodeContainer, ElementContainer>;

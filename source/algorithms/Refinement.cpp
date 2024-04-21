@@ -82,6 +82,93 @@ std::vector<LocalIndex> create_new_nodes(
     return new_connectivity;
 }
 
+void refine_linear_triangle(Mesh& mesh,
+                            const ElementAccessor& element,
+                            std::map<std::size_t, RefinementEntry>& edge_face_hash_to_new_node_map,
+                            std::vector<ElementRefinementEntry>& element_refinements)
+{
+    // Based on connectivity: (with new nodes and triangles labeled)
+    //      2
+    //     /3\
+    //    /___\
+    //  5/\ 2 /\4
+    //  / 0\ /1 \
+    // 0---------1
+    //      3
+
+    static const std::vector<std::vector<ConnIndex>> split_nodes = {
+        { 0, 1 }, // 3
+        { 1, 2 }, // 4
+        { 2, 0 }, // 5
+    };
+
+    std::vector<mesh::LocalIndex> c =
+      create_new_nodes(element, split_nodes, mesh, edge_face_hash_to_new_node_map);
+
+    std::vector<mesh::LocalIndex> t0_conn = { c[0], c[3], c[5] }; // reuse current element for t0
+    mesh.elements().add(ElementType::T2D3N, { c[3], c[1], c[4] });
+    mesh.elements().add(ElementType::T2D3N, { c[3], c[4], c[5] });
+    mesh.elements().add(ElementType::T2D3N, { c[2], c[5], c[4] });
+    for (auto i : utility::range(3))
+    {
+        element.connectivity()[i] = t0_conn[i];
+    }
+
+    std::vector<LocalIndex> new_elements;
+    for (auto i : utility::range(mesh.elements().size() - 3, mesh.elements().size()))
+    {
+        mesh.elements()[i].local_coord_sys().copy(element.local_coord_sys());
+        mesh.elements()[i].component_id()     = element.component_id();
+        mesh.elements()[i].parent_partition() = element.parent_partition();
+        new_elements.push_back(i);
+    }
+    element_refinements.push_back({ element.local_index(), new_elements });
+}
+
+void refine_linear_quad(Mesh& mesh,
+                        const ElementAccessor& element,
+                        std::map<std::size_t, RefinementEntry>& edge_face_hash_to_new_node_map,
+                        std::vector<ElementRefinementEntry>& element_refinements)
+{
+    // Based on connectivity: (with new nodes and quads labeled)
+    //  3----6----2
+    //  | 3  | 2  |
+    //  7----8----5
+    //  | 0  | 1  |
+    //  0----4----1
+
+    static const std::vector<std::vector<ConnIndex>> split_nodes = {
+        { 0, 1 },       // 4
+        { 1, 2 },       // 5
+        { 2, 3 },       // 6
+        { 3, 0 },       // 7
+        { 0, 1, 2, 3 }, // 8
+    };
+
+    std::vector<mesh::LocalIndex> c =
+      create_new_nodes(element, split_nodes, mesh, edge_face_hash_to_new_node_map);
+
+    // reuse current element for q0
+    std::vector<mesh::LocalIndex> q0_conn = { c[0], c[4], c[8], c[7] };
+    mesh.elements().add(ElementType::Q2D4N, { c[4], c[1], c[5], c[8] });
+    mesh.elements().add(ElementType::Q2D4N, { c[8], c[5], c[2], c[6] });
+    mesh.elements().add(ElementType::Q2D4N, { c[7], c[8], c[6], c[3] });
+    for (auto i : utility::indices(q0_conn))
+    {
+        element.connectivity()[i] = q0_conn[i];
+    }
+
+    std::vector<LocalIndex> new_elements;
+    for (auto i : utility::range(mesh.elements().size() - 3, mesh.elements().size()))
+    {
+        mesh.elements()[i].local_coord_sys().copy(element.local_coord_sys());
+        mesh.elements()[i].component_id()     = element.component_id();
+        mesh.elements()[i].parent_partition() = element.parent_partition();
+        new_elements.push_back(i);
+    }
+    element_refinements.push_back({ element.local_index(), new_elements });
+}
+
 void refine_linear_tetrahedron(
   Mesh& mesh,
   const ElementAccessor& element,
@@ -542,7 +629,21 @@ void refine_uniform(Mesh& mesh)
     auto n_elements_orig = mesh.elements().size();
     for (auto i : utility::range(n_elements_orig))
     {
-        if (mesh.elements()[i].type() == ElementType::T3D4N)
+        if (mesh.elements()[i].type() == ElementType::T2D3N)
+        {
+            refine_linear_triangle(mesh,
+                                   mesh.elements()[i],
+                                   edge_face_hash_to_new_node_map,
+                                   element_refinements);
+        }
+        else if (mesh.elements()[i].type() == ElementType::Q2D4N)
+        {
+            refine_linear_quad(mesh,
+                               mesh.elements()[i],
+                               edge_face_hash_to_new_node_map,
+                               element_refinements);
+        }
+        else if (mesh.elements()[i].type() == ElementType::T3D4N)
         {
             refine_linear_tetrahedron(mesh,
                                       mesh.elements()[i],

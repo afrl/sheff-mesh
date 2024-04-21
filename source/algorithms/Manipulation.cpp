@@ -15,6 +15,13 @@ void convert_to_quadratic(Mesh& mesh)
     // then this algorithm needs extra steps for faces (that would be exactly the same
     // as the edge algorithm) and body centered (which is localized to each element) nodes.
 
+    if (!mesh.nodes().groups().empty())
+    {
+        _UTIL_WARN(
+          "convert_to_quadratic does not add new nodes to node groups, so be suspect of "
+          "any existing node groups as they will be missing any midside and face centered nodes.");
+    }
+
     // Create a map of edge hash id's to new nodes.
     std::map<std::size_t, LocalIndex> hash_to_new_node_map;
     for (auto& element : mesh.elements())
@@ -48,9 +55,12 @@ void convert_to_quadratic(Mesh& mesh)
     }
 
     // Update the element connectivities
+    ElementContainer new_elements(mesh.nodes());
+    new_elements.reserve(mesh.elements().size(),
+                         get_num_nodes_for_type(get_quadratic_type(mesh.elements().back().type())));
     std::vector<ConnIndex> midside_node_indices;
     std::vector<std::pair<ConnIndex, ConnIndex>> linear_node_pair_indices;
-    for (auto element : mesh.elements())
+    for (auto& element : mesh.elements())
     {
         bool is_node_level_orient = element.local_coord_sys().size() > 1;
 
@@ -116,20 +126,29 @@ void convert_to_quadratic(Mesh& mesh)
             }
         }
 
-        element.type() = quadratic_type;
-        mesh.elements().replace_connectivity(element.local_index(), utility::slice(quadratic_conn));
+        new_elements.add(quadratic_type,
+                         quadratic_conn,
+                         element.global_index(),
+                         element.parent_partition(),
+                         element.component_id());
+        new_elements.back().local_coord_sys().copy(element.local_coord_sys());
         if (quadratic_orientations.size() > 1)
         {
-            element.local_coord_sys() = std::move(quadratic_orientations);
+            new_elements.back().local_coord_sys() = std::move(quadratic_orientations);
         }
     }
+
+    // Swap groups so that they remain unchanged after the element containers are swapped on the
+    // next line.
+    new_elements.groups().swap(mesh.elements().groups());
+    mesh.elements().swap(new_elements);
 }
 
 void convert_to_linear(Mesh& mesh)
 {
     std::vector<LocalIndex> new_conn;
     new_conn.reserve(20);
-    for (auto element : mesh.elements())
+    for (auto& element : mesh.elements())
     {
         auto linear_type = get_linearized_type(element.type());
         auto permutation = get_quadratic_indices_of_linear_nodes(linear_type);

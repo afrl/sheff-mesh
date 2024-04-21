@@ -74,35 +74,43 @@ class ElementContainer
     ///@{
     /// Adds an element to the end of the container.  Assigns the global index of the new node to
     /// the next highest number (on this rank).
-    void add(ElementType type, const std::vector<LocalIndex>& connectivity);
+    ElementAccessor add(ElementType type, const std::vector<LocalIndex>& connectivity);
     /// Adds an element to the end of the container with a specified global index.
-    void add(ElementType type,
-             const std::vector<LocalIndex>& connectivity,
-             GlobalIndex i,
-             PartitionIndex parent_partition = 0,
-             ComponentIndex component_index  = 0);
+    ElementAccessor add(ElementType type,
+                        const std::vector<LocalIndex>& connectivity,
+                        GlobalIndex i,
+                        PartitionIndex parent_partition = 0,
+                        ComponentIndex component_index  = 0);
     /// Adds an element to the end of the container.  Assigns the global index of the new node to
     /// the next highest number (on this partition).
-    void add(ElementType type, const utility::Slice<const LocalIndex>& connectivity);
+    ElementAccessor add(ElementType type, const utility::Slice<const LocalIndex>& connectivity);
     /// Adds an element to the end of the container with a specified global index.
-    void add(ElementType type,
-             const utility::Slice<const LocalIndex>& connectivity,
-             GlobalIndex i,
-             PartitionIndex parent_partition = 0,
-             ComponentIndex component_index  = 0);
+    ElementAccessor add(ElementType type,
+                        const utility::Slice<const LocalIndex>& connectivity,
+                        GlobalIndex i,
+                        PartitionIndex parent_partition = 0,
+                        ComponentIndex component_index  = 0);
 
     /// Adds an element that is a copy of another element.
     ElementAccessor add_copy(const ElementConstAccessor& other_element);
 
+    /// Allocates memory to speed up adding a large number of elements.
+    /// Since std::vector is used as an underlying structures, it should be noted that calling add()
+    /// is quite efficient without the need for reserving memory.
+    void reserve(const LocalIndex& n_new_elements, const ConnIndex& estimated_n_nodes_per_element);
+
     /// Replaces a given element's connectivity with the given one.
+    /// WARNING: this is a slow method if the element is near the beginning of the container.
     void replace_connectivity(const LocalIndex& element_index,
                               const utility::Slice<LocalIndex>& connectivity);
 
     /// Removes an element by its index from the container while preserving ordering (and therefore
     /// local indices).
+    /// WARNING: this is a slow method if the element is near the beginning of the container.
     void remove_stable(LocalIndex i);
     /// Removes a list of element by their index from the container while preserving ordering (and
     /// therefore local indices).
+    /// WARNING: this is a slow method if the elements are near the beginning of the container.
     void remove_stable(std::vector<LocalIndex>& v);
 
     /// Swaps all data with the other container, but does not change the reference to the

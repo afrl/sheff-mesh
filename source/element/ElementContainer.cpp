@@ -108,21 +108,26 @@ const std::vector<ElementGroup>& ElementContainer::groups() const
     return groups_;
 }
 
-void ElementContainer::add(ElementType type, const std::vector<LocalIndex>& connectivity)
+ElementAccessor ElementContainer::add(ElementType type, const std::vector<LocalIndex>& connectivity)
 {
     add(type, utility::slice_c(connectivity));
+
+    return back();
 }
 
-void ElementContainer::add(ElementType type,
+ElementAccessor ElementContainer::add(ElementType type,
                            const std::vector<LocalIndex>& connectivity,
                            GlobalIndex i,
                            PartitionIndex parent_partition,
                            ComponentIndex component_index)
 {
     add(type, utility::slice_c(connectivity), i, parent_partition, component_index);
+
+    return back();
 }
 
-void ElementContainer::add(ElementType type, const utility::Slice<const LocalIndex>& connectivity)
+ElementAccessor ElementContainer::add(ElementType type,
+                                      const utility::Slice<const LocalIndex>& connectivity)
 {
     auto next_index = static_cast<GlobalIndex>(global_indices_.size());
     global_indices_.push_back(next_index);
@@ -134,9 +139,11 @@ void ElementContainer::add(ElementType type, const utility::Slice<const LocalInd
     parent_partitions_.push_back(0);
     component_ids_.push_back(0);
     lcs_.push_back(QuaternionContainer());
+
+    return back();
 }
 
-void ElementContainer::add(ElementType type,
+ElementAccessor ElementContainer::add(ElementType type,
                            const utility::Slice<const LocalIndex>& connectivity,
                            GlobalIndex i,
                            PartitionIndex parent_partition,
@@ -151,6 +158,8 @@ void ElementContainer::add(ElementType type,
     parent_partitions_.push_back(parent_partition);
     component_ids_.push_back(component_index);
     lcs_.push_back(QuaternionContainer());
+
+    return back();
 }
 
 ElementAccessor ElementContainer::add_copy(const ElementConstAccessor& other_element)
@@ -167,6 +176,19 @@ ElementAccessor ElementContainer::add_copy(const ElementConstAccessor& other_ele
     component_ids_.push_back(other_element.component_id());
 
     return back();
+}
+
+void ElementContainer::reserve(const LocalIndex& n_new_elements,
+                               const ConnIndex& estimated_n_nodes_per_element)
+{
+    auto curr_n_elements = global_indices_.size();
+    global_indices_.reserve(curr_n_elements + n_new_elements);
+    types_.reserve(curr_n_elements + n_new_elements);
+    connectivities_.reserve(connectivities_.size() +
+                            n_new_elements * estimated_n_nodes_per_element);
+    lcs_.reserve(curr_n_elements + n_new_elements);
+    parent_partitions_.reserve(curr_n_elements + n_new_elements);
+    component_ids_.reserve(curr_n_elements + n_new_elements);
 }
 
 void ElementContainer::replace_connectivity(const LocalIndex& element_index,

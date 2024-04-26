@@ -165,7 +165,10 @@ namespace detail
 ///
 /// a:    x-----x
 /// b: x-----------x
-static bool do_segments_overlap(const double& a1, const double& a2, const double& b1, const double& b2)
+static bool do_segments_overlap(const double& a1,
+                                const double& a2,
+                                const double& b1,
+                                const double& b2)
 {
     const double t = 1e-6 * std::min(a2 - a1, b2 - b1);
     if ((a1 >= b1 - t && a1 <= b2 + t) || (a2 >= b1 - t && a2 <= b2 + t) ||
@@ -287,6 +290,93 @@ BoundaryInfo extract_boundary(const Mesh& mesh, const std::vector<LocalIndex>& e
     return boundary_info;
 }
 
+std::vector<ComponentInterface> extract_component_interfaces(const Mesh& mesh)
+{
+    // A map from the face hash to the pair of (component index, element index, face index).
+    // If a match is found, then the existing object is removed (thus assuming no
+    // more than 2 elements share a face).
+    // Note: the reference volume element will be the one with the lower component ID to ensure
+    // the surface elements have consistent normal vectors.
+    std::unordered_map<std::size_t,
+                       std::tuple<ComponentIndex, ComponentIndex, LocalIndex, ConnIndex>>
+      unmatched_faces;
+    for (auto& e : mesh.elements())
+    {
+        FaceContainer faces(e);
+        for (auto& face : faces)
+        {
+            auto hash      = utility::hash_sorted(face.connectivity());
+            auto find_iter = unmatched_faces.find(hash);
+            if (find_iter == unmatched_faces.end())
+            {
+                unmatched_faces[hash] = { e.component_id(),
+                                          NOT_SET_ComponentIndex,
+                                          e.local_index(),
+                                          face.index() };
+            }
+            else if (std::get<0>(find_iter->second) == e.component_id())
+            { // The face lies between two elements in the same component
+                unmatched_faces.erase(find_iter);
+            }
+            else if (std::get<0>(find_iter->second) < e.component_id())
+            { // This element should be the reference to ensure consistent normals
+                std::get<1>(find_iter->second) = std::get<0>(find_iter->second);
+                std::get<0>(find_iter->second) = e.component_id();
+                std::get<2>(find_iter->second) = e.local_index();
+                std::get<3>(find_iter->second) = face.index();
+            }
+            else
+            {
+                std::get<1>(find_iter->second) = e.component_id();
+            }
+        }
+    }
+
+    std::vector<ComponentInterface> component_interfaces;
+    std::unordered_map<std::size_t, std::size_t> component_id_hash_to_index_map;
+    for (auto& p : unmatched_faces)
+    {
+        auto& component_id_1 = std::get<0>(p.second);
+        auto& component_id_2 = std::get<1>(p.second);
+        auto& element_index  = std::get<2>(p.second);
+        auto& face_index     = std::get<3>(p.second);
+
+        auto hash = utility::hash(component_id_1, component_id_2);
+
+        // If statement needed to filter out the outer boundary faces.
+        if (component_id_2 != NOT_SET_ComponentIndex)
+        {
+            FaceContainer faces(mesh.elements()[element_index]);
+            auto face = faces[face_index];
+
+            auto find_iter = component_id_hash_to_index_map.find(hash);
+            if (find_iter == component_id_hash_to_index_map.end())
+            {
+                ComponentInterface component_interface = { component_id_1,
+                                                           component_id_2,
+                                                           MeshSurface(mesh),
+                                                           {},
+                                                           {} };
+
+                component_interface.surface.add(face);
+                component_interface.parent_volume_elements.push_back(element_index);
+                component_interface.face_in_parent_volume_elements.push_back(face_index);
+
+                component_id_hash_to_index_map[hash] = component_interfaces.size();
+                component_interfaces.push_back(std::move(component_interface));
+            }
+            else
+            {
+                auto& component_interface = component_interfaces[find_iter->second];
+                component_interface.surface.add(face);
+                component_interface.parent_volume_elements.push_back(element_index);
+                component_interface.face_in_parent_volume_elements.push_back(face_index);
+            }
+        }
+    }
+    return component_interfaces;
+}
+
 Mesh extract_component(const Mesh& mesh, const ComponentIndex& component_id)
 {
     std::vector<LocalIndex> elements_in_component;
@@ -304,9 +394,9 @@ UnmatchedEdgeInfo find_unmatched_edges(const Mesh& mesh)
 {
     // Will store the connectivity of an edge in terms of the node numbering in the mesh
     std::vector<LocalIndex> edge_conn;
-    // A map from the hash of an edge's sorted connectivity to the number of elements that contain
-    // the edge, the first element that contained it (based on local element numbering), the type of
-    // edge, and the connectivity of the edge.
+    // A map from the hash of an edge's sorted connectivity to the number of elements that
+    // contain the edge, the first element that contained it (based on local element numbering),
+    // the type of edge, and the connectivity of the edge.
     std::unordered_map<std::size_t, std::tuple<int, LocalIndex, EdgeType, std::vector<LocalIndex>>>
       edge_hash_to_count_and_info;
     for (auto& e : mesh.elements())

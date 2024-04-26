@@ -64,14 +64,29 @@ struct BoundaryInfo
     std::vector<ConnIndex> face_in_parent_volume_elements;
 };
 
-/// @brief TODO write doc string
-/// @param mesh
+/// @brief Extracts a surface mesh of the outermost boundary of the given volume mesh.
+///
+/// Note: a face is considered to lie on the boundary if there is only one element connected to it.
 BoundaryInfo extract_boundary(const Mesh& mesh);
 
-/// @brief TODO write doc string
-/// @param mesh
-/// @param elements_to_search
+/// @brief Extracts a surface mesh of the outermost boundary of the given set of elements in a
+///        volume mesh.
+///
+/// Note: a face is considered to lie on the boundary if there is only one element in
+///       elemenets_to_search connected to it.
 BoundaryInfo extract_boundary(const Mesh& mesh, const std::vector<LocalIndex>& elements_to_search);
+
+struct ComponentInterface
+{
+    ComponentIndex component_1;
+    ComponentIndex component_2;
+    MeshSurface surface;
+    std::vector<LocalIndex> parent_volume_elements;
+    std::vector<ConnIndex> face_in_parent_volume_elements;
+};
+
+/// @brief Extracts a surface mesh of along component interfaces.
+std::vector<ComponentInterface> extract_component_interfaces(const Mesh& mesh);
 
 /// @brief Extracts a submesh for a single component from a mesh that may contain multiple
 /// components.

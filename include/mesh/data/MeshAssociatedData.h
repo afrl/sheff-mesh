@@ -36,8 +36,14 @@
     void add_##LEVEL##_##TYPE_NAME##(const std::string& name,                                     \
                                      const std::vector<std::string>& component_names,             \
                                      const int n_rows,                                            \
-                                     const int n_cols);
-
+                                     const int n_cols);                                           \
+                                                                                                  \
+    /** @brief Helper method to add ##TYPE## data at ##LEVEL## level */                           \
+    /** */                                                                                        \
+    /** Note: moves the data to be owned by this object */                                        \
+    void add_##LEVEL##_##TYPE_NAME##(const std::string& name,                                     \
+                                     const std::vector<std::string>& component_names,             \
+                                     simple_math::DynamicMatrix<##TYPE##>&& data);                \
 
 namespace mesh
 {
@@ -413,7 +419,17 @@ inline const std::vector<DataField<T>>& MeshAssociatedData::get() const
           DataField<##TYPE##>::move(name,                                                          \
                                     component_names,                                               \
                                     simple_math::DynamicMatrix<##TYPE##>::Zero(n_rows, n_cols)));  \
+    }                                                                                              \
+                                                                                                   \
+    inline void MeshAssociatedData::add_##LEVEL##_##TYPE_NAME##(                                   \
+      const std::string& name,                                                                     \
+      const std::vector<std::string>& component_names,                                             \
+      simple_math::DynamicMatrix<##TYPE##>&& data)                                                 \
+    {                                                                                              \
+        add<DataFieldType::##LEVEL_ENUM##, ##TYPE##>(                                              \
+          DataField<##TYPE##>::move(name, component_names, std::move(data)));                      \
     }
+
 // clang-format on
 
 ADD_DATA_HELPERS_DEF(int16, int16_t, node, NODE)

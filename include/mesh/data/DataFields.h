@@ -94,6 +94,7 @@ struct DataField
                  std::make_unique<EigenMatrixOwningHandle<T>>(
                    Eigen::Map<const simple_math::DynamicMatrix<T>>(data.data(), data.size(), 1)) };
     }
+
     static DataField<T> copy(const std::string& name,
                              const std::vector<std::string>& component_names,
                              const T*& data,

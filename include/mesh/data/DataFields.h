@@ -47,6 +47,9 @@ struct DataField
     template<typename SerializerType>
     void serialize(SerializerType& s) const
     {
+        // If this is violated, then you will have downstream errors.
+        assert(data().cols() == component_names.size());
+
         s(utility::named_value("name", name),
           utility::named_value("n_component_names", component_names.size()),
           utility::named_value("component_names", utility::slice_c(component_names)),
@@ -61,13 +64,13 @@ struct DataField
     {
         s(name);
 
-        std::size_t n_component_names;
+        decltype(component_names.size()) n_component_names;
         s(n_component_names);
 
         component_names.resize(n_component_names);
         s(utility::slice(component_names));
 
-        Eigen::Index n_data_rows;
+        decltype(data().rows()) n_data_rows;
         s(n_data_rows);
 
         simple_math::DynamicMatrix<T> data =
@@ -101,6 +104,7 @@ struct DataField
                              const std::size_t& n_rows,
                              const std::size_t& n_cols)
     {
+        assert(cols == component_names.size());
         return { name,
                  component_names,
                  std::make_unique<EigenMatrixOwningHandle<T>>(
@@ -110,6 +114,7 @@ struct DataField
                              const std::vector<std::string>& component_names,
                              const simple_math::DynamicMatrix<T>& data)
     {
+        assert(data.cols() == component_names.size());
         EigenMatrixOwningHandle<T> handle(data);
         return { name, component_names, std::make_unique<EigenMatrixOwningHandle<T>>(data) };
     }
@@ -118,6 +123,7 @@ struct DataField
                              const std::vector<std::string>& component_names,
                              simple_math::DynamicMatrix<T>&& data)
     {
+        assert(data.cols() == component_names.size());
         return { name, component_names, std::make_unique<EigenMatrixOwningHandle<T>>(data) };
     }
 
@@ -149,6 +155,7 @@ struct DataField
                              const std::size_t& n_rows,
                              const std::size_t& n_cols)
     {
+        assert(n_cols == component_names.size());
         return { name,
                  component_names,
                  std::make_unique<EigenMatrixConstMapHandle<T>>(data, n_rows, n_cols) };
@@ -185,6 +192,7 @@ struct DataField
                             const std::size_t& n_rows,
                             const std::size_t& n_cols)
     {
+        assert(n_cols == component_names.size());
         return { name,
                  component_names,
                  std::make_unique<EigenMatrixMutableMapHandle<T>>(data,
@@ -195,6 +203,7 @@ struct DataField
                             const std::vector<std::string>& component_names,
                             simple_math::DynamicMatrix<T>& data)
     {
+        assert(data.cols() == component_names.size());
         return { name, component_names, std::make_unique<EigenMatrixMutableHandle<T>>(data) };
     }
 };

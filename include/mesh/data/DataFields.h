@@ -103,7 +103,7 @@ struct DataField
                              const std::size_t& n_rows,
                              const std::size_t& n_cols)
     {
-        assert(cols == component_names.size());
+        assert(n_cols == component_names.size());
         return { name,
                  component_names,
                  std::make_unique<EigenMatrixOwningHandle<T>>(

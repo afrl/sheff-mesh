@@ -11,39 +11,39 @@
 #include <vector>
 
 #define ADD_DATA_HELPERS_DECL(TYPE_NAME, TYPE, LEVEL)                                             \
-    /** @brief Helper method to add ##TYPE## data at ##LEVEL## level */                           \
+    /** @brief Helper method to add TYPE data at LEVEL level */                                   \
     /** */                                                                                        \
     /** Note: same as calling the templated add and this only refers to the data (does not */     \
     /**       make a copy) so make sure it stays in scope */                                      \
-    void add_##LEVEL##_##TYPE_NAME##(const std::string& name,                                     \
-                                     const std::vector<std::string>& component_names,             \
-                                     const simple_math::DynamicMatrix<##TYPE##>& data);           \
+    void add_##LEVEL##_##TYPE_NAME(const std::string& name,                                       \
+                                   const std::vector<std::string>& component_names,               \
+                                     const simple_math::DynamicMatrix<TYPE>& data);               \
                                                                                                   \
-    /** @brief Helper method to add ##TYPE## data at ##LEVEL## level */                           \
+    /** @brief Helper method to add TYPE data at LEVEL level */                                   \
     /** */                                                                                        \
     /** Note: same as calling the templated add and this only refers to the data (does not */     \
     /**       make a copy) so make sure it stays in scope */                                      \
-    void add_##LEVEL##_##TYPE_NAME##(const std::string& name, const std::vector<##TYPE##>& data); \
+    void add_##LEVEL##_##TYPE_NAME(const std::string& name, const std::vector<TYPE>& data);       \
                                                                                                   \
-    /** @brief Helper method to add ##TYPE## data at ##LEVEL## level */                           \
+    /** @brief Helper method to add TYPE data at LEVEL level */                                   \
     /** */                                                                                        \
     /** Note: data is initialized to zero's and will own the memory internally */                 \
-    void add_##LEVEL##_##TYPE_NAME##(const std::string& name, const int n_rows);                  \
+    void add_##LEVEL##_##TYPE_NAME(const std::string& name, const int n_rows);                    \
                                                                                                   \
-    /** @brief Helper method to add ##TYPE## data at ##LEVEL## level */                           \
+    /** @brief Helper method to add TYPE data at LEVEL level */                                   \
     /** */                                                                                        \
     /** Note: data is initialized to zero's and will own the memory internally */                 \
-    void add_##LEVEL##_##TYPE_NAME##(const std::string& name,                                     \
-                                     const std::vector<std::string>& component_names,             \
-                                     const int n_rows,                                            \
-                                     const int n_cols);                                           \
+    void add_##LEVEL##_##TYPE_NAME(const std::string& name,                                       \
+                                   const std::vector<std::string>& component_names,               \
+                                   const int n_rows,                                              \
+                                    const int n_cols);                                            \
                                                                                                   \
-    /** @brief Helper method to add ##TYPE## data at ##LEVEL## level */                           \
+    /** @brief Helper method to add TYPE data at LEVEL level */                                   \
     /** */                                                                                        \
     /** Note: moves the data to be owned by this object */                                        \
-    void add_##LEVEL##_##TYPE_NAME##(const std::string& name,                                     \
-                                     const std::vector<std::string>& component_names,             \
-                                     simple_math::DynamicMatrix<##TYPE##>&& data);                \
+    void add_##LEVEL##_##TYPE_NAME(const std::string& name,                                       \
+                                   const std::vector<std::string>& component_names,               \
+                                   simple_math::DynamicMatrix<TYPE>&& data);                      \
 
 namespace mesh
 {
@@ -374,60 +374,60 @@ inline const std::vector<DataField<T>>& MeshAssociatedData::get() const
 // clang-format off
 #define ADD_DATA_HELPERS_DEF(TYPE_NAME, TYPE, LEVEL, LEVEL_ENUM)                                   \
     template<>                                                                                     \
-    inline void MeshAssociatedData::add<DataFieldType::##LEVEL_ENUM##, ##TYPE##>(                  \
-      DataField<##TYPE##> && data)                                                                 \
+    inline void MeshAssociatedData::add<DataFieldType::LEVEL_ENUM, TYPE>(                          \
+      DataField<TYPE> && data)                                                                     \
     {                                                                                              \
-        ##TYPE_NAME##_data.##LEVEL##_data_fields.push_back(std::move(data));                       \
+        TYPE_NAME##_data.LEVEL##_data_fields.push_back(std::move(data));                           \
     }                                                                                              \
                                                                                                    \
     template<>                                                                                     \
-    inline const std::vector<DataField<##TYPE##>>&                                                 \
-    MeshAssociatedData::get<DataFieldType::##LEVEL_ENUM##, ##TYPE##>() const                       \
+    inline const std::vector<DataField<TYPE>>&                                                     \
+    MeshAssociatedData::get<DataFieldType::LEVEL_ENUM, TYPE>() const                               \
     {                                                                                              \
-        return TYPE_NAME##_data.##LEVEL##_data_fields;                    \
+        return TYPE_NAME##_data.LEVEL##_data_fields;                                               \
     }                                                                                              \
                                                                                                    \
-    inline void MeshAssociatedData::add_##LEVEL##_##TYPE_NAME##(                                   \
+    inline void MeshAssociatedData::add_##LEVEL##_##TYPE_NAME(                                     \
       const std::string& name,                                                                     \
       const std::vector<std::string>& component_names,                                             \
-      const simple_math::DynamicMatrix<##TYPE##>& data)                                            \
+      const simple_math::DynamicMatrix<TYPE>& data)                                                \
     {                                                                                              \
-        add<DataFieldType::##LEVEL_ENUM##, ##TYPE##>(                                              \
-          DataField<##TYPE##>::cref(name, component_names, data));                                 \
+        add<DataFieldType::LEVEL_ENUM, TYPE>(                                                      \
+          DataField<TYPE>::cref(name, component_names, data));                                     \
     }                                                                                              \
                                                                                                    \
-    inline void MeshAssociatedData::add_##LEVEL##_##TYPE_NAME##(const std::string& name,           \
-                                                                const std::vector<##TYPE##>& data) \
+    inline void MeshAssociatedData::add_##LEVEL##_##TYPE_NAME(const std::string& name,             \
+                                                                const std::vector<TYPE>& data)     \
     {                                                                                              \
-        add<DataFieldType::##LEVEL_ENUM##, ##TYPE##>(DataField<##TYPE##>::cref(name, data));       \
+        add<DataFieldType::LEVEL_ENUM, TYPE>(DataField<TYPE>::cref(name, data));                   \
     }                                                                                              \
                                                                                                    \
-    inline void MeshAssociatedData::add_##LEVEL##_##TYPE_NAME##(const std::string& name,           \
+    inline void MeshAssociatedData::add_##LEVEL##_##TYPE_NAME(const std::string& name,             \
                                                                 const int n_rows)                  \
     {                                                                                              \
-        add<DataFieldType::##LEVEL_ENUM##, ##TYPE##>(                                              \
-          DataField<##TYPE##>::copy(name, std::vector<##TYPE##>(n_rows, 0.0)));                    \
+        add<DataFieldType::LEVEL_ENUM, TYPE>(                                                      \
+          DataField<TYPE>::copy(name, std::vector<TYPE>(n_rows, 0.0)));                            \
     }                                                                                              \
                                                                                                    \
-    inline void MeshAssociatedData::add_##LEVEL##_##TYPE_NAME##(                                   \
+    inline void MeshAssociatedData::add_##LEVEL##_##TYPE_NAME(                                     \
       const std::string& name,                                                                     \
       const std::vector<std::string>& component_names,                                             \
       const int n_rows,                                                                            \
       const int n_cols)                                                                            \
     {                                                                                              \
-        add<DataFieldType::##LEVEL_ENUM##, ##TYPE##>(                                              \
-          DataField<##TYPE##>::move(name,                                                          \
+        add<DataFieldType::LEVEL_ENUM, TYPE>(                                                      \
+          DataField<TYPE>::move(name,                                                              \
                                     component_names,                                               \
-                                    simple_math::DynamicMatrix<##TYPE##>::Zero(n_rows, n_cols)));  \
+                                    simple_math::DynamicMatrix<TYPE>::Zero(n_rows, n_cols)));      \
     }                                                                                              \
                                                                                                    \
-    inline void MeshAssociatedData::add_##LEVEL##_##TYPE_NAME##(                                   \
+    inline void MeshAssociatedData::add_##LEVEL##_##TYPE_NAME(                                     \
       const std::string& name,                                                                     \
       const std::vector<std::string>& component_names,                                             \
-      simple_math::DynamicMatrix<##TYPE##>&& data)                                                 \
+      simple_math::DynamicMatrix<TYPE>&& data)                                                     \
     {                                                                                              \
-        add<DataFieldType::##LEVEL_ENUM##, ##TYPE##>(                                              \
-          DataField<##TYPE##>::move(name, component_names, std::move(data)));                      \
+        add<DataFieldType::LEVEL_ENUM, TYPE>(                                                      \
+          DataField<TYPE>::move(name, component_names, std::move(data)));                          \
     }
 
 // clang-format on
